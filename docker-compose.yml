@@ -7,6 +7,17 @@ services:
       - "5000:5000"
     restart: unless-stopped
 
+  ml-inference:
+    build: ./ml-inference
+    volumes:
+      - ./data:/app/data
+      - ./cache/torch:/root/.cache/torch/hub/checkpoints
+    ports:
+      - "6000:6000"
+    restart: unless-stopped
+    environment:
+      - LOG_LEVEL=trace
+
   frontend:
     build: ./frontend
     depends_on:
