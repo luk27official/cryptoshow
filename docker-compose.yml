@@ -7,11 +7,12 @@ services:
       - "5000:5000"
     restart: unless-stopped
 
-  ml-inference:
-    build: ./ml-inference
+  ml_inference:
+    build: ./ml_inference
     volumes:
       - ./data:/app/data
       - ./cache/torch:/root/.cache/torch/hub/checkpoints
+      - ./cache/cryptobench:/app/cryptobench
     ports:
       - "6000:6000"
     restart: unless-stopped

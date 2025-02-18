@@ -16,6 +16,7 @@ from biotite.sequence import ProteinSequence
 
 
 from .esm2_generator import compute_esm2
+from .cb import compute_prediction2
 
 app = FastAPI()
 uvicorn_logger = logging.getLogger("uvicorn.error")
@@ -51,11 +52,26 @@ async def run_pdb_id(pdb_id: str):
 
     # run the ml model
     try:
-        compute_esm2(f"/app/data/inputs/{pdb_id}.fasta", f"/app/data/outputs/{pdb_id}.npy", logger)
+        compute_esm2(f"/app/data/inputs/{pdb_id}.fasta", f"/app/data/outputs/{pdb_id}.npy")
     except Exception as e:
-        return {e}
+        logger.error(f"Error running ESM2 model: {e}")
+        return {"error": str(e)}
 
-    return {f"Prediction run succesfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy"}
+    print(f"Saved ESM2 embeddings to /app/data/outputs/{pdb_id}.npy")
+
+    # run the cryptobench model
+    try:
+        pred = compute_prediction2(f"/app/data/outputs/{pdb_id}.npy")
+    except Exception as e:
+        logger.error(f"Error running ESM2 model: {e}")
+        return {"error": str(e)}
+
+    print(f"Prediction: {pred}")
+
+    return {
+        "status": f"Prediction run succesfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy",
+        "prediction": pred[1],
+    }
 
 
 if __name__ == "__main__":

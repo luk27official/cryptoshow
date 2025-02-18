@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 
-def compute_esm2(input_file: os.PathLike, output_file: os.PathLike, logger):
+def compute_esm2(input_file: os.PathLike, output_file: os.PathLike):
     # TODO: change the model here... t36 currently requires >16 GB of RAM, that's why im using 12
     layers = 12
     model, alphabet = esm.pretrained.esm2_t12_35M_UR50D()

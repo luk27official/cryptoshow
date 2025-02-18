@@ -1,8 +1,10 @@
-FROM python:3.13
+FROM python:3.12
 
 WORKDIR /app
 
 # TODO: add download of the ESM2 model here...
+
+# TODO: add download of the CryptoBench model here...
 
 # TODO: add CUDA support...
 
