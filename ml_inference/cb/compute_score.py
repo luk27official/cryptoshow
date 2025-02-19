@@ -1,6 +1,8 @@
 import numpy as np
 import sys
 import os
+
+os.environ["TF_USE_LEGACY_KERAS"] = "1"  # force using Keras 2 instead of Keras 3
 from tensorflow import keras
 
 # CAUTION: You need to specify the path to the CryptoBench dataset! It is available at: https://osf.io/pz4a9/
@@ -48,8 +50,10 @@ class MatthewsCorrelationCoefficient(keras.metrics.Metric):
 
 def load_model():
     print("Loading CryptoBench model ...")
-    # TODO: fix this, it does not work...
-    return keras.models.load_model(MODEL_PATH, compile=False)
+    # TODO: look further into this
+    return keras.models.load_model(
+        MODEL_PATH, custom_objects={"MatthewsCorrelationCoefficient": MatthewsCorrelationCoefficient()}, compile=False
+    )
 
 
 def predict(X: np.ndarray, model: keras.Model):

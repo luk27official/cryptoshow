@@ -14,3 +14,4 @@ typing_extensions>=4.10.0
 
 biotite
 tensorflow==2.18.0
+tf-keras==2.18.0
