@@ -1,1 +1,1 @@
-from .compute_score import compute_prediction2
+from .compute_score import compute_prediction

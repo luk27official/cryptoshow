@@ -67,7 +67,7 @@ def load_data(embedding_path: os.PathLike):
     return embeddings
 
 
-def compute_prediction2(embedding_path: os.PathLike):
+def compute_prediction(embedding_path: os.PathLike):
     model = load_model()
     print("Model loaded")
     embeddings = load_data(embedding_path)
