@@ -3,21 +3,42 @@ services:
     build: ./backend
     volumes:
       - ./data:/app/data
-    ports:
-      - "5000:5000"
-    restart: unless-stopped
-
-  ml_inference:
-    build: ./ml_inference
-    volumes:
-      - ./data:/app/data
       - ./cache/torch:/root/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
     ports:
-      - "6000:6000"
+      - "5000:5000"
     restart: unless-stopped
+    depends_on:
+      - redis
     environment:
-      - LOG_LEVEL=trace
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+
+  worker:
+    build: 
+      context: ./backend
+      args:
+        UID: ${UID:-2727}
+        GID: ${GID:-2727}
+    command: celery -A tasks.celery_app worker --loglevel=info
+    depends_on:
+      - redis
+      - backend
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: all
+    #           capabilities: [gpu]
+    environment:
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
 
   frontend:
     build: ./frontend
