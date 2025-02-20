@@ -5,10 +5,14 @@ import os
 
 
 def compute_esm2(input_file: os.PathLike, output_file: os.PathLike):
-    # TODO: change the model here... t36 currently requires >16 GB of RAM, that's why im using 12
-    layers = 12
-    model, alphabet = esm.pretrained.esm2_t12_35M_UR50D()
-    # model, alphabet = esm.pretrained.esm2_t36_3B_UR50D()
+    # TODO: change the model here... t36 currently requires >16 GB of RAM, that's why im using less
+    # currently the first model does not work with CryptoBench...
+    models = [(esm.pretrained.esm2_t33_650M_UR50D, 33), (esm.pretrained.esm2_t36_3B_UR50D, 36)]
+
+    model_idx = 1
+
+    model, alphabet = models[model_idx][0]()
+    layers = models[model_idx][1]
 
     batch_converter = alphabet.get_batch_converter()
     device = torch.device(f"cuda:0" if (torch.cuda.is_available()) else "cpu")

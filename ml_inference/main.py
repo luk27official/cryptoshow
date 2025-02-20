@@ -55,13 +55,14 @@ async def run_pdb_id(pdb_id: str):
     print(f"Saved sequence file to /app/data/inputs/{pdb_id}.fasta")
 
     # run the ml model
-    try:
-        compute_esm2(f"/app/data/inputs/{pdb_id}.fasta", f"/app/data/outputs/{pdb_id}.npy")
-    except Exception as e:
-        logger.error(f"Error running ESM2 model: {e}")
-        return {"error": str(e)}
+    if not DEBUG:
+        try:
+            compute_esm2(f"/app/data/inputs/{pdb_id}.fasta", f"/app/data/outputs/{pdb_id}.npy")
+        except Exception as e:
+            logger.error(f"Error running ESM2 model: {e}")
+            return {"error": str(e)}
 
-    print(f"Saved ESM2 embeddings to /app/data/outputs/{pdb_id}.npy")
+        print(f"Saved ESM2 embeddings to /app/data/outputs/{pdb_id}.npy")
 
     # run the cryptobench model
     if DEBUG:
