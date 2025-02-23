@@ -36,7 +36,16 @@ def process_esm2_cryptobench(pdb_id: str):
     protein = get_structure(cif_file, model=1)
     protein = protein[(protein.atom_name == "CA") & (protein.element == "C") & (protein.chain_id == chain_id)]
 
-    seq = "".join([ProteinSequence.convert_letter_3to1(residue.res_name) for residue in protein])
+    seq = "".join(
+        [
+            (
+                ProteinSequence.convert_letter_3to1(residue.res_name)
+                if residue.res_name in ProteinSequence._dict_3to1
+                else "X"
+            )
+            for residue in protein
+        ]
+    )
     with open(f"/app/data/inputs/{pdb_id}.fasta", "w") as f:
         f.write(seq)
 
