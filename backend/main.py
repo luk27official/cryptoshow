@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.logger import logger
 
 import logging
@@ -22,6 +23,15 @@ from .tasks import celery_app
 from celery.result import AsyncResult
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost"],  # TODO: what should this be when the app is deployed?
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 uvicorn_logger = logging.getLogger("uvicorn.error")
 logger.handlers = uvicorn_logger.handlers
 logger.setLevel(logging.DEBUG)
