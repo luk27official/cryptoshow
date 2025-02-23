@@ -13,6 +13,8 @@ services:
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/app
+    working_dir: /app
 
   worker:
     build: 
@@ -21,19 +23,26 @@ services:
         UID: ${UID:-2727}
         GID: ${GID:-2727}
     command: celery -A tasks.celery_app worker --loglevel=info
+    volumes:
+      - ./data:/app/data
+      - ./cache/torch:/root/.cache/torch/hub/checkpoints
+      - ./cache/cryptobench:/app/cryptobench
     depends_on:
       - redis
       - backend
-    # deploy:
-    #   resources:
-    #     reservations:
-    #       devices:
-    #         - driver: nvidia
-    #           count: all
-    #           capabilities: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
+      - PYTHONPATH=/app
+      - NVIDIA_DISABLE_REQUIRE=true
+    working_dir: /app
 
   redis:
     image: redis:alpine
