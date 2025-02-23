@@ -2,7 +2,9 @@ import numpy as np
 import sys
 import os
 
+# TODO: look if this is needed as we set this in the docker-compose file
 os.environ["TF_USE_LEGACY_KERAS"] = "1"  # force using Keras 2 instead of Keras 3
+os.environ["TF_GPU_ALLOCATOR"] = "cuda_malloc_async"  # faster GPU memory allocation
 from tensorflow import keras
 
 # CAUTION: You need to specify the path to the CryptoBench dataset! It is available at: https://osf.io/pz4a9/
@@ -46,6 +48,13 @@ class MatthewsCorrelationCoefficient(keras.metrics.Metric):
         self.tn.assign(0)
         self.fp.assign(0)
         self.fn.assign(0)
+
+    def get_config(self):
+        base_config = super().get_config()
+        return {**base_config, "tp": self.tp, "tn": self.tn, "fp": self.fp, "fn": self.fn}
+
+    def from_config(cls, config):
+        return cls(**config)
 
 
 def load_model():
