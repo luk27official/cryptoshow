@@ -36,11 +36,6 @@ async def read_root():
 
 @app.get("/{pdb_id}")
 async def run_pdb_id(pdb_id: str):
-    return {f"Called {pdb_id}"}
-
-
-@app.get("/{pdb_id}")
-async def run_pdb_id(pdb_id: str):
 
     logger.warning(f"new request: GET /{pdb_id}")
 
@@ -84,7 +79,7 @@ async def run_pdb_id(pdb_id: str):
 
     return {
         "status": f"Prediction run succesfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy",
-        "prediction": [p[1] for p in pred],
+        "prediction": [float(p[1]) for p in pred],
     }
 
 
