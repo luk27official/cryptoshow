@@ -5,6 +5,7 @@ services:
       - ./data:/app/data
       - ./cache/torch:/root/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
+      - ./cache/cryptobench-small:/app/cryptobench-small
     ports:
       - "5000:5000"
     restart: unless-stopped
@@ -27,6 +28,7 @@ services:
       - ./data:/app/data
       - ./cache/torch:/root/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
+      - ./cache/cryptobench-small:/app/cryptobench-small
     depends_on:
       - redis
       - backend
@@ -42,9 +44,9 @@ services:
       - CELERY_BACKEND=redis://redis:6379/0
       - PYTHONPATH=/app
       - NVIDIA_DISABLE_REQUIRE=true
-      - TF_GPU_ALLOCATOR=cuda_malloc_async
-      - TF_FORCE_GPU_ALLOW_GROWTH=true
-      - TF_USE_LEGACY_KERAS=1
+      # - TF_GPU_ALLOCATOR=cuda_malloc_async
+      # - TF_FORCE_GPU_ALLOW_GROWTH=true
+      # - TF_USE_LEGACY_KERAS=1
     working_dir: /app
     profiles:
       - gpu
@@ -60,6 +62,7 @@ services:
       - ./data:/app/data
       - ./cache/torch:/root/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
+      - ./cache/cryptobench-small:/app/cryptobench-small
     depends_on:
       - redis
       - backend
