@@ -1,7 +1,5 @@
 # cryptoshow
 
-build: `docker compose build`
+build: `docker compose --profile <cpu/gpu> build`
 
-run on CPU: `docker compose --profile cpu up`
-
-run on GPU: `docker compose --profile gpu up`
+run: `docker compose --profile <cpu/gpu> up`
