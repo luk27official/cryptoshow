@@ -11,9 +11,6 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 # TODO remove
 
-# TODO: set this to false once we're done with mocking the output
-DEBUG = True
-
 import biotite.database.rcsb as rcsb
 import biotite.structure.io.pdbx as pdbx
 from biotite.structure.io.pdbx import get_structure
@@ -65,7 +62,7 @@ async def run_pdb_id(pdb_id: str):
 
     return {
         "status": f"Prediction run succesfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy",
-        "prediction": [float(p[1]) for p in pred],
+        "prediction": [float(p) for p in pred],
     }
 
 

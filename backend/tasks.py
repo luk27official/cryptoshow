@@ -8,7 +8,7 @@ from biotite.structure.io.pdbx import get_structure
 from biotite.sequence import ProteinSequence
 
 from esm2_generator import compute_esm2
-from cb import compute_prediction
+from cb_small import compute_prediction
 
 celery_app = Celery("celery_app", broker="redis://redis:6379/0", backend="redis://redis:6379/0")
 
@@ -65,7 +65,9 @@ def process_esm2_cryptobench(pdb_id: str):
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
+    print(f"Got prediction for {pdb_id} from CryptoBench")
+
     return {
         "status": f"Prediction run succesfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy",
-        "prediction": [float(p[1]) for p in pred],
+        "prediction": [float(p) for p in pred],
     }
