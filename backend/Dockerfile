@@ -4,6 +4,9 @@ WORKDIR /app
 
 COPY requirements.txt .
 
+RUN groupadd -g 1000 cryptoshow && \
+    useradd -r -u 1000 -g cryptoshow cryptoshow
+
 # TODO: add download of the ESM2 model here...
 
 RUN mkdir -p /app/cryptobench-small && \
@@ -12,6 +15,10 @@ RUN mkdir -p /app/cryptobench-small && \
 
 COPY . .
 
+RUN chown -R cryptoshow:cryptoshow /app
+
 EXPOSE 5000
+
+USER cryptoshow
 
 CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]

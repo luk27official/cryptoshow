@@ -20,9 +20,6 @@ services:
   worker-gpu:
     build: 
       context: ./backend
-      args:
-        UID: ${UID:-2727}
-        GID: ${GID:-2727}
     command: celery -A tasks.celery_app worker --loglevel=info
     volumes:
       - ./data:/app/data
@@ -54,9 +51,6 @@ services:
   worker-cpu:
     build: 
       context: ./backend
-      args:
-        UID: ${UID:-2727}
-        GID: ${GID:-2727}
     command: celery -A tasks.celery_app worker --loglevel=info
     volumes:
       - ./data:/app/data
