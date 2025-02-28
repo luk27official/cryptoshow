@@ -10,7 +10,9 @@ from biotite.sequence import ProteinSequence
 from esm2_generator import compute_esm2
 from cb_small import compute_prediction
 
-celery_app = Celery("celery_app", broker="redis://redis:6379/0", backend="redis://redis:6379/0")
+celery_app = Celery(
+    "celery_app", broker="redis://redis:6379/0", backend="redis://redis:6379/0", broker_connection_retry_on_startup=True
+)
 
 
 @celery_app.task(name="celery_app.process_string_test")
