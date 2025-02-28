@@ -3,7 +3,7 @@ services:
     build: ./backend
     volumes:
       - ./data:/app/data
-      - ./cache/torch:/root/.cache/torch/hub/checkpoints
+      - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
       - ./cache/cryptobench-small:/app/cryptobench-small
     ports:
@@ -23,7 +23,7 @@ services:
     command: celery -A tasks.celery_app worker --loglevel=info
     volumes:
       - ./data:/app/data
-      - ./cache/torch:/root/.cache/torch/hub/checkpoints
+      - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
       - ./cache/cryptobench-small:/app/cryptobench-small
     depends_on:
@@ -54,7 +54,7 @@ services:
     command: celery -A tasks.celery_app worker --loglevel=info
     volumes:
       - ./data:/app/data
-      - ./cache/torch:/root/.cache/torch/hub/checkpoints
+      - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
       - ./cache/cryptobench-small:/app/cryptobench-small
     depends_on:

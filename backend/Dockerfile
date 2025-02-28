@@ -15,7 +15,8 @@ RUN mkdir -p /app/cryptobench-small && \
 
 COPY . .
 
-RUN chown -R cryptoshow:cryptoshow /app
+RUN mkdir -p /app/data/inputs /app/data/outputs /home/cryptoshow && \
+    chown -R cryptoshow:cryptoshow /app /app/data /app/cryptobench-small /home/cryptoshow
 
 EXPOSE 5000
 
