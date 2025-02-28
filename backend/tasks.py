@@ -15,8 +15,8 @@ celery_app = Celery(
 )
 
 
-@celery_app.task(name="celery_app.process_string_test")
-def process_string_test(string: str):
+@celery_app.task(name="celery_app.process_string_test", bind=True)
+def process_string_test(self, string: str):
     """Run ML inference on the uploaded 3D structure."""
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
@@ -27,13 +27,17 @@ def process_string_test(string: str):
     return result
 
 
-@celery_app.task(name="celery_app.process_esm2_cryptobench")
-def process_esm2_cryptobench(pdb_id: str):
+@celery_app.task(name="celery_app.process_esm2_cryptobench", bind=True)
+def process_esm2_cryptobench(self, pdb_id: str):
     """Run ESM2 and CryptoBench models on the uploaded 3D structure."""
+    self.update_state(state="PROGRESS", meta={"status": "Downloading PDB file"})
+
     cif_file_path = rcsb.fetch(pdb_id, "cif", f"/app/data/inputs/")
     cif_file = pdbx.CIFFile.read(cif_file_path)
 
     chain_id = "A"  # TODO: change this
+
+    self.update_state(state="PROGRESS", meta={"status": "Extracting sequence from PDB file"})
 
     protein = get_structure(cif_file, model=1)
     protein = protein[(protein.atom_name == "CA") & (protein.element == "C") & (protein.chain_id == chain_id)]
@@ -53,6 +57,8 @@ def process_esm2_cryptobench(pdb_id: str):
 
     print(f"Saved sequence file to /app/data/inputs/{pdb_id}.fasta")
 
+    self.update_state(state="PROGRESS", meta={"status": "Running ESM2 embedding computation"})
+
     # run the ml model
     try:
         compute_esm2(f"/app/data/inputs/{pdb_id}.fasta", f"/app/data/outputs/{pdb_id}.npy")
@@ -60,6 +66,8 @@ def process_esm2_cryptobench(pdb_id: str):
         return {"status": "error", "error": str(e)}
 
     print(f"Saved ESM2 embeddings to /app/data/outputs/{pdb_id}.npy")
+
+    self.update_state(state="PROGRESS", meta={"status": "Running CryptoBench prediction"})
 
     # run the cryptobench model
     try:
