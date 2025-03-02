@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.logger import logger
 
+import json
+import asyncio
 import logging
 import random
 
@@ -88,3 +90,26 @@ def get_status(task_id: str):
     """Check the status of a processing task."""
     task_result: AsyncResult = celery_app.AsyncResult(task_id)
     return {"status": task_result.state, "result": task_result.result}
+
+
+@app.websocket("/ws/task-status/{task_id}")
+async def websocket_endpoint(websocket: WebSocket, task_id: str):
+    await websocket.accept()
+
+    try:
+        while True:
+            result = celery_app.AsyncResult(task_id)
+            status_info = {"task_id": task_id, "status": result.status, "result": result.result}
+
+            # Send task status to frontend
+            await websocket.send_text(json.dumps(status_info))
+
+            # # Stop if task is done
+            # if result.status in ["SUCCESS", "FAILURE", "REVOKED"]:
+            #     break
+
+            await asyncio.sleep(1)
+    except WebSocketDisconnect:
+        logger.info(f"Client disconnected from task status websocket for task_id: {task_id}")
+    except Exception as e:
+        logger.error(f"Error in websocket connection for task_id {task_id}: {str(e)}")

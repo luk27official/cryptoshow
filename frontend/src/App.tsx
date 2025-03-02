@@ -1,47 +1,102 @@
 import { useState } from 'react';
 import './App.css';
 
-function App() {
+const getApiUrl = (path: string) => {
+  return `./api${path}`;
+};
 
+function App() {
   const [pdbCode, setPdbCode] = useState('');
   const [taskId, setTaskId] = useState('');
   const [resultData, setResultData] = useState<any>({}); // TODO: add proper types
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
-    const data = await fetch(`./api/calculate/${pdbCode}`)
-      .then(response => response.json()); // TODO: add proper types and error handling
+    if (!pdbCode) return;
 
-    console.log("submitting...", data);
+    setIsLoading(true);
+    try {
+      const data = await fetch(getApiUrl(`/calculate/${pdbCode}`))
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        });
 
-    setTaskId(data["task_id"]);
-    poll(data["task_id"]);
+      console.log("submitting...", data);
+      setTaskId(data["task_id"]);
+      poll(data["task_id"]);
+      webSocketCheck(data["task_id"]);
+    } catch (error) {
+      console.error("Error submitting request:", error);
+      setResultData({ status: "Error submitting request" });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const poll = async (tId: string) => {
-    const data = await fetch(`./api/task-status/${tId}`)
-      .then(response => response.json()); // TODO add proper types and error handling
+    try {
+      const data = await fetch(getApiUrl(`/task-status/${tId}`))
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`HTTP error! Status: ${response.status}`);
+          }
+          return response.json();
+        });
 
-    console.log("polling...", data);
+      console.log("polling...", data);
 
-    if (data["status"] === 'SUCCESS') { // TODO: add more status, enable showing intermediate results
-      setResultData(data["result"]);
-    } else if (data["status"] === 'PENDING') {
-      setTimeout(() => poll(tId), 1000);
-    } else {
-      setResultData(data["status"]);
+      if (data["status"] === 'SUCCESS') {
+        setResultData(data["result"]);
+      } else if (data["status"] === 'PENDING' || data["status"] === 'PROGRESS') {
+        setTimeout(() => poll(tId), 1000);
+        setResultData(data["result"] || { status: data["status"] });
+      } else {
+        setResultData(data["status"]);
+      }
+    } catch (error) {
+      console.error("Error polling task status:", error);
+      setResultData({ status: "Error checking task status" });
     }
+  };
+
+  const webSocketCheck = (taskId: string) => {
+    const ws1 = new WebSocket(`ws://localhost/ws/task-status/${taskId}`);
+    ws1.onopen = () => {
+      console.log("WebSocket1 connected");
+    };
+
+    ws1.onmessage = (event) => {
+      console.log("WebSocket1 message received:", event.data);
+    };
+
+    ws1.onclose = () => {
+      console.log("WebSocket1 closed");
+    };
   };
 
   return (
     <>
       <div>
-        <h2>CryptoShow</h2>
+        <h2>CryptoShow {window.location.port === "3000" && '(Dev Mode)'}</h2>
       </div>
       <div>
         <span>Input a PDB code: </span>
-        <input type="text" value={pdbCode} onChange={(e) => setPdbCode(e.target.value)} />
+        <input
+          type="text"
+          value={pdbCode}
+          onChange={(e) => setPdbCode(e.target.value)}
+          disabled={isLoading}
+        />
         &nbsp;
-        <button onClick={() => handleSubmit()}>Submit</button>
+        <button
+          onClick={() => handleSubmit()}
+          disabled={isLoading || !pdbCode}
+        >
+          {isLoading ? 'Processing...' : 'Submit'}
+        </button>
       </div>
       {taskId &&
         <div>
@@ -53,11 +108,13 @@ function App() {
         <div>
           <h3>Result:</h3>
           <p>{resultData["status"]}</p>
-          <ul>
-            {resultData["prediction"].map((value: number, index: number) => (
-              <li key={index}>{value.toFixed(5)}</li>
-            ))}
-          </ul>
+          {resultData["prediction"] &&
+            <ul>
+              {resultData["prediction"].map((value: number, index: number) => (
+                <li key={index}>{value.toFixed(5)}</li>
+              ))}
+            </ul>
+          }
         </div>
       }
     </>
