@@ -10,8 +10,8 @@ xyz = np.random.uniform(0, 20, size=(num_points, 3))  # Random coordinates in ra
 scores = np.random.uniform(0, 1, size=(num_points, 1))  # Scores in range [0, 1]
 points = np.hstack((xyz, scores))  # Combine coordinates with scores
 
-# Filter points with scores > 0.75
-high_score_points = points[points[:, 3] > 0.75][:, :3]  # Extract only (x, y, z) coordinates
+high_score_mask = points[:, 3] > 0.75
+high_score_points = points[high_score_mask][:, :3]  # Extract only (x, y, z) coordinates
 
 # Perform the clustering
 eps = 5.0  # Max distance for neighbors (adjust as needed)
@@ -26,6 +26,12 @@ unique_labels = set(labels)
 fig = plt.figure(figsize=(8, 6))
 ax = fig.add_subplot(111, projection="3d")
 
+# Plot all points (including low-score ones) in gray
+ax.scatter(
+    points[:, 0], points[:, 1], points[:, 2], color="lightgray", label="All Points (Not Clustered)", s=20, alpha=0.5
+)
+
+# Plot clustered high-score points
 for i, label in enumerate(unique_labels):
     cluster_points = high_score_points[labels == label]
     color = "black" if label == -1 else distinct_colors(i % distinct_colors.N)
@@ -44,6 +50,6 @@ for i, label in enumerate(unique_labels):
 ax.set_xlabel("X")
 ax.set_ylabel("Y")
 ax.set_zlabel("Z")
-ax.set_title("3D Clustering with DBSCAN (Filtered Scores > 0.75)")
+ax.set_title("3D Clustering with DBSCAN (High-Score Points Clustered)")
 ax.legend()
 plt.show()
