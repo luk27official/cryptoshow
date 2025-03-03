@@ -108,10 +108,12 @@ function App() {
         <div>
           <h3>Result:</h3>
           <p>{resultData["status"]}</p>
-          {resultData["prediction"] &&
+          {resultData["prediction"] && resultData["pockets"] &&
             <ul>
               {resultData["prediction"].map((value: number, index: number) => (
-                <li key={index}>{value.toFixed(5)}</li>
+                <li key={index}>
+                  {value.toFixed(5)}, {resultData["pockets"][index]}
+                </li>
               ))}
             </ul>
           }
