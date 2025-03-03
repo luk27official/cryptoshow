@@ -1,6 +1,8 @@
+# FastAPI
 fastapi[standard]
 requests
 
+# CryptoBench (Tiny), ESM-2
 biopython==1.85
 fair-esm==2.0.0
 filelock==3.13.1
@@ -12,9 +14,16 @@ networkx==3.2.1
 torch==2.6.0
 typing_extensions>=4.10.0
 
+# Clustering
+scikit-learn
+
+# Sequence + Structure functionality
 biotite
+
+# CryptoBench (Large), not used now
 # tensorflow==2.18.0
 # tf-keras==2.18.0
 
+# Async tasks
 celery
 redis
