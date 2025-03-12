@@ -15,11 +15,15 @@ RUN mkdir -p /app/cryptobench-small && \
 
 COPY . .
 
-RUN mkdir -p /app/data/inputs /app/data/outputs /home/cryptoshow && \
-    chown -R cryptoshow:cryptoshow /app /app/data /app/cryptobench-small /home/cryptoshow
+RUN mkdir /app/data && chown -R cryptoshow:cryptoshow /app /app/data /app/cryptobench-small
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 EXPOSE 5000
 
 USER cryptoshow
+
+ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
