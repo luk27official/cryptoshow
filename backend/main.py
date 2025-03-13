@@ -51,10 +51,8 @@ async def run_pdb_id(pdb_id: str):
     cif_file_path = rcsb.fetch(pdb_id, "cif", f"/app/data/inputs/")
     cif_file = pdbx.CIFFile.read(cif_file_path)
 
-    chain_id = "A"  # TODO: change this
-
     protein = get_structure(cif_file, model=1)
-    protein = protein[(protein.atom_name == "CA") & (protein.element == "C") & (protein.chain_id == chain_id)]
+    protein = protein[(protein.atom_name == "CA") & (protein.element == "C")]
 
     seq = "".join([ProteinSequence.convert_letter_3to1(residue.res_name) for residue in protein])
 
