@@ -36,12 +36,10 @@ def process_esm2_cryptobench(self, pdb_id: str):
     cif_file_path = rcsb.fetch(pdb_id, "cif", f"/app/data/inputs/")
     cif_file = pdbx.CIFFile.read(cif_file_path)
 
-    chain_id = "A"  # TODO: change this
-
     self.update_state(state="PROGRESS", meta={"status": "Extracting sequence from PDB file"})
 
     protein = get_structure(cif_file, model=1)
-    protein = protein[(protein.atom_name == "CA") & (protein.element == "C") & (protein.chain_id == chain_id)]
+    protein = protein[(protein.atom_name == "CA") & (protein.element == "C")]  # & (protein.chain_id == chain_id)]
 
     seq = "".join(
         [
@@ -95,7 +93,9 @@ def process_esm2_cryptobench(self, pdb_id: str):
     pockets = [int(p) for p in pockets]
 
     return {
-        "status": f"Prediction run succesfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy",
+        "status": f"Prediction run successfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy",
         "prediction": cryptobench_prediction,
         "pockets": pockets,
+        "sequence": list(seq),
+        "residue_ids": [f"{residue.chain_id}_{residue.res_id}" for residue in protein],
     }
