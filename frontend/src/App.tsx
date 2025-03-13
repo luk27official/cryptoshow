@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { CryptoBenchResult } from "./types";
 import './App.css';
 
 const getApiUrl = (path: string) => {
@@ -8,7 +9,7 @@ const getApiUrl = (path: string) => {
 function App() {
   const [pdbCode, setPdbCode] = useState('');
   const [taskId, setTaskId] = useState('');
-  const [resultData, setResultData] = useState<any>({}); // TODO: add proper types
+  const [resultData, setResultData] = useState<CryptoBenchResult>({ status: "Uninitialized" });
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async () => {
@@ -112,7 +113,7 @@ function App() {
             <ul>
               {resultData["prediction"].map((value: number, index: number) => (
                 <li key={index}>
-                  {value.toFixed(5)}, {resultData["pockets"][index]}
+                  {resultData["residue_ids"]?.[index]}, {value.toFixed(5)}, {resultData["pockets"]?.[index]}
                 </li>
               ))}
             </ul>
