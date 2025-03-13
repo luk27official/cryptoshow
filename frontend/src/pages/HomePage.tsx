@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState } from "react";
 import { CryptoBenchResult } from "../types";
 import { getApiUrl } from "../utils";
 
 import "./HomePage.css";
 
 function HomePage() {
-    const [pdbCode, setPdbCode] = useState('');
-    const [taskId, setTaskId] = useState('');
+    const [pdbCode, setPdbCode] = useState("");
+    const [taskId, setTaskId] = useState("");
     const [resultData, setResultData] = useState<CryptoBenchResult>({ status: "Uninitialized" });
     const [isLoading, setIsLoading] = useState(false);
 
@@ -47,9 +47,9 @@ function HomePage() {
 
             console.log("polling...", data);
 
-            if (data["status"] === 'SUCCESS') {
+            if (data["status"] === "SUCCESS") {
                 setResultData(data["result"]);
-            } else if (data["status"] === 'PENDING' || data["status"] === 'PROGRESS') {
+            } else if (data["status"] === "PENDING" || data["status"] === "PROGRESS") {
                 setTimeout(() => poll(tId), 1000);
                 setResultData(data["result"] || { status: data["status"] });
             } else {
@@ -79,7 +79,7 @@ function HomePage() {
     return (
         <>
             <div>
-                <h2>CryptoShow {window.location.port === "3000" && '(Dev Mode)'}</h2>
+                <h2>CryptoShow {window.location.port === "3000" && "(Dev Mode)"}</h2>
             </div>
             <div>
                 <span>Input a PDB code: </span>
@@ -94,7 +94,7 @@ function HomePage() {
                     onClick={() => handleSubmit()}
                     disabled={isLoading || !pdbCode}
                 >
-                    {isLoading ? 'Processing...' : 'Submit'}
+                    {isLoading ? "Processing..." : "Submit"}
                 </button>
             </div>
             {taskId &&
