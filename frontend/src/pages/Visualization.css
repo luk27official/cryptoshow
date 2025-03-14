@@ -25,8 +25,12 @@ ul.navigation li {
 .viewer-3d {
     border: 1px solid red;
     width: 800px;
+    height: 600px;
+    position: relative;
+    margin: 10px;
 }
 
 .results-table {
     border: 1px solid blue;
+    margin: 10px;
 }

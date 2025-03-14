@@ -3,9 +3,12 @@ import "./Visualization.css";
 import { getApiUrl } from "../utils";
 import { useEffect, useState } from "react";
 import { CryptoBenchResult } from "../types";
+import { initializePlugin, loadStructure } from "../components/MolstarComponent";
+import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 
 function Visualization() {
     const [result, setResult] = useState<CryptoBenchResult | null>(null);
+    const [plugin, setPlugin] = useState<PluginUIContext | null>(null);
 
     // get taskId from URL (viewer?id=taskId)
     const taskId = new URLSearchParams(window.location.search).get("id");
@@ -29,6 +32,18 @@ function Visualization() {
         fetchData();
     }, [taskId]);
 
+    useEffect(() => {
+        if (result && !plugin) {
+            const initPlugin = async () => {
+                const pluginInstance = await initializePlugin();
+                setPlugin(pluginInstance);
+                loadStructure(pluginInstance, getApiUrl(`/file/${result.task_id}/structure.cif`)); // TODO: change the structure.cif later
+            };
+
+            initPlugin();
+        }
+    }, [result, plugin]);
+
     if (!taskId) {
         return (
             <div>
@@ -44,7 +59,7 @@ function Visualization() {
                 <h2>3D Structure Viewer</h2>
                 <p>Fetching task...</p>
                 <p>Click here to reset the page: <a href={`/viewer?id=${taskId}`}>Reset</a></p>
-            </div >
+            </div>
         );
     }
 
@@ -62,9 +77,7 @@ function Visualization() {
                 </nav>
             </div>
             <div className="viewer-container">
-                <div className="viewer-3d" id="viewer-3d">
-                    <p>AAA</p>
-                </div>
+                <div className="viewer-3d" id="molstar-component"></div>
                 <div className="results-table">
                     <p>Task ID: {taskId}</p>
                     <p>Status: {result["status"]}</p>
