@@ -1,0 +1,32 @@
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+ul.navigation {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+ul.navigation li {
+    font-weight: bold;
+}
+
+.viewer-container {
+    border: 1px solid #ccc;
+    padding: 2rem;
+    min-height: 400px;
+    display: flex;
+    justify-content: center;
+}
+
+.viewer-3d {
+    border: 1px solid red;
+    width: 800px;
+}
+
+.results-table {
+    border: 1px solid blue;
+}

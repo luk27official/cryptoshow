@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { CryptoBenchResult } from "../types";
 import { getApiUrl } from "../utils";
 
 import "./HomePage.css";
@@ -7,7 +6,7 @@ import "./HomePage.css";
 function HomePage() {
     const [pdbCode, setPdbCode] = useState("");
     const [taskId, setTaskId] = useState("");
-    const [resultData, setResultData] = useState<CryptoBenchResult>({ status: "Uninitialized" });
+    const [resultData, setResultData] = useState<{ status: string; }>({ status: "Uninitialized" });
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async () => {
@@ -35,17 +34,17 @@ function HomePage() {
     };
 
     const webSocketCheck = (taskId: string) => {
-        const ws1 = new WebSocket(`ws://localhost/ws/task-status/${taskId}`);
-        ws1.onopen = () => {
-            console.log("WebSocket1 connected");
+        const ws = new WebSocket(`ws://localhost/ws/task-status/${taskId}`);
+        ws.onopen = () => {
+            console.log("WebSocket connected");
         };
 
-        ws1.onmessage = (event) => {
-            console.log("WebSocket1 message received:", event.data);
+        ws.onmessage = (event) => {
             const data = event.data ? JSON.parse(event.data) : {};
 
             if (data["status"] === "SUCCESS") {
                 setResultData(data["result"]);
+                ws.close();
             } else if (data["status"] === "PENDING" || data["status"] === "PROGRESS") {
                 setResultData(data["result"] || { status: data["status"] });
             } else {
@@ -53,8 +52,8 @@ function HomePage() {
             }
         };
 
-        ws1.onclose = () => {
-            console.log("WebSocket1 closed");
+        ws.onclose = () => {
+            console.log("WebSocket closed");
         };
     };
 
@@ -89,15 +88,7 @@ function HomePage() {
                 <div>
                     <h3>Result:</h3>
                     <p>{resultData["status"]}</p>
-                    {resultData["prediction"] && resultData["pockets"] &&
-                        <ul>
-                            {resultData["prediction"].map((value: number, index: number) => (
-                                <li key={index}>
-                                    {resultData["residue_ids"]?.[index]}, {value.toFixed(5)}, {resultData["pockets"]?.[index]}
-                                </li>
-                            ))}
-                        </ul>
-                    }
+                    {resultData["status"] === "SUCCESS" && <a href={`./viewer?id=${taskId}`}>View 3D Structure</a>}
                 </div>
             }
         </>
