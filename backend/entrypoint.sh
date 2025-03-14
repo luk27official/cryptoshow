@@ -1,5 +1,5 @@
 #!/bin/bash
 
-mkdir -p /app/data/inputs /app/data/outputs /home/cryptoshow
+mkdir -p /app/data/jobs /home/cryptoshow
 
 exec "$@"

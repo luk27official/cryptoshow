@@ -48,7 +48,7 @@ async def run_pdb_id(pdb_id: str):
 
     print("Converting the file to a sequence")
     # download the pdb
-    cif_file_path = rcsb.fetch(pdb_id, "cif", f"/app/data/inputs/")
+    cif_file_path = rcsb.fetch(pdb_id, "cif", f"/app/data/")
     cif_file = pdbx.CIFFile.read(cif_file_path)
 
     protein = get_structure(cif_file, model=1)
@@ -56,12 +56,12 @@ async def run_pdb_id(pdb_id: str):
 
     seq = "".join([ProteinSequence.convert_letter_3to1(residue.res_name) for residue in protein])
 
-    print(f"Saved sequence file to /app/data/inputs/{pdb_id}.fasta")
+    print(f"Saved sequence file to /app/data/{pdb_id}.fasta")
 
     pred = [[x, 1 - x] for x in [random.random() for _ in range(len(seq))]]
 
     return {
-        "status": f"Prediction run succesfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy",
+        "status": f"Prediction run succesfully for {pdb_id}.",
         "prediction": [float(p) for p in pred],
     }
 

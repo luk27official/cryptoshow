@@ -1,6 +1,8 @@
 from celery import Celery
 import torch
 import time
+import os
+import json
 
 import biotite.database.rcsb as rcsb
 import biotite.structure.io.pdbx as pdbx
@@ -12,7 +14,11 @@ from cb_small import compute_prediction
 from clustering import compute_clusters
 
 celery_app = Celery(
-    "celery_app", broker="redis://redis:6379/0", backend="redis://redis:6379/0", broker_connection_retry_on_startup=True
+    "celery_app",
+    broker="redis://redis:6379/0",
+    backend="redis://redis:6379/0",
+    broker_connection_retry_on_startup=True,
+    result_expires=0,
 )
 
 
@@ -31,10 +37,19 @@ def process_string_test(self, string: str):
 @celery_app.task(name="celery_app.process_esm2_cryptobench", bind=True)
 def process_esm2_cryptobench(self, pdb_id: str):
     """Run ESM2 and CryptoBench models on the uploaded 3D structure."""
+    task_id = self.request.id
+
+    JOB_PATH = f"/app/data/jobs/{task_id}"
+
+    os.makedirs(JOB_PATH, exist_ok=True)
+
     self.update_state(state="PROGRESS", meta={"status": "Downloading PDB file"})
 
-    cif_file_path = rcsb.fetch(pdb_id, "cif", f"/app/data/inputs/")
-    cif_file = pdbx.CIFFile.read(cif_file_path)
+    STRUCTURE_FILE = os.path.join(JOB_PATH, "structure.cif")
+
+    cif_file_path = rcsb.fetch(pdb_id, "cif", JOB_PATH)
+    os.rename(cif_file_path, STRUCTURE_FILE)
+    cif_file = pdbx.CIFFile.read(STRUCTURE_FILE)
 
     self.update_state(state="PROGRESS", meta={"status": "Extracting sequence from PDB file"})
 
@@ -51,10 +66,13 @@ def process_esm2_cryptobench(self, pdb_id: str):
             for residue in protein
         ]
     )
-    with open(f"/app/data/inputs/{pdb_id}.fasta", "w") as f:
+
+    SEQUENCE_FILE = os.path.join(JOB_PATH, "seq.fasta")
+
+    with open(SEQUENCE_FILE, "w") as f:
         f.write(seq)
 
-    print(f"Saved sequence file to /app/data/inputs/{pdb_id}.fasta")
+    print(f"Saved sequence file to {SEQUENCE_FILE}")
 
     self.update_state(state="PROGRESS", meta={"status": "Extracting 3D coordinates from PDB file"})
 
@@ -69,19 +87,20 @@ def process_esm2_cryptobench(self, pdb_id: str):
 
     # run the ml model
     # TODO: fix the error handling etc
+    EMBEDDING_FILE = os.path.join(JOB_PATH, "embedding.npy")
     try:
-        compute_esm2(f"/app/data/inputs/{pdb_id}.fasta", f"/app/data/outputs/{pdb_id}.npy")
+        compute_esm2(SEQUENCE_FILE, EMBEDDING_FILE)
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
-    print(f"Saved ESM2 embeddings to /app/data/outputs/{pdb_id}.npy")
+    print(f"Saved ESM2 embeddings to {EMBEDDING_FILE}")
 
     self.update_state(state="PROGRESS", meta={"status": "Running CryptoBench prediction"})
 
     # run the cryptobench model
     # TODO: fix the error handling etc
     try:
-        pred = compute_prediction(f"/app/data/outputs/{pdb_id}.npy")
+        pred = compute_prediction(EMBEDDING_FILE)
     except Exception as e:
         return {"status": "error", "error": str(e)}
 
@@ -92,10 +111,20 @@ def process_esm2_cryptobench(self, pdb_id: str):
     pockets = compute_clusters(coordinates, cryptobench_prediction)
     pockets = [int(p) for p in pockets]
 
-    return {
-        "status": f"Prediction run successfully for {pdb_id}. Available at /app/data/outputs/{pdb_id}.npy",
+    task_data = {
+        "status": "SUCCESS",
         "prediction": cryptobench_prediction,
         "pockets": pockets,
         "sequence": list(seq),
         "residue_ids": [f"{residue.chain_id}_{residue.res_id}" for residue in protein],
+        "input_structure": STRUCTURE_FILE,
+        "task_id": task_id,
     }
+
+    # save the results to a file
+    RESULTS_FILE = os.path.join(JOB_PATH, "results.json")
+
+    with open(RESULTS_FILE, "w") as f:
+        json.dump(task_data, f)
+
+    return task_data
