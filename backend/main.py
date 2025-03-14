@@ -95,6 +95,9 @@ def get_status(task_id: str):
 @app.get("/file/{task_id}/{filename}")
 def get_file(task_id: str, filename: str):
     """Get the file at the given path for a given task id (in the /app/data directory)."""
+    if ".." in task_id or ".." in filename:
+        return {"error": f"Nice try, but no."}
+
     path = os.path.join("/app/data/jobs", task_id, filename)
 
     if os.path.exists(path):
