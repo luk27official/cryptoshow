@@ -117,7 +117,7 @@ def process_esm2_cryptobench(self, pdb_id: str):
         "pockets": pockets,
         "sequence": list(seq),
         "residue_ids": [f"{residue.chain_id}_{residue.res_id}" for residue in protein],
-        "input_structure": STRUCTURE_FILE,
+        "input_structure": "structure.cif",
         "task_id": task_id,
     }
 

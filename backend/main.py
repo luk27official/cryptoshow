@@ -1,11 +1,13 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.logger import logger
+from fastapi.responses import FileResponse
 
 import json
 import asyncio
 import logging
 import random
+import os
 
 # TODO: this is here for debugging when behind a proxy !!!
 import ssl
@@ -88,6 +90,17 @@ def get_status(task_id: str):
     """Check the status of a processing task."""
     task_result: AsyncResult = celery_app.AsyncResult(task_id)
     return {"status": task_result.state, "result": task_result.result}
+
+
+@app.get("/file/{task_id}/{filename}")
+def get_file(task_id: str, filename: str):
+    """Get the file at the given path for a given task id (in the /app/data directory)."""
+    path = os.path.join("/app/data/jobs", task_id, filename)
+
+    if os.path.exists(path):
+        return FileResponse(path, filename=filename, media_type="application/octet-stream")
+
+    return {"error": f"File not found: {path}"}
 
 
 @app.websocket("/ws/task-status/{task_id}")
