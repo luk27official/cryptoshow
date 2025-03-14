@@ -25,39 +25,12 @@ function HomePage() {
 
             console.log("submitting...", data);
             setTaskId(data["task_id"]);
-            poll(data["task_id"]);
             webSocketCheck(data["task_id"]);
         } catch (error) {
             console.error("Error submitting request:", error);
             setResultData({ status: "Error submitting request" });
         } finally {
             setIsLoading(false);
-        }
-    };
-
-    const poll = async (tId: string) => {
-        try {
-            const data = await fetch(getApiUrl(`/task-status/${tId}`))
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
-                    }
-                    return response.json();
-                });
-
-            console.log("polling...", data);
-
-            if (data["status"] === "SUCCESS") {
-                setResultData(data["result"]);
-            } else if (data["status"] === "PENDING" || data["status"] === "PROGRESS") {
-                setTimeout(() => poll(tId), 1000);
-                setResultData(data["result"] || { status: data["status"] });
-            } else {
-                setResultData(data["status"]);
-            }
-        } catch (error) {
-            console.error("Error polling task status:", error);
-            setResultData({ status: "Error checking task status" });
         }
     };
 
@@ -69,6 +42,15 @@ function HomePage() {
 
         ws1.onmessage = (event) => {
             console.log("WebSocket1 message received:", event.data);
+            const data = event.data ? JSON.parse(event.data) : {};
+
+            if (data["status"] === "SUCCESS") {
+                setResultData(data["result"]);
+            } else if (data["status"] === "PENDING" || data["status"] === "PROGRESS") {
+                setResultData(data["result"] || { status: data["status"] });
+            } else {
+                setResultData(data["status"]);
+            }
         };
 
         ws1.onclose = () => {
