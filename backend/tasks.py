@@ -23,16 +23,10 @@ celery_app = Celery(
 )
 
 
-@celery_app.task(name="celery_app.process_string_test", bind=True)
-def process_string_test(self, string: str):
-    """Run ML inference on the uploaded 3D structure."""
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    # Simulate ML model inference
-    time.sleep(3)  # Fake processing time
-    result = {"device": device, "string": string}
-
-    return result
+@celery_app.task(name="celery_app.cuda_test", bind=True)
+def process_string_test(self):
+    """CUDA test."""
+    return {"device": "cuda" if torch.cuda.is_available() else "cpu"}
 
 
 @celery_app.task(name="celery_app.process_esm2_cryptobench", bind=True)

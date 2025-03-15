@@ -6,7 +6,6 @@ from fastapi.responses import FileResponse
 import json
 import asyncio
 import logging
-import random
 import os
 
 # TODO: this is here for debugging when behind a proxy !!!
@@ -43,29 +42,12 @@ async def read_root():
     return {"Hello": "World"}
 
 
-@app.get("/debug/{pdb_id}")
-async def run_pdb_id(pdb_id: str):
+@app.get("/gpu-status")
+async def gpu_status():
+    """Check if CUDA is available."""
+    task: AsyncResult = celery_app.send_task("celery_app.cuda_test")
 
-    logger.warning(f"debug: GET /{pdb_id}")
-
-    print("Converting the file to a sequence")
-    # download the pdb
-    cif_file_path = rcsb.fetch(pdb_id, "cif", f"/app/data/")
-    cif_file = pdbx.CIFFile.read(cif_file_path)
-
-    protein = get_structure(cif_file, model=1)
-    protein = protein[(protein.atom_name == "CA") & (protein.element == "C")]
-
-    seq = "".join([ProteinSequence.convert_letter_3to1(residue.res_name) for residue in protein])
-
-    print(f"Saved sequence file to /app/data/{pdb_id}.fasta")
-
-    pred = [[x, 1 - x] for x in [random.random() for _ in range(len(seq))]]
-
-    return {
-        "status": f"Prediction run succesfully for {pdb_id}.",
-        "prediction": [float(p) for p in pred],
-    }
+    return {"task_id": task.id}
 
 
 @app.get("/calculate/{pdb_id}")
@@ -73,15 +55,6 @@ async def calculate(pdb_id: str):
     """Calculates the prediction for a given PDB ID."""
     task: AsyncResult = celery_app.send_task("celery_app.process_esm2_cryptobench", args=(pdb_id,))
 
-    return {"task_id": task.id}
-
-
-@app.get("/process/{id}")
-async def process_string_test(id: str):
-    """Uploads a string and starts processing."""
-    test_string = id + "_hi"
-
-    task: AsyncResult = celery_app.send_task("celery_app.process_string_test", args=(test_string,))
     return {"task_id": task.id}
 
 
