@@ -1,9 +1,8 @@
 import torch
 import numpy as np
-import os
 
 
-def compute_prediction(embedding_path: os.PathLike):
+def compute_prediction(embedding_path: str):
     print("Running CryptoBench model ...")
     PATH = "/app/cryptobench-small/model-650M.pt"
     device = "cuda" if torch.cuda.is_available() else "cpu"

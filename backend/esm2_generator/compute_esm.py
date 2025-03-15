@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 
-def compute_esm2(input_file: os.PathLike, output_file: os.PathLike):
+def compute_esm2(input_file: str, output_file: str):
     # NOTE: t36 currently requires >16 GB of RAM, not using now
     models = [(esm.pretrained.esm2_t33_650M_UR50D, 33), (esm.pretrained.esm2_t36_3B_UR50D, 36)]
 
