@@ -6,6 +6,7 @@ import json
 
 import biotite.database.rcsb as rcsb
 import biotite.structure.io.pdbx as pdbx
+from biotite.structure import AtomArrayStack
 from biotite.structure.io.pdbx import get_structure
 from biotite.sequence import ProteinSequence
 
@@ -55,6 +56,8 @@ def process_esm2_cryptobench(self, pdb_id: str):
 
     protein = get_structure(cif_file, model=1)
     protein = protein[(protein.atom_name == "CA") & (protein.element == "C")]  # & (protein.chain_id == chain_id)]
+
+    protein: AtomArrayStack = protein
 
     seq = "".join(
         [
@@ -108,13 +111,36 @@ def process_esm2_cryptobench(self, pdb_id: str):
     cryptobench_prediction = [float(p) for p in pred]
 
     # run clustering
-    pockets = compute_clusters(coordinates, cryptobench_prediction)
-    pockets = [int(p) for p in pockets]
+    clusters = compute_clusters(coordinates, cryptobench_prediction)
+    clusters = [int(p) for p in clusters]
+
+    # group residues into pockets
+    pocket_groups = {}
+    for i, pocket in enumerate(clusters):
+        if pocket == -1:
+            continue
+
+        if pocket not in pocket_groups:
+            pocket_groups[pocket] = {
+                "pocket_id": pocket,
+                "residue_ids": [],
+                "prediction": [],
+                "average_prediction": 0,
+            }
+        pocket_groups[pocket]["residue_ids"].append(f"{protein[i].chain_id}_{protein[i].res_id}")
+        pocket_groups[pocket]["prediction"].append(cryptobench_prediction[i])
+
+    # compute average prediction for each pocket
+    for pocket in pocket_groups:
+        pocket_groups[pocket]["average_prediction"] = sum(pocket_groups[pocket]["prediction"]) / len(
+            pocket_groups[pocket]["prediction"]
+        )
 
     task_data = {
         "status": "SUCCESS",
         "prediction": cryptobench_prediction,
-        "pockets": pockets,
+        "clusters": clusters,
+        "pockets": list(pocket_groups.values()),
         "sequence": list(seq),
         "residue_ids": [f"{residue.chain_id}_{residue.res_id}" for residue in protein],
         "input_structure": "structure.cif",

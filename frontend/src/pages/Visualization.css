@@ -33,4 +33,5 @@ ul.navigation li {
 .results-table {
     border: 1px solid blue;
     margin: 10px;
+    max-width: 400px;
 }

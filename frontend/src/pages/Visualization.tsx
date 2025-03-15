@@ -1,9 +1,9 @@
 import { Link } from "react-router-dom";
 import "./Visualization.css";
-import { getApiUrl } from "../utils";
+import { getApiUrl, getColorString } from "../utils";
 import { useEffect, useState } from "react";
-import { CryptoBenchResult } from "../types";
-import { initializePlugin, loadStructure } from "../components/MolstarComponent";
+import { CryptoBenchResult, Pocket } from "../types";
+import { loadPockets, initializePlugin, loadStructure } from "../components/MolstarComponent";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 
 function Visualization() {
@@ -37,7 +37,9 @@ function Visualization() {
             const initPlugin = async () => {
                 const pluginInstance = await initializePlugin();
                 setPlugin(pluginInstance);
-                loadStructure(pluginInstance, getApiUrl(`/file/${result.task_id}/structure.cif`)); // TODO: change the structure.cif later
+                // TODO: save s
+                const s = await loadStructure(pluginInstance, getApiUrl(`/file/${result.task_id}/structure.cif`)); // TODO: change the structure.cif later
+                loadPockets(pluginInstance, s, result.pockets);
             };
 
             initPlugin();
@@ -80,13 +82,24 @@ function Visualization() {
                 <div className="viewer-3d" id="molstar-component"></div>
                 <div className="results-table">
                     <p>Task ID: {taskId}</p>
-                    <p>Status: {result["status"]}</p>
                     <ul>
-                        {result["prediction"].map((value: number, index: number) => (
-                            <li key={index}>
-                                {result["residue_ids"][index]}, {value.toFixed(5)}, {result["pockets"][index]}
-                            </li>
-                        ))}
+                        {result.pockets.map((pocket: Pocket, index: number) => {
+                            const predictionString = pocket.prediction.map((e) => e.toFixed(3)).join(",");
+                            const residueIds = pocket.residue_ids.join(",");
+                            const displayString = `${pocket.pocket_id} - ${predictionString} - ${pocket.average_prediction.toFixed(3)} | IDs: ${residueIds}`;
+
+                            return (
+                                <li key={index} className="pocket-item">
+                                    <span className="pocket-text" style={{
+                                        wordBreak: "break-word",
+                                        overflowWrap: "break-word",
+                                        display: "inline-block",
+                                        maxWidth: "100%",
+                                        color: getColorString(pocket.pocket_id)
+                                    }}>{displayString}</span>
+                                </li>
+                            );
+                        })}
                     </ul>
                 </div>
             </div>

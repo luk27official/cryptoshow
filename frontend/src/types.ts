@@ -1,9 +1,17 @@
 export type CryptoBenchResult = {
     status: string;
     prediction: number[];
-    pockets: number[];
+    clusters: number[];
+    pockets: Pocket[];
     sequence: string[];
     residue_ids: string[];
     input_structure: string;
     task_id: string;
+};
+
+export type Pocket = {
+    pocket_id: number;
+    residue_ids: string[];
+    prediction: number[];
+    average_prediction: number;
 };
