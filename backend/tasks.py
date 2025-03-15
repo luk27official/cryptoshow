@@ -1,13 +1,13 @@
 from celery import Celery
 import torch
-import time
 import os
 import json
+import shutil
 
 import biotite.database.rcsb as rcsb
 import biotite.structure.io.pdbx as pdbx
-from biotite.structure import AtomArrayStack
-from biotite.structure.io.pdbx import get_structure
+import biotite.structure.io.pdb as pdb
+from biotite.structure import AtomArray
 from biotite.sequence import ProteinSequence
 
 from esm2_generator import compute_esm2
@@ -30,28 +30,55 @@ def process_string_test(self):
 
 
 @celery_app.task(name="celery_app.process_esm2_cryptobench", bind=True)
-def process_esm2_cryptobench(self, pdb_id: str):
-    """Run ESM2 and CryptoBench models on the uploaded 3D structure."""
+def process_esm2_cryptobench(self, structure: str):
+    """Run ESM2 and CryptoBench models on the uploaded 3D structure.
+
+    Parameters
+    ----------
+    structure : str
+        PDB ID or path to the uploaded structure file
+    """
+
     task_id = self.request.id
 
     JOB_PATH = f"/app/data/jobs/{task_id}"
 
     os.makedirs(JOB_PATH, exist_ok=True)
 
-    self.update_state(state="PROGRESS", meta={"status": "Downloading PDB file"})
+    SUPPORTED_FORMATS = [".cif", ".pdb", ".pdb1"]
 
-    STRUCTURE_FILE = os.path.join(JOB_PATH, "structure.cif")
+    if not any([structure.lower().endswith(ext) for ext in SUPPORTED_FORMATS]):
+        # then download the structure from the PDB
+        self.update_state(state="PROGRESS", meta={"status": "Downloading PDB file"})
 
-    cif_file_path = rcsb.fetch(pdb_id, "cif", JOB_PATH)
-    os.rename(cif_file_path, STRUCTURE_FILE)
-    cif_file = pdbx.CIFFile.read(STRUCTURE_FILE)
+        cif_file_path: str = rcsb.fetch(structure, "cif", JOB_PATH)  # type: ignore
+        STRUCTURE_FILE = os.path.join(JOB_PATH, "structure.cif")
+        shutil.move(cif_file_path, STRUCTURE_FILE)
+        structure_file = pdbx.CIFFile.read(STRUCTURE_FILE)
 
-    self.update_state(state="PROGRESS", meta={"status": "Extracting sequence from PDB file"})
+        self.update_state(state="PROGRESS", meta={"status": "Extracting sequence from PDB file"})
 
-    protein = get_structure(cif_file, model=1)
-    protein = protein[(protein.atom_name == "CA") & (protein.element == "C")]  # & (protein.chain_id == chain_id)]
+        protein = pdbx.get_structure(structure_file, model=1)  # type: ignore
+    else:
+        self.update_state(state="PROGRESS", meta={"status": "Still processing custom file"})
 
-    protein: AtomArrayStack = protein
+        # detect the format
+        if structure.lower().endswith(".cif"):
+            STRUCTURE_FILE = os.path.join(JOB_PATH, "structure.cif")
+            shutil.move(structure, STRUCTURE_FILE)
+            structure_file = pdbx.CIFFile.read(STRUCTURE_FILE)
+            protein = pdbx.get_structure(structure_file, model=1)  # type: ignore
+
+        elif structure.lower().endswith((".pdb", ".pdb1")):
+            STRUCTURE_FILE = os.path.join(JOB_PATH, "structure.pdb")
+            shutil.move(structure, STRUCTURE_FILE)
+            structure_file = pdb.PDBFile.read(STRUCTURE_FILE)
+            protein = pdb.get_structure(structure_file, model=1)  # type: ignore
+
+        else:
+            raise ValueError("Unsupported file format")
+
+    protein: AtomArray = protein[(protein.atom_name == "CA") & (protein.element == "C")]  # type: ignore
 
     seq = "".join(
         [
@@ -85,10 +112,7 @@ def process_esm2_cryptobench(self, pdb_id: str):
     # run the ml model
     # TODO: fix the error handling etc
     EMBEDDING_FILE = os.path.join(JOB_PATH, "embedding.npy")
-    try:
-        compute_esm2(SEQUENCE_FILE, EMBEDDING_FILE)
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    compute_esm2(SEQUENCE_FILE, EMBEDDING_FILE)
 
     print(f"Saved ESM2 embeddings to {EMBEDDING_FILE}")
 
@@ -96,12 +120,9 @@ def process_esm2_cryptobench(self, pdb_id: str):
 
     # run the cryptobench model
     # TODO: fix the error handling etc
-    try:
-        pred = compute_prediction(EMBEDDING_FILE)
-    except Exception as e:
-        return {"status": "error", "error": str(e)}
+    pred = compute_prediction(EMBEDDING_FILE)
 
-    print(f"Got prediction for {pdb_id} from CryptoBench")
+    print(f"Got prediction for {structure} from CryptoBench")
     cryptobench_prediction = [float(p) for p in pred]
 
     # run clustering
@@ -137,7 +158,7 @@ def process_esm2_cryptobench(self, pdb_id: str):
         "pockets": list(pocket_groups.values()),
         "sequence": list(seq),
         "residue_ids": [f"{residue.chain_id}_{residue.res_id}" for residue in protein],
-        "input_structure": "structure.cif",
+        "input_structure": os.path.basename(STRUCTURE_FILE),
         "task_id": task_id,
     }
 

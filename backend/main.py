@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.logger import logger
 from fastapi.responses import FileResponse
@@ -7,6 +7,7 @@ import json
 import asyncio
 import logging
 import os
+import shutil
 
 # TODO: this is here for debugging when behind a proxy !!!
 import ssl
@@ -14,13 +15,9 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 # TODO remove
 
-import biotite.database.rcsb as rcsb
-import biotite.structure.io.pdbx as pdbx
-from biotite.structure.io.pdbx import get_structure
-from biotite.sequence import ProteinSequence
-
 from .tasks import celery_app
 from celery.result import AsyncResult
+import tempfile
 
 app = FastAPI()
 
@@ -50,10 +47,35 @@ async def gpu_status():
     return {"task_id": task.id}
 
 
-@app.get("/calculate/{pdb_id}")
-async def calculate(pdb_id: str):
+@app.post("/calculate")
+async def calculate(request: dict):
     """Calculates the prediction for a given PDB ID."""
+    if "pdb" not in request:
+        return {"error": "Missing 'pdb' field in request"}
+
+    pdb_id = request["pdb"]
     task: AsyncResult = celery_app.send_task("celery_app.process_esm2_cryptobench", args=(pdb_id,))
+
+    return {"task_id": task.id}
+
+
+@app.post("/calculate-custom")
+async def calculate_custom(file: UploadFile = File(...)):
+    """Upload a PDB/CIF file and calculate the prediction."""
+    if not file or not file.filename:
+        return {"error": "No file uploaded."}
+
+    if not file.filename.lower().endswith((".pdb", ".cif", ".pdb1")):
+        return {"error": "Only .pdb, .pdb1 and .cif files are supported"}
+
+    suffix = os.path.splitext(file.filename)[1]
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
+        shutil.copyfileobj(file.file, temp_file)
+        file_path = temp_file.name
+
+    # the temporary file will be processed by the task and can be deleted afterward by the task
+
+    task: AsyncResult = celery_app.send_task("celery_app.process_esm2_cryptobench", args=(file_path,))
 
     return {"task_id": task.id}
 
@@ -91,11 +113,9 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
             # Send task status to frontend
             await websocket.send_text(json.dumps(status_info))
 
-            # # Stop if task is done
-            # if result.status in ["SUCCESS", "FAILURE", "REVOKED"]:
-            #     break
-
+            # We expect the frontend to disconnect when the task is done...
             await asyncio.sleep(1)
+
     except WebSocketDisconnect:
         logger.info(f"Client disconnected from task status websocket for task_id: {task_id}")
     except Exception as e:

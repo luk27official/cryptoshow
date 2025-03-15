@@ -8,21 +8,42 @@ function HomePage() {
     const [taskId, setTaskId] = useState("");
     const [resultData, setResultData] = useState<{ status: string; }>({ status: "Uninitialized" });
     const [isLoading, setIsLoading] = useState(false);
+    const [fileData, setFileData] = useState<File | null>(null);
 
     const handleSubmit = async () => {
-        if (!pdbCode) return;
-
         setIsLoading(true);
         try {
-            const data = await fetch(getApiUrl(`/calculate/${pdbCode}`))
-                .then(response => {
+            let data;
+            if (fileData) {
+                const formData = new FormData();
+                formData.append("file", fileData);
+
+                data = await fetch(getApiUrl("/calculate-custom"), {
+                    method: "POST",
+                    body: formData,
+                }).then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! Status: ${response.status}`);
                     }
                     return response.json();
                 });
+            } else if (pdbCode) {
+                data = await fetch(getApiUrl("/calculate"), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ pdb: pdbCode }),
+                }).then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    }
+                    return response.json();
+                });
+            } else return;
 
             console.log("submitting...", data);
+            setResultData({ status: "Submitted" });
             setTaskId(data["task_id"]);
             webSocketCheck(data["task_id"]);
         } catch (error) {
@@ -40,7 +61,7 @@ function HomePage() {
         };
 
         ws.onmessage = (event) => {
-            const data = event.data ? JSON.parse(event.data) : {};
+            const data = event.data ? JSON.parse(event.data) : { "status": "unknown" };
 
             if (data["status"] === "SUCCESS") {
                 setResultData(data["result"]);
@@ -63,20 +84,48 @@ function HomePage() {
                 <h2>CryptoShow {window.location.port === "3000" && "(Dev Mode)"}</h2>
             </div>
             <div>
-                <span>Input a PDB code: </span>
-                <input
-                    type="text"
-                    value={pdbCode}
-                    onChange={(e) => setPdbCode(e.target.value)}
-                    disabled={isLoading}
-                />
-                &nbsp;
-                <button
-                    onClick={() => handleSubmit()}
-                    disabled={isLoading || !pdbCode}
-                >
-                    {isLoading ? "Processing..." : "Submit"}
-                </button>
+                <table className="input-table">
+                    <tbody>
+                        <tr>
+                            <td>PDB Code:</td>
+                            <td>
+                                <input
+                                    type="text"
+                                    value={pdbCode}
+                                    onChange={(e) => setPdbCode(e.target.value)}
+                                    disabled={isLoading}
+                                    placeholder="Enter PDB code"
+                                />
+                            </td>
+                            <td rowSpan={2}>
+                                <button
+                                    onClick={() => handleSubmit()}
+                                    disabled={isLoading || (!pdbCode && !fileData)}
+                                >
+                                    {isLoading ? "Processing..." : "Submit"}
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Or:</td>
+                            <td>
+                                <input
+                                    type="file"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            setPdbCode(""); // Clear PDB code when file is selected
+                                            setFileData(file);
+                                            console.log(file);
+                                        }
+                                    }}
+                                    disabled={isLoading}
+                                    accept=".pdb,.cif,.pdb1"
+                                />
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             {taskId &&
                 <div>
