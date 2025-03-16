@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getApiUrl } from "../utils";
+import { COMPLETED_TASKS_KEY, getApiUrl } from "../utils";
 
 import "./HomePage.css";
 
@@ -65,6 +65,12 @@ function HomePage() {
 
             if (data["status"] === "SUCCESS") {
                 setResultData(data["result"]);
+                const completedTasks = localStorage.getItem(COMPLETED_TASKS_KEY);
+                if (completedTasks) {
+                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...JSON.parse(completedTasks), data["result"]["task_id"]]));
+                } else {
+                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([data["result"]["task_id"]]));
+                }
                 ws.close();
             } else if (data["status"] === "PENDING" || data["status"] === "PROGRESS") {
                 setResultData(data["result"] || { status: data["status"] });
@@ -140,6 +146,16 @@ function HomePage() {
                     {resultData["status"] === "SUCCESS" && <a href={`./viewer?id=${taskId}`}>View 3D Structure</a>}
                 </div>
             }
+            <div>
+                <h3>Last 5 completed tasks:</h3>
+                <ul>
+                    {JSON.parse(localStorage.getItem(COMPLETED_TASKS_KEY) || "[]")
+                        .slice(-5)
+                        .map((task: string, index: number) => (
+                            <li key={index}><a href={`./viewer?id=${task}`}>{task}</a></li>
+                        ))}
+                </ul>
+            </div>
         </>
     );
 }

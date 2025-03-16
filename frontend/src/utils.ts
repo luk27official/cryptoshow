@@ -19,3 +19,5 @@ const defaultColors = [
     0x80ff00,
     0x00ff00,
 ];
+
+export const COMPLETED_TASKS_KEY = "completedTasks";
