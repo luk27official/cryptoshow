@@ -16,26 +16,40 @@ jobs:
         steps:
             - name: Check out the repo
               uses: actions/checkout@v4
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@v3
+
             - name: Log in to GitHub container registry
               uses: docker/login-action@v3
               with:
                   registry: ghcr.io/luk27official/cryptoshow
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN  }}
+
             - name: Extract metadata (tags, labels) for Docker
               id: meta
               uses: docker/metadata-action@v5
               with:
                   images: ghcr.io/luk27official/cryptoshow
                   tags: type=ref,event=tag
-            - name: Build and push Docker image
+
+            - name: Build and push Frontend Docker image
               uses: docker/build-push-action@v2
               with:
-                  context: ./
-                  file: ./Dockerfile
+                  context: ./frontend
+                  file: ./frontend/Dockerfile
                   platforms: linux/amd64,linux/arm64
                   push: true
-                  tags: ghcr.io/luk27official/cryptoshow:latest
+                  tags: ghcr.io/luk27official/cryptoshow:frontend-latest
+                  labels: ${{ steps.meta.outputs.labels }}
+
+            - name: Build and push Backend Docker image
+              uses: docker/build-push-action@v2
+              with:
+                  context: ./backend
+                  file: ./backend/Dockerfile
+                  platforms: linux/amd64,linux/arm64
+                  push: true
+                  tags: ghcr.io/luk27official/cryptoshow:backend-latest
                   labels: ${{ steps.meta.outputs.labels }}
