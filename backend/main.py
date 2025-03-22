@@ -47,6 +47,12 @@ async def gpu_status():
     return {"task_id": task.id}
 
 
+@app.get("/health")
+async def health():
+    """Check if the server is healthy."""
+    return {"status": "healthy"}
+
+
 @app.post("/calculate")
 async def calculate(request: dict):
     """Calculates the prediction for a given PDB ID."""
