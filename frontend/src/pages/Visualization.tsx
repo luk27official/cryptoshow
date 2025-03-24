@@ -39,7 +39,7 @@ function Visualization() {
                 setPlugin(pluginInstance);
                 // TODO: save s
                 const s = await loadStructure(pluginInstance, getApiUrl(`/file/${result.task_id}/${result.input_structure}`));
-                loadPockets(pluginInstance, s, result.pockets);
+                loadPockets(pluginInstance, s, result);
             };
 
             initPlugin();

@@ -7,10 +7,11 @@ import { StateTransforms } from "molstar/lib/mol-plugin-state/transforms";
 import { MolScriptBuilder as MS } from "molstar/lib/mol-script/language/builder";
 import { createStructureRepresentationParams } from "molstar/lib/mol-plugin-state/helpers/structure-representation-params";
 import { Color } from "molstar/lib/mol-util/color";
+import { StructureElement, StructureProperties } from "molstar/lib/mol-model/structure";
 
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
-import { Pocket } from "../types";
+import { CryptoBenchResult, Pocket } from "../types";
 import { getColor } from "../utils";
 
 export const initializePlugin = async () => {
@@ -68,15 +69,35 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
 };
 
 
-export const loadPockets = async (plugin: PluginUIContext, structure: StateObjectSelector, pockets: Pocket[]) => {
+export const loadPockets = async (plugin: PluginUIContext, structure: StateObjectSelector, result: CryptoBenchResult) => {
     const builder = plugin.state.data.build();
     const group = builder.to(structure).apply(StateTransforms.Misc.CreateGroup, { label: "Pockets" }, { ref: "pockets" });
 
     // TODO: here we should save the pocket representations to the state (for toggling etc.)
-    pockets.map((pocket, i) => {
+    result.pockets.map((pocket, i) => {
         createPocketFromJson(plugin, structure, pocket, `Pocket ${i + 1}`, group, getColor(pocket.pocket_id));
     });
     await builder.commit();
+
+    const PocketLabelProvider = {
+        label: (loci: any) => {
+            if (StructureElement.Loci.is(loci)) {
+                const loc = StructureElement.Loci.getFirstLocation(loci);
+                if (!loc) return;
+
+                const chainId = StructureProperties.chain.auth_asym_id(loc);
+                const resId = StructureProperties.residue.auth_seq_id(loc);
+
+                const idx = result.residue_ids.findIndex((e) => e === `${chainId}_${resId}`);
+                if (idx === -1) return "";
+
+                return `${result.clusters[idx] === -1 ? "No pocket" : `Pocket: ${result.clusters[idx]}`}, predicted score: ${result.prediction[idx].toFixed(3)}`;
+            }
+            return "";
+        },
+    };
+
+    plugin.managers.lociLabels.addProvider(PocketLabelProvider);
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
