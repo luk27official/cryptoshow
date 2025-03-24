@@ -8,9 +8,10 @@ import { MolScriptBuilder as MS } from "molstar/lib/mol-script/language/builder"
 import { createStructureRepresentationParams } from "molstar/lib/mol-plugin-state/helpers/structure-representation-params";
 import { Color } from "molstar/lib/mol-util/color";
 import { StructureElement, StructureProperties } from "molstar/lib/mol-model/structure";
-
+import { Loci } from "molstar/lib/mol-model/loci";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
+
 import { CryptoBenchResult, Pocket } from "../types";
 import { getColor } from "../utils";
 
@@ -80,7 +81,7 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
     await builder.commit();
 
     const PocketLabelProvider = {
-        label: (loci: any) => {
+        label: (loci: Loci) => {
             if (StructureElement.Loci.is(loci)) {
                 const loc = StructureElement.Loci.getFirstLocation(loci);
                 if (!loc) return;
