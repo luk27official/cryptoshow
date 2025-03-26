@@ -13,6 +13,7 @@ from biotite.sequence import ProteinSequence
 from esm2_generator import compute_esm2
 from cb_small import compute_prediction
 from clustering import compute_clusters
+from utils import get_file_hash
 
 celery_app = Celery(
     "celery_app",
@@ -30,53 +31,49 @@ def process_string_test(self):
 
 
 @celery_app.task(name="celery_app.process_esm2_cryptobench", bind=True)
-def process_esm2_cryptobench(self, structure: str):
+def process_esm2_cryptobench(self, structure_path_original: str):
     """Run ESM2 and CryptoBench models on the uploaded 3D structure.
 
     Parameters
     ----------
     structure : str
-        PDB ID or path to the uploaded structure file
+        Path to the uploaded structure file (or downloaded by PDB ID).
     """
+    if not os.path.exists(structure_path_original):
+        raise FileNotFoundError(f"File {structure_path_original} not found")
 
-    task_id = self.request.id
+    TASK_ID = self.request.id
+    USED_HASH_TYPE = "md5"
 
-    JOB_PATH = f"/app/data/jobs/{task_id}"
+    FILE_HASH = get_file_hash(structure_path_original)
+    JOB_PATH = f"/app/data/jobs/{FILE_HASH[USED_HASH_TYPE]}"
 
     os.makedirs(JOB_PATH, exist_ok=True)
 
-    SUPPORTED_FORMATS = [".cif", ".pdb", ".pdb1"]
+    self.update_state(state="PROGRESS", meta={"status": "Processing the structure"})
 
-    if not any([structure.lower().endswith(ext) for ext in SUPPORTED_FORMATS]):
-        # then download the structure from the PDB
-        self.update_state(state="PROGRESS", meta={"status": "Downloading PDB file"})
-
-        cif_file_path: str = rcsb.fetch(structure, "cif", JOB_PATH)  # type: ignore
-        STRUCTURE_FILE = os.path.join(JOB_PATH, "structure.cif")
-        shutil.move(cif_file_path, STRUCTURE_FILE)
-        structure_file = pdbx.CIFFile.read(STRUCTURE_FILE)
-
-        self.update_state(state="PROGRESS", meta={"status": "Extracting sequence from PDB file"})
-
+    # detect the format
+    if structure_path_original.lower().endswith(".cif"):
+        structure_file_path = os.path.join(JOB_PATH, "structure.cif")
+        shutil.move(structure_path_original, structure_file_path)
+        structure_file = pdbx.CIFFile.read(structure_file_path)
         protein = pdbx.get_structure(structure_file, model=1)  # type: ignore
+
+    elif structure_path_original.lower().endswith((".pdb", ".pdb1")):
+        structure_file_path = os.path.join(JOB_PATH, "structure.pdb")
+        shutil.move(structure_path_original, structure_file_path)
+        structure_file = pdb.PDBFile.read(structure_file_path)
+        protein = pdb.get_structure(structure_file, model=1)  # type: ignore
+
     else:
-        self.update_state(state="PROGRESS", meta={"status": "Still processing custom file"})
+        # TODO: what to do with the files here?
+        raise ValueError("Unsupported file format")
 
-        # detect the format
-        if structure.lower().endswith(".cif"):
-            STRUCTURE_FILE = os.path.join(JOB_PATH, "structure.cif")
-            shutil.move(structure, STRUCTURE_FILE)
-            structure_file = pdbx.CIFFile.read(STRUCTURE_FILE)
-            protein = pdbx.get_structure(structure_file, model=1)  # type: ignore
+    # Remove the original folder and all its contents
+    if os.path.exists(os.path.dirname(structure_path_original)):
+        shutil.rmtree(os.path.dirname(structure_path_original))
 
-        elif structure.lower().endswith((".pdb", ".pdb1")):
-            STRUCTURE_FILE = os.path.join(JOB_PATH, "structure.pdb")
-            shutil.move(structure, STRUCTURE_FILE)
-            structure_file = pdb.PDBFile.read(STRUCTURE_FILE)
-            protein = pdb.get_structure(structure_file, model=1)  # type: ignore
-
-        else:
-            raise ValueError("Unsupported file format")
+    self.update_state(state="PROGRESS", meta={"status": "Extracting sequence from PDB file"})
 
     protein: AtomArray = protein[(protein.atom_name == "CA") & (protein.element == "C")]  # type: ignore
 
@@ -122,7 +119,7 @@ def process_esm2_cryptobench(self, structure: str):
     # TODO: fix the error handling etc
     pred = compute_prediction(EMBEDDING_FILE)
 
-    print(f"Got prediction for {structure} from CryptoBench")
+    print(f"Got prediction for {structure_file_path} from CryptoBench")
     cryptobench_prediction = [float(p) for p in pred]
 
     # run clustering
@@ -158,8 +155,9 @@ def process_esm2_cryptobench(self, structure: str):
         "pockets": list(pocket_groups.values()),
         "sequence": list(seq),
         "residue_ids": [f"{residue.chain_id}_{residue.res_id}" for residue in protein],
-        "input_structure": os.path.basename(STRUCTURE_FILE),
-        "task_id": task_id,
+        "input_structure": os.path.basename(structure_file_path),
+        "task_id": TASK_ID,
+        "file_hash": FILE_HASH[USED_HASH_TYPE],
     }
 
     # save the results to a file

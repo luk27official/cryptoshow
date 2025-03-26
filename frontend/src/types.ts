@@ -7,6 +7,7 @@ export type CryptoBenchResult = {
     residue_ids: string[];
     input_structure: string;
     task_id: string;
+    file_hash: string;
 };
 
 export type Pocket = {

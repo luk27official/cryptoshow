@@ -15,9 +15,11 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 # TODO remove
 
+import biotite.database.rcsb as rcsb
+
 from .tasks import celery_app
+from .utils import get_existing_result, generate_random_folder_name
 from celery.result import AsyncResult
-import tempfile
 
 app = FastAPI()
 
@@ -60,7 +62,18 @@ async def calculate(request: dict):
         return {"error": "Missing 'pdb' field in request"}
 
     pdb_id = request["pdb"]
-    task: AsyncResult = celery_app.send_task("celery_app.process_esm2_cryptobench", args=(pdb_id,))
+
+    tmp_dir = f"/app/data/jobs/{generate_random_folder_name()}"
+    os.makedirs(tmp_dir, exist_ok=True)
+
+    # TODO: handle errors
+    cif_file_path: str = rcsb.fetch(pdb_id, "cif", tmp_dir)  # type: ignore
+
+    result = get_existing_result(cif_file_path)
+    if result:
+        return result
+
+    task: AsyncResult = celery_app.send_task("celery_app.process_esm2_cryptobench", args=(cif_file_path,))
 
     return {"task_id": task.id}
 
@@ -74,10 +87,17 @@ async def calculate_custom(file: UploadFile = File(...)):
     if not file.filename.lower().endswith((".pdb", ".cif", ".pdb1")):
         return {"error": "Only .pdb, .pdb1 and .cif files are supported"}
 
-    suffix = os.path.splitext(file.filename)[1]
-    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
-        shutil.copyfileobj(file.file, temp_file)
-        file_path = temp_file.name
+    tmp_dir = f"/app/data/jobs/{generate_random_folder_name()}"
+    os.makedirs(tmp_dir, exist_ok=True)
+
+    file_path = os.path.join(tmp_dir, file.filename)
+
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    result = get_existing_result(file_path)
+    if result:
+        return result
 
     # the temporary file will be processed by the task and can be deleted afterward by the task
 
@@ -93,13 +113,13 @@ def get_status(task_id: str):
     return {"status": task_result.state, "result": task_result.result}
 
 
-@app.get("/file/{task_id}/{filename}")
-def get_file(task_id: str, filename: str):
+@app.get("/file/{task_hash}/{filename}")
+def get_file(task_hash: str, filename: str):
     """Get the file at the given path for a given task id (in the /app/data directory)."""
-    if ".." in task_id or ".." in filename:
+    if ".." in task_hash or ".." in filename:
         return {"error": f"Nice try, but no."}
 
-    path = os.path.join("/app/data/jobs", task_id, filename)
+    path = os.path.join("/app/data/jobs", task_hash, filename)
 
     if os.path.exists(path):
         return FileResponse(path, filename=filename, media_type="application/octet-stream")
