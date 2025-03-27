@@ -52,7 +52,6 @@ def process_esm2_cryptobench(self, structure_path_original: str):
 
     self.update_state(state="PROGRESS", meta={"status": "Processing the structure"})
 
-    # detect the format
     if structure_path_original.lower().endswith(".cif"):
         structure_file_path = os.path.join(JOB_PATH, "structure.cif")
         shutil.move(structure_path_original, structure_file_path)
@@ -66,7 +65,8 @@ def process_esm2_cryptobench(self, structure_path_original: str):
         protein = pdb.get_structure(structure_file, model=1)  # type: ignore
 
     else:
-        # TODO: what to do with the files here?
+        # This should be checked by the `main.py`, but for the sake of
+        # completeness, we will raise an error here as well
         raise ValueError("Unsupported file format")
 
     # Remove the original folder and all its contents
@@ -107,7 +107,6 @@ def process_esm2_cryptobench(self, structure_path_original: str):
     self.update_state(state="PROGRESS", meta={"status": "Running ESM2 embedding computation"})
 
     # run the ml model
-    # TODO: fix the error handling etc
     EMBEDDING_FILE = os.path.join(JOB_PATH, "embedding.npy")
     compute_esm2(SEQUENCE_FILE, EMBEDDING_FILE)
 
@@ -116,7 +115,6 @@ def process_esm2_cryptobench(self, structure_path_original: str):
     self.update_state(state="PROGRESS", meta={"status": "Running CryptoBench prediction"})
 
     # run the cryptobench model
-    # TODO: fix the error handling etc
     pred = compute_prediction(EMBEDDING_FILE)
 
     print(f"Got prediction for {structure_file_path} from CryptoBench")

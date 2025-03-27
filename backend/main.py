@@ -59,15 +59,25 @@ async def health():
 async def calculate(request: dict):
     """Calculates the prediction for a given PDB ID."""
     if "pdb" not in request:
-        return {"error": "Missing 'pdb' field in request"}
+        return {"error": "Missing 'pdb' field in request."}
 
     pdb_id = request["pdb"]
 
     tmp_dir = f"/app/data/jobs/{generate_random_folder_name()}"
     os.makedirs(tmp_dir, exist_ok=True)
 
-    # TODO: handle errors
-    cif_file_path: str = rcsb.fetch(pdb_id, "cif", tmp_dir)  # type: ignore
+    try:
+        cif_file_path: str = rcsb.fetch(pdb_id, "cif", tmp_dir)  # type: ignore
+        # Here, we check if the file is actually a CIF file, and not an error message - wrong PDB ID might return a HTML file.
+        with open(cif_file_path, "r") as f:
+            cif_file_content = f
+            if "400 Bad Request" in cif_file_content.read() or "404 Not Found" in cif_file_content.read():
+                shutil.rmtree(tmp_dir)
+                return {"error": "PDB ID not found."}
+
+    except Exception as e:
+        shutil.rmtree(tmp_dir)
+        return {"error": "Could not load the structure from the PDB ID. Perhaps it does not exist?"}
 
     result = get_existing_result(cif_file_path)
     if result:
@@ -85,7 +95,7 @@ async def calculate_custom(file: UploadFile = File(...)):
         return {"error": "No file uploaded."}
 
     if not file.filename.lower().endswith((".pdb", ".cif", ".pdb1")):
-        return {"error": "Only .pdb, .pdb1 and .cif files are supported"}
+        return {"error": "Only .pdb, .pdb1 and .cif files are supported."}
 
     tmp_dir = f"/app/data/jobs/{generate_random_folder_name()}"
     os.makedirs(tmp_dir, exist_ok=True)
@@ -99,8 +109,6 @@ async def calculate_custom(file: UploadFile = File(...)):
     if result:
         return result
 
-    # the temporary file will be processed by the task and can be deleted afterward by the task
-
     task: AsyncResult = celery_app.send_task("celery_app.process_esm2_cryptobench", args=(file_path,))
 
     return {"task_id": task.id}
@@ -110,7 +118,13 @@ async def calculate_custom(file: UploadFile = File(...)):
 def get_status(task_id: str):
     """Check the status of a processing task."""
     task_result: AsyncResult = celery_app.AsyncResult(task_id)
-    return {"status": task_result.state, "result": task_result.result}
+
+    # Serialize exceptions to string
+    result_value = task_result.result
+    if isinstance(result_value, Exception):
+        result_value = str(result_value)
+
+    return {"status": task_result.state, "result": result_value}
 
 
 @app.get("/file/{task_hash}/{filename}")
@@ -134,7 +148,13 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
     try:
         while True:
             result = celery_app.AsyncResult(task_id)
-            status_info = {"task_id": task_id, "status": result.status, "result": result.result}
+
+            # Serialize exceptions to string
+            result_value = result.result
+            if isinstance(result_value, Exception):
+                result_value = str(result_value)
+
+            status_info = {"task_id": task_id, "status": result.status, "result": result_value}
 
             # Send task status to frontend
             await websocket.send_text(json.dumps(status_info))

@@ -17,7 +17,6 @@ def compute_esm2(input_file: str, output_file: str):
     device = torch.device(f"cuda:0" if (torch.cuda.is_available()) else "cpu")
     model.to(device)
 
-    i = 0
     name, ext = os.path.splitext(input_file)
 
     with open(input_file, "r") as f:

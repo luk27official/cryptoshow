@@ -16,3 +16,10 @@ export type Pocket = {
     prediction: number[];
     average_prediction: number;
 };
+
+export type TaskStatus = {
+    status?: string;
+    task_id?: string;
+    result?: string | CryptoBenchResult;
+    error?: string;
+};

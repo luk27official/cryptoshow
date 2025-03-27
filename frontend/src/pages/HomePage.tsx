@@ -2,18 +2,21 @@ import { useState } from "react";
 import { COMPLETED_TASKS_KEY, getApiUrl } from "../utils";
 
 import "./HomePage.css";
+import { CryptoBenchResult, TaskStatus } from "../types";
 
 function HomePage() {
     const [pdbCode, setPdbCode] = useState("");
     const [taskId, setTaskId] = useState("");
-    const [resultData, setResultData] = useState<{ status: string; }>({ status: "Uninitialized" });
+    const [resultStatus, setResultStatus] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
     const [fileData, setFileData] = useState<File | null>(null);
 
     const handleSubmit = async () => {
         setIsLoading(true);
         try {
-            let data;
+            setResultStatus("Submitted. Validating the structure...");
+
+            let data: TaskStatus;
             if (fileData) {
                 const formData = new FormData();
                 formData.append("file", fileData);
@@ -42,13 +45,16 @@ function HomePage() {
                 });
             } else return;
 
-            console.log("submitting...", data);
-            setResultData({ status: "Submitted" });
-            setTaskId(data["task_id"]);
-            webSocketCheck(data["task_id"]);
+            if (data.error) {
+                setResultStatus(data.error);
+                return;
+            }
+
+            console.log(data);
+            setTaskId(data.task_id!);
+            webSocketCheck(data.task_id!);
         } catch (error) {
-            console.error("Error submitting request:", error);
-            setResultData({ status: "Error submitting request" });
+            setResultStatus("Error submitting request, " + error);
         } finally {
             setIsLoading(false);
         }
@@ -61,21 +67,24 @@ function HomePage() {
         };
 
         ws.onmessage = (event) => {
-            const data = event.data ? JSON.parse(event.data) : { "status": "unknown" };
+            const data: TaskStatus = event.data ? JSON.parse(event.data) : { "status": "unknown" };
 
-            if (data["status"] === "SUCCESS") {
-                setResultData(data["result"]);
+            if (data.status === "SUCCESS") {
+                setResultStatus("Success.");
                 const completedTasks = localStorage.getItem(COMPLETED_TASKS_KEY);
                 if (completedTasks) {
-                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...JSON.parse(completedTasks), data["result"]["task_id"]]));
+                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...JSON.parse(completedTasks), (data.result as CryptoBenchResult).task_id]));
                 } else {
-                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([data["result"]["task_id"]]));
+                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([(data.result as CryptoBenchResult).task_id]));
                 }
                 ws.close();
-            } else if (data["status"] === "PENDING" || data["status"] === "PROGRESS") {
-                setResultData(data["result"] || { status: data["status"] });
+            } else if (data.status === "FAILURE") {
+                setResultStatus(data.error ?? data.result as string ?? "Unknown error.");
+                ws.close();
+            } else if (data.status === "PROGRESS" || data.status === "PENDING") {
+                setResultStatus(data.error ?? (data.result as CryptoBenchResult)?.status ?? data.result as string ?? "Unknown status.");
             } else {
-                setResultData(data["status"]);
+                setResultStatus("Unknown status: " + data.status);
             }
         };
 
@@ -139,11 +148,11 @@ function HomePage() {
                     <p>{taskId}</p>
                 </div>
             }
-            {resultData["status"] &&
+            {resultStatus &&
                 <div>
                     <h3>Result:</h3>
-                    <p>{resultData["status"]}</p>
-                    {resultData["status"] === "SUCCESS" && <a href={`./viewer?id=${taskId}`}>View 3D Structure</a>}
+                    <p>{resultStatus}</p>
+                    {resultStatus === "Success." && <a href={`./viewer?id=${taskId}`}>View 3D Structure</a>}
                 </div>
             }
             <div>
