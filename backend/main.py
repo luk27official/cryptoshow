@@ -1,7 +1,8 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile
+from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.logger import logger
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 
 import json
 import asyncio
@@ -21,7 +22,7 @@ from .tasks import celery_app
 from .utils import get_existing_result, generate_random_folder_name
 from celery.result import AsyncResult
 
-app = FastAPI()
+app = FastAPI(openapi_url="/api/openapi")
 
 app.add_middleware(
     CORSMiddleware,
@@ -36,9 +37,26 @@ logger.handlers = uvicorn_logger.handlers
 logger.setLevel(logging.DEBUG)
 
 
+def generate_openapi_schema():
+    """Generate the OpenAPI schema for the FastAPI application."""
+    return get_openapi(
+        title="CryptoShow API",
+        version="1.0.0",
+        description="CryptoShow API",
+        routes=app.routes,
+    )
+
+
 @app.get("/")
 async def read_root():
+    """Root endpoint."""
     return {"Hello": "World"}
+
+
+@app.get("/openapi")
+def get_openapi_endpoint():
+    """Retrieve the generated OpenAPI schema."""
+    return JSONResponse(content=generate_openapi_schema())
 
 
 @app.get("/gpu-status")
