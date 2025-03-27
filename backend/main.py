@@ -77,7 +77,7 @@ async def health():
 async def calculate(request: dict):
     """Calculates the prediction for a given PDB ID."""
     if "pdb" not in request:
-        return {"error": "Missing 'pdb' field in request."}
+        return JSONResponse(status_code=400, content={"error": "Missing 'pdb' field in request."})
 
     pdb_id = request["pdb"]
 
@@ -91,11 +91,14 @@ async def calculate(request: dict):
             cif_file_content = f
             if "400 Bad Request" in cif_file_content.read() or "404 Not Found" in cif_file_content.read():
                 shutil.rmtree(tmp_dir)
-                return {"error": "PDB ID not found."}
+                return JSONResponse(status_code=400, content={"error": "PDB ID not found."})
 
     except Exception as e:
         shutil.rmtree(tmp_dir)
-        return {"error": "Could not load the structure from the PDB ID. Perhaps it does not exist?"}
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Could not load the structure from the PDB ID. Perhaps it does not exist?"},
+        )
 
     result = get_existing_result(cif_file_path)
     if result:
@@ -110,10 +113,10 @@ async def calculate(request: dict):
 async def calculate_custom(file: UploadFile = File(...)):
     """Upload a PDB/CIF file and calculate the prediction."""
     if not file or not file.filename:
-        return {"error": "No file uploaded."}
+        return JSONResponse(status_code=400, content={"error": "No file uploaded."})
 
     if not file.filename.lower().endswith((".pdb", ".cif", ".pdb1")):
-        return {"error": "Only .pdb, .pdb1 and .cif files are supported."}
+        return JSONResponse(status_code=400, content={"error": "Only .pdb, .pdb1 and .cif files are supported."})
 
     tmp_dir = f"/app/data/jobs/{generate_random_folder_name()}"
     os.makedirs(tmp_dir, exist_ok=True)
@@ -149,14 +152,14 @@ def get_status(task_id: str):
 def get_file(task_hash: str, filename: str):
     """Get the file at the given path for a given task id (in the /app/data directory)."""
     if ".." in task_hash or ".." in filename:
-        return {"error": f"Nice try, but no."}
+        return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
 
     path = os.path.join("/app/data/jobs", task_hash, filename)
 
     if os.path.exists(path):
         return FileResponse(path, filename=filename, media_type="application/octet-stream")
 
-    return {"error": f"File not found: {path}"}
+    return JSONResponse(status_code=404, content={"error": f"File not found: {path}"})
 
 
 @app.websocket("/ws/task-status/{task_id}")

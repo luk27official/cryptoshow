@@ -25,10 +25,10 @@ function HomePage() {
                     method: "POST",
                     body: formData,
                 }).then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    if (response.status === 400 || response.status === 404 || response.status === 500 || response.ok) {
+                        return response.json();
                     }
-                    return response.json();
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 });
             } else if (pdbCode) {
                 data = await fetch(getApiUrl("/calculate"), {
@@ -38,10 +38,10 @@ function HomePage() {
                     },
                     body: JSON.stringify({ pdb: pdbCode }),
                 }).then(response => {
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! Status: ${response.status}`);
+                    if (response.status === 400 || response.status === 404 || response.status === 500 || response.ok) {
+                        return response.json();
                     }
-                    return response.json();
+                    throw new Error(`HTTP error! Status: ${response.status}`);
                 });
             } else return;
 
@@ -82,7 +82,7 @@ function HomePage() {
                 setResultStatus(data.error ?? data.result as string ?? "Unknown error.");
                 ws.close();
             } else if (data.status === "PROGRESS" || data.status === "PENDING") {
-                setResultStatus(data.error ?? (data.result as CryptoBenchResult)?.status ?? data.result as string ?? "Unknown status.");
+                setResultStatus(data.error ?? (data.result as CryptoBenchResult)?.status ?? data.result as string ?? "Processing structure...");
             } else {
                 setResultStatus("Unknown status: " + data.status);
             }
