@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.logger import logger
 from fastapi.responses import FileResponse, JSONResponse
 
+import httpx
 import json
 import asyncio
 import logging
@@ -26,7 +27,7 @@ app = FastAPI(openapi_url="/api/openapi")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost"],  # TODO: what should this be when the app is deployed?
+    allow_origins=["http://localhost", "https://apoholo.cz"],  # TODO: what should this be when the app is deployed?
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -176,6 +177,7 @@ def get_file(task_hash: str, filename: str):
 
 @app.websocket("/ws/task-status/{task_id}")
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
+    """Websocket endpoint for getting the status of a processing task."""
     await websocket.accept()
 
     try:
@@ -199,3 +201,29 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
         logger.info(f"Client disconnected from task status websocket for task_id: {task_id}")
     except Exception as e:
         logger.error(f"Error in websocket connection for task_id {task_id}: {str(e)}")
+
+
+@app.post("/proxy/ahoj/job")
+async def proxy_ahoj_calcluate(request: dict):
+    """Proxy POST request to apoholo.cz/api/job endpoint."""
+    url = "https://apoholo.cz/api/job"
+    try:
+        async with httpx.AsyncClient(verify=False) as client:  # TODO: verify to True
+            response = await client.post(url, json=request)
+            return response.json()
+    except Exception as e:
+        logger.error(f"Error proxying request to apoholo.cz: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": f"Failed to proxy request: {str(e)}"})
+
+
+@app.get("/proxy/ahoj/job/{job_id}")
+async def proxy_ahoj_get(job_id: str):
+    """Proxy GET request to apoholo.cz/api/job/<job_id> endpoint."""
+    url = f"https://apoholo.cz/api/job/{job_id}"
+    try:
+        async with httpx.AsyncClient(verify=False) as client:  # TODO: verify to True
+            response = await client.get(url)
+            return response.json()
+    except Exception as e:
+        logger.error(f"Error proxying request to apoholo.cz: {str(e)}")
+        return JSONResponse(status_code=500, content={"error": f"Failed to proxy request: {str(e)}"})

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { COMPLETED_TASKS_KEY, getApiUrl } from "../utils";
 
 import "./HomePage.css";
+import InputTable from "../components/InputTable";
 import { CryptoBenchResult, TaskStatus } from "../types";
 
 function HomePage() {
@@ -99,48 +100,14 @@ function HomePage() {
                 <h2>CryptoShow {window.location.port === "3000" && "(Dev Mode)"}</h2>
             </div>
             <div>
-                <table className="input-table">
-                    <tbody>
-                        <tr>
-                            <td>PDB Code:</td>
-                            <td>
-                                <input
-                                    type="text"
-                                    value={pdbCode}
-                                    onChange={(e) => setPdbCode(e.target.value)}
-                                    disabled={isLoading}
-                                    placeholder="Enter PDB code"
-                                />
-                            </td>
-                            <td rowSpan={2}>
-                                <button
-                                    onClick={() => handleSubmit()}
-                                    disabled={isLoading || (!pdbCode && !fileData)}
-                                >
-                                    {isLoading ? "Processing..." : "Submit"}
-                                </button>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>Or:</td>
-                            <td>
-                                <input
-                                    type="file"
-                                    onChange={(e) => {
-                                        const file = e.target.files?.[0];
-                                        if (file) {
-                                            setPdbCode(""); // Clear PDB code when file is selected
-                                            setFileData(file);
-                                            console.log(file);
-                                        }
-                                    }}
-                                    disabled={isLoading}
-                                    accept=".pdb,.cif,.pdb1"
-                                />
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <InputTable
+                    pdbCode={pdbCode}
+                    fileData={fileData}
+                    isLoading={isLoading}
+                    setPdbCode={setPdbCode}
+                    setFileData={setFileData}
+                    handleSubmit={handleSubmit}
+                />
             </div>
             {taskId &&
                 <div>

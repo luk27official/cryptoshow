@@ -1,10 +1,12 @@
 import { Link } from "react-router-dom";
-import "./Visualization.css";
-import { getApiUrl, getColorString } from "../utils";
+import { getApiUrl } from "../utils";
 import { useEffect, useState } from "react";
-import { CryptoBenchResult, Pocket } from "../types";
+import { CryptoBenchResult } from "../types";
 import { loadPockets, initializePlugin, loadStructure } from "../components/MolstarComponent";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
+
+import "./Visualization.css";
+import ResultTable from "../components/ResultTable";
 
 function Visualization() {
     const [result, setResult] = useState<CryptoBenchResult | null>(null);
@@ -80,28 +82,14 @@ function Visualization() {
             </div>
             <div className="viewer-container">
                 <div className="viewer-3d" id="molstar-component"></div>
-                <div className="results-table">
-                    <p>Task ID: {taskId}</p>
-                    <ul>
-                        {result.pockets.map((pocket: Pocket, index: number) => {
-                            const predictionString = pocket.prediction.map((e) => e.toFixed(3)).join(",");
-                            const residueIds = pocket.residue_ids.join(",");
-                            const displayString = `${pocket.pocket_id} - ${predictionString} - ${pocket.average_prediction.toFixed(3)} | IDs: ${residueIds}`;
-
-                            return (
-                                <li key={index} className="pocket-item">
-                                    <span className="pocket-text" style={{
-                                        wordBreak: "break-word",
-                                        overflowWrap: "break-word",
-                                        display: "inline-block",
-                                        maxWidth: "100%",
-                                        color: getColorString(pocket.pocket_id)
-                                    }}>{displayString}</span>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </div>
+                {result && plugin && (
+                    <ResultTable
+                        taskId={taskId}
+                        pockets={result.pockets}
+                        plugin={plugin}
+                        structureId={result.structure_name}
+                    />
+                )}
             </div>
         </div>
     );

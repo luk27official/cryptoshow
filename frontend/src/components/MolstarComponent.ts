@@ -7,12 +7,13 @@ import { StateTransforms } from "molstar/lib/mol-plugin-state/transforms";
 import { MolScriptBuilder as MS } from "molstar/lib/mol-script/language/builder";
 import { createStructureRepresentationParams } from "molstar/lib/mol-plugin-state/helpers/structure-representation-params";
 import { Color } from "molstar/lib/mol-util/color";
-import { StructureElement, StructureProperties } from "molstar/lib/mol-model/structure";
+import { StructureSelection, StructureElement, StructureProperties, Bond } from "molstar/lib/mol-model/structure";
 import { Loci } from "molstar/lib/mol-model/loci";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
+import { Script } from "molstar/lib/mol-script/script";
 
-import { CryptoBenchResult, Pocket } from "../types";
+import { CryptoBenchResult, Pocket, Point3D, MolstarResidue } from "../types";
 import { getColor } from "../utils";
 
 export const initializePlugin = async () => {
@@ -120,4 +121,70 @@ export async function createPocketFromJson(plugin: PluginUIContext, structure: S
         size: "uniform",
         sizeParams: { value: 1.05 },
     }));
+}
+
+function getSelectionFromChainAuthId(plugin: PluginUIContext, chainId: string, positions: number[]) {
+    const query = MS.struct.generator.atomGroups({
+        "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), chainId]), // TODO: fix multiple chains
+        "residue-test": MS.core.set.has([MS.set(...positions), MS.struct.atomProperty.macromolecular.auth_seq_id()]),
+        "group-by": MS.struct.atomProperty.macromolecular.residueKey()
+    });
+    return Script.getStructureSelection(query, plugin.managers.structure.hierarchy.current.structures[0].cell.obj!.data);
+}
+
+//cc: https://github.com/scheuerv/molart/
+function getStructureElementLoci(loci: Loci): StructureElement.Loci | undefined {
+    if (loci.kind == "bond-loci") {
+        return Bond.toStructureElementLoci(loci);
+    } else if (loci.kind == "element-loci") {
+        return loci;
+    }
+    return undefined;
+}
+
+export function getResidueCoordinates(plugin: PluginUIContext, residues: string[]) {
+    const coordinates: Point3D[] = [];
+
+    //TODO: could this be potentially improved? not sure whether we can do it just with one selection
+    for (const res of residues) {
+        const sel = getSelectionFromChainAuthId(plugin, res.split("_")[0], [Number(res.split("_")[1])]);
+        const loci = getStructureElementLoci(StructureSelection.toLociWithSourceUnits(sel));
+
+        if (loci) {
+            const structureElement = StructureElement.Stats.ofLoci(loci);
+            const location = structureElement.firstElementLoc;
+            coordinates.push({ x: StructureProperties.atom.x(location), y: StructureProperties.atom.y(location), z: StructureProperties.atom.z(location) });
+        }
+    }
+
+    return coordinates;
+}
+
+export function getResidueInformation(plugin: PluginUIContext, residue: string) {
+    const sel = getSelectionFromChainAuthId(plugin, residue.split("_")[0], [Number(residue.split("_")[1])]);
+    const loci = getStructureElementLoci(StructureSelection.toLociWithSourceUnits(sel));
+    if (!loci) return null;
+
+    const structureElement = StructureElement.Stats.ofLoci(loci);
+    const location = structureElement.firstElementLoc;
+    const r: MolstarResidue = {
+        authName: StructureProperties.atom.auth_comp_id(location),
+        name: StructureProperties.atom.label_comp_id(location),
+        isHet: StructureProperties.residue.hasMicroheterogeneity(location),
+        insCode: StructureProperties.residue.pdbx_PDB_ins_code(location),
+        index: StructureProperties.residue.key(location),
+        seqNumber: StructureProperties.residue.label_seq_id(location),
+        authSeqNumber: StructureProperties.residue.auth_seq_id(location),
+        chain: {
+            asymId: StructureProperties.chain.label_asym_id(location),
+            authAsymId: StructureProperties.chain.auth_asym_id(location),
+            entity: {
+                entityId: StructureProperties.entity.id(location),
+                index: StructureProperties.entity.key(location)
+            },
+            index: StructureProperties.chain.key(location)
+        }
+    };
+
+    return r;
 }
