@@ -31,13 +31,15 @@ def process_string_test(self):
 
 
 @celery_app.task(name="celery_app.process_esm2_cryptobench", bind=True)
-def process_esm2_cryptobench(self, structure_path_original: str):
+def process_esm2_cryptobench(self, structure_path_original: str, structure_name: str):
     """Run ESM2 and CryptoBench models on the uploaded 3D structure.
 
     Parameters
     ----------
-    structure : str
+    structure_path_original : str
         Path to the uploaded structure file (or downloaded by PDB ID).
+    structure_name : str
+        Name of the structure (PDB ID or "custom").
     """
     if not os.path.exists(structure_path_original):
         raise FileNotFoundError(f"File {structure_path_original} not found")
@@ -156,6 +158,7 @@ def process_esm2_cryptobench(self, structure_path_original: str):
         "input_structure": os.path.basename(structure_file_path),
         "task_id": TASK_ID,
         "file_hash": FILE_HASH[USED_HASH_TYPE],
+        "structure_name": structure_name,
     }
 
     # save the results to a file

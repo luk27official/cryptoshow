@@ -104,7 +104,13 @@ async def calculate(request: dict):
     if result:
         return result
 
-    task: AsyncResult = celery_app.send_task("celery_app.process_esm2_cryptobench", args=(cif_file_path,))
+    task: AsyncResult = celery_app.send_task(
+        "celery_app.process_esm2_cryptobench",
+        args=(
+            cif_file_path,
+            pdb_id,
+        ),
+    )
 
     return {"task_id": task.id}
 
@@ -130,7 +136,13 @@ async def calculate_custom(file: UploadFile = File(...)):
     if result:
         return result
 
-    task: AsyncResult = celery_app.send_task("celery_app.process_esm2_cryptobench", args=(file_path,))
+    task: AsyncResult = celery_app.send_task(
+        "celery_app.process_esm2_cryptobench",
+        args=(
+            file_path,
+            "custom",
+        ),
+    )
 
     return {"task_id": task.id}
 
