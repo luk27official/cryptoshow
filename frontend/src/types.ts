@@ -59,6 +59,7 @@ export type AHoJStructure = {
     chains: string[];
     rmsd: number;
     sasa: number;
+    structure_file: string;
     structure_file_url: string;
     uniprot_ids: string[];
 };

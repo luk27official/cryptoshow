@@ -3,6 +3,7 @@ import { getAHoJJobConfiguration, submitAHoJJob, pollAHoJJobStatus } from "../se
 import { AHoJResponse, Pocket } from "../types";
 import { getApiUrl, getColorString } from "../utils";
 import { useState } from "react";
+import { loadStructure } from "./MolstarComponent";
 
 interface ResultTableProps {
     taskId: string;
@@ -64,14 +65,34 @@ function ResultTable({ taskId, pockets, plugin, structureId, taskHash }: ResultT
                                     {ahojJobResults[index] && (
                                         <>
                                             APO: {ahojJobResults[index].queries[0]?.found_apo.map((v) => (
-                                                <a key={v.pdb_id} href={getApiUrl(`/proxy/ahoj/${taskHash}/${v.structure_file_url}`)} target="_blank" rel="noopener noreferrer">
-                                                    {v.pdb_id}{" "}
-                                                </a>
+                                                <div>
+                                                    <span
+                                                        key={v.pdb_id}
+                                                        onClick={async () => {
+                                                            await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${v.structure_file_url}`));
+                                                            loadStructure(plugin, getApiUrl(`/file/${taskHash}/${v.structure_file}`));
+                                                        }}
+                                                        style={{ cursor: "pointer", textDecoration: "underline" }}
+                                                    >
+                                                        {v.pdb_id}
+                                                    </span>
+                                                    &nbsp;
+                                                </div>
                                             ))} <br />
                                             HOLO: {ahojJobResults[index].queries[0]?.found_holo.map((v) => (
-                                                <a key={v.pdb_id} href={getApiUrl(`/proxy/ahoj/${taskHash}/${v.structure_file_url}`)} target="_blank" rel="noopener noreferrer">
-                                                    {v.pdb_id}{" "}
-                                                </a>
+                                                <div>
+                                                    <span
+                                                        key={v.pdb_id}
+                                                        onClick={async () => {
+                                                            await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${v.structure_file_url}`));
+                                                            loadStructure(plugin, getApiUrl(`/file/${taskHash}/${v.structure_file}`));
+                                                        }}
+                                                        style={{ cursor: "pointer", textDecoration: "underline" }}
+                                                    >
+                                                        {v.pdb_id}
+                                                    </span>
+                                                    &nbsp;
+                                                </div>
                                             ))} <br />
                                         </>
                                     )}
