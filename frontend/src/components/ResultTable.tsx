@@ -1,6 +1,6 @@
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
-import { getAHoJJobConfiguration, submitAHoJJob, getAHoJJobStatus } from "../services/AHoJservice";
-import { Pocket } from "../types";
+import { getAHoJJobConfiguration, submitAHoJJob, pollAHoJJobStatus } from "../services/AHoJservice";
+import { AHoJResponse, Pocket } from "../types";
 import { getColorString } from "../utils";
 import { useState } from "react";
 
@@ -13,6 +13,7 @@ interface ResultTableProps {
 
 function ResultTable({ taskId, pockets, plugin, structureId }: ResultTableProps) {
     const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(new Array(pockets.length).fill(null));
+    const [ahojJobResults, setAhoJJobResults] = useState<(AHoJResponse | null)[]>(new Array(pockets.length).fill(null));
 
     const handleClick = async (pocket: Pocket, idx: number) => {
         const config = getAHoJJobConfiguration(pocket, plugin, structureId);
@@ -24,11 +25,11 @@ function ResultTable({ taskId, pockets, plugin, structureId }: ResultTableProps)
             setAHoJJobIds([...ahoJJobIds]);
             console.log(postData);
 
-            const jobStatus = await getAHoJJobStatus(postData["job_id"]);
-            console.log("Job status:", jobStatus);
+            const jobResult = await pollAHoJJobStatus(postData["job_id"]);
+            ahojJobResults[idx] = jobResult;
+            setAhoJJobResults([...ahojJobResults]);
+            console.log("AHoJ Job Result:", jobResult);
         }
-
-        console.log("Pocket clicked:", pocket);
     };
 
     return (
@@ -58,6 +59,13 @@ function ResultTable({ taskId, pockets, plugin, structureId }: ResultTableProps)
                                     <button onClick={() => handleClick(pocket, index)}>AHoJ</button>
                                     <br />
                                     <span>{ahoJJobIds[index] ?? ""}</span>
+                                    <br />
+                                    {ahojJobResults[index] && (
+                                        <>
+                                            APO: {ahojJobResults[index].queries[0]?.found_apo.map((v) => v.pdb_id).join(", ")} <br />
+                                            HOLO: {ahojJobResults[index].queries[0]?.found_holo.map((v) => v.pdb_id).join(", ")} <br />
+                                        </>
+                                    )}
                                 </>
                             )}
 

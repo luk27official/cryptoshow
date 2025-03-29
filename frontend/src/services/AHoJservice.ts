@@ -1,5 +1,5 @@
 import { getResidueCoordinates, getResidueInformation } from "../components/MolstarComponent";
-import { Pocket } from "../types";
+import { AHoJResponse, Pocket } from "../types";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { getApiUrl } from "../utils";
 
@@ -80,7 +80,7 @@ export async function submitAHoJJob(config: string) {
     }
 }
 
-export async function getAHoJJobStatus(jobId: string) {
+export async function getAHoJJobStatus(jobId: string): Promise<AHoJResponse | null> {
     try {
         const response = await fetch(getApiUrl(`/proxy/ahoj/job/${jobId}`));
 
@@ -93,4 +93,20 @@ export async function getAHoJJobStatus(jobId: string) {
         console.error("Error fetching AHoJ job status:", error);
         return null;
     }
+}
+
+export async function pollAHoJJobStatus(jobId: string, interval: number = 5000): Promise<AHoJResponse> {
+    return new Promise((resolve) => {
+        const intervalId = setInterval(async () => {
+            const status = await getAHoJJobStatus(jobId);
+            if (status) {
+                if (status.done) {
+                    clearInterval(intervalId);
+                    resolve(status);
+                }
+            } else {
+                console.error("Failed to fetch AHoJ job status, jobId:", jobId);
+            }
+        }, interval);
+    });
 }

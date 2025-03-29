@@ -53,3 +53,26 @@ export type MolstarResidue = {
     name: string;
     seqNumber: number;
 };
+
+export type AHoJStructure = {
+    pdb_id: string;
+    chains: string[];
+    rmsd: number;
+    sasa: number;
+    structure_file_url: string;
+    uniprot_ids: string[];
+};
+
+// TODO: we might add more fields here if needed
+export type AHoJResponse = {
+    job_id: string;
+    done: boolean;
+    queries: {
+        found_apo: AHoJStructure[];
+        found_holo: AHoJStructure[];
+        found_alphafold: AHoJStructure[];
+        [key: string]: unknown;
+    }[];
+    result_zip_url: string;
+    [key: string]: unknown;
+};
