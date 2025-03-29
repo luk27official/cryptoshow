@@ -103,6 +103,7 @@ async def calculate(request: dict):
 
     result = get_existing_result(cif_file_path)
     if result:
+        shutil.rmtree(tmp_dir)
         return result
 
     task: AsyncResult = celery_app.send_task(
@@ -135,6 +136,7 @@ async def calculate_custom(file: UploadFile = File(...)):
 
     result = get_existing_result(file_path)
     if result:
+        shutil.rmtree(tmp_dir)
         return result
 
     task: AsyncResult = celery_app.send_task(
@@ -205,7 +207,7 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
 
 @app.post("/proxy/ahoj/job")
 async def proxy_ahoj_calcluate(request: dict):
-    """Proxy POST request to apoholo.cz/api/job endpoint."""
+    """Proxy POST request to apoholo.cz/api/job endpoint (for job posting)."""
     url = "https://apoholo.cz/api/job"
     try:
         async with httpx.AsyncClient(verify=False) as client:  # TODO: verify to True
@@ -216,14 +218,37 @@ async def proxy_ahoj_calcluate(request: dict):
         return JSONResponse(status_code=500, content={"error": f"Failed to proxy request: {str(e)}"})
 
 
-@app.get("/proxy/ahoj/job/{job_id}")
-async def proxy_ahoj_get(job_id: str):
-    """Proxy GET request to apoholo.cz/api/job/<job_id> endpoint."""
-    url = f"https://apoholo.cz/api/job/{job_id}"
+@app.get("/proxy/ahoj/{task_hash}/{path:path}")
+async def proxy_ahoj_get(task_hash: str, path: str):
+    """Proxy GET request to apoholo.cz/<path> endpoint."""
+    url = f"https://apoholo.cz/{path}"
+
+    if ".." in task_hash or ".." in path:
+        return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
+
     try:
         async with httpx.AsyncClient(verify=False) as client:  # TODO: verify to True
             response = await client.get(url)
-            return response.json()
+
+            if response.headers.get("Content-Type") == "application/json":
+                return JSONResponse(content=response.json())
+
+            else:
+                file_name = path.split("/")[-1]
+                file_path = os.path.join("/app/data/jobs", task_hash, file_name)
+
+                os.makedirs(os.path.dirname(file_path), exist_ok=True)  # this should already exist, but just in case
+                with open(file_path, "wb") as f:
+                    f.write(response.content)
+
+                return JSONResponse(
+                    content={
+                        "file_path": file_path,
+                        "file_name": file_name,
+                        "message": "File downloaded successfully.",
+                    }
+                )
+
     except Exception as e:
         logger.error(f"Error proxying request to apoholo.cz: {str(e)}")
         return JSONResponse(status_code=500, content={"error": f"Failed to proxy request: {str(e)}"})

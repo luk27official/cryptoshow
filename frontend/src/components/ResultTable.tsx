@@ -1,17 +1,18 @@
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { getAHoJJobConfiguration, submitAHoJJob, pollAHoJJobStatus } from "../services/AHoJservice";
 import { AHoJResponse, Pocket } from "../types";
-import { getColorString } from "../utils";
+import { getApiUrl, getColorString } from "../utils";
 import { useState } from "react";
 
 interface ResultTableProps {
-    taskId: string | null;
+    taskId: string;
     pockets: Pocket[];
     plugin: PluginUIContext;
     structureId: string;
+    taskHash: string;
 }
 
-function ResultTable({ taskId, pockets, plugin, structureId }: ResultTableProps) {
+function ResultTable({ taskId, pockets, plugin, structureId, taskHash }: ResultTableProps) {
     const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(new Array(pockets.length).fill(null));
     const [ahojJobResults, setAhoJJobResults] = useState<(AHoJResponse | null)[]>(new Array(pockets.length).fill(null));
 
@@ -25,7 +26,7 @@ function ResultTable({ taskId, pockets, plugin, structureId }: ResultTableProps)
             setAHoJJobIds([...ahoJJobIds]);
             console.log(postData);
 
-            const jobResult = await pollAHoJJobStatus(postData["job_id"]);
+            const jobResult = await pollAHoJJobStatus(taskHash, postData["job_id"]);
             ahojJobResults[idx] = jobResult;
             setAhoJJobResults([...ahojJobResults]);
             console.log("AHoJ Job Result:", jobResult);
@@ -62,13 +63,20 @@ function ResultTable({ taskId, pockets, plugin, structureId }: ResultTableProps)
                                     <br />
                                     {ahojJobResults[index] && (
                                         <>
-                                            APO: {ahojJobResults[index].queries[0]?.found_apo.map((v) => v.pdb_id).join(", ")} <br />
-                                            HOLO: {ahojJobResults[index].queries[0]?.found_holo.map((v) => v.pdb_id).join(", ")} <br />
+                                            APO: {ahojJobResults[index].queries[0]?.found_apo.map((v) => (
+                                                <a key={v.pdb_id} href={getApiUrl(`/proxy/ahoj/${taskHash}/${v.structure_file_url}`)} target="_blank" rel="noopener noreferrer">
+                                                    {v.pdb_id}{" "}
+                                                </a>
+                                            ))} <br />
+                                            HOLO: {ahojJobResults[index].queries[0]?.found_holo.map((v) => (
+                                                <a key={v.pdb_id} href={getApiUrl(`/proxy/ahoj/${taskHash}/${v.structure_file_url}`)} target="_blank" rel="noopener noreferrer">
+                                                    {v.pdb_id}{" "}
+                                                </a>
+                                            ))} <br />
                                         </>
                                     )}
                                 </>
                             )}
-
                             <hr />
                         </div>
                     );

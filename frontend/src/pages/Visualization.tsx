@@ -88,6 +88,7 @@ function Visualization() {
                         pockets={result.pockets}
                         plugin={plugin}
                         structureId={result.structure_name}
+                        taskHash={result.file_hash}
                     />
                 )}
             </div>

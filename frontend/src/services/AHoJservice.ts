@@ -80,9 +80,9 @@ export async function submitAHoJJob(config: string) {
     }
 }
 
-export async function getAHoJJobStatus(jobId: string): Promise<AHoJResponse | null> {
+export async function getAHoJJobStatus(taskHash: string, ahojJobId: string): Promise<AHoJResponse | null> {
     try {
-        const response = await fetch(getApiUrl(`/proxy/ahoj/job/${jobId}`));
+        const response = await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/api/job/${ahojJobId}`));
 
         if (!response.ok) {
             throw new Error(`HTTP error! Status: ${response.status}`);
@@ -95,10 +95,10 @@ export async function getAHoJJobStatus(jobId: string): Promise<AHoJResponse | nu
     }
 }
 
-export async function pollAHoJJobStatus(jobId: string, interval: number = 5000): Promise<AHoJResponse> {
+export async function pollAHoJJobStatus(taskHash: string, jobId: string, interval: number = 5000): Promise<AHoJResponse> {
     return new Promise((resolve) => {
         const intervalId = setInterval(async () => {
-            const status = await getAHoJJobStatus(jobId);
+            const status = await getAHoJJobStatus(taskHash, jobId);
             if (status) {
                 if (status.done) {
                     clearInterval(intervalId);
