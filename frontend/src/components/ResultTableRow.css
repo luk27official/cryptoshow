@@ -43,12 +43,12 @@
     border: 1px solid var(--border-color);
 }
 
-.result-row:hover {
-    box-shadow: 0 0.25rem 0.5rem var(--hover-shadow);
+.result-row.collapsed {
+    padding: 0.75rem 1rem;
 }
 
-.pocket-details {
-    margin-bottom: 0.75rem;
+.result-row:hover {
+    box-shadow: 0 0.25rem 0.5rem var(--hover-shadow);
 }
 
 .pocket-header {
@@ -56,6 +56,27 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.result-row.collapsed .pocket-header {
+    margin-bottom: 0;
+}
+
+.pocket-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    width: 1rem;
+    text-align: center;
 }
 
 .pocket-id {
@@ -70,6 +91,27 @@
     background-color: var(--accent-bg-light);
     border-radius: 0.25rem;
     color: var(--text-secondary);
+}
+
+.pocket-content {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-0.5rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.pocket-details {
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
+    padding-left: 1.5rem;
 }
 
 .pocket-info {
@@ -102,6 +144,7 @@
     margin-top: 1rem;
     padding-top: 0.75rem;
     border-top: 1px solid var(--border-color);
+    padding-left: 1.5rem;
 }
 
 .ahoj-controls {
@@ -147,6 +190,12 @@
 @media (max-width: 768px) {
     .ahoj-results {
         grid-template-columns: 1fr;
+    }
+
+    .pocket-header {
+        flex-direction: row; /* Keep as row even on mobile */
+        flex-wrap: wrap;
+        gap: 0.5rem;
     }
 }
 

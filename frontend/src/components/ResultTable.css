@@ -1,7 +1,7 @@
 .results-table {
     margin: 0.625rem;
     overflow: hidden;
-    max-width: 20rem;
+    width: 100%;
 }
 
 .results-container {
