@@ -38,19 +38,23 @@ function ResultTable({ pockets, plugin, structureId, taskHash }: ResultTableProp
     return (
         <div className="results-table">
             <div>
-                {pockets.map((pocket: Pocket, index: number) => (
-                    <ResultTableRow
-                        key={index}
-                        pocket={pocket}
-                        index={index}
-                        structureId={structureId}
-                        taskHash={taskHash}
-                        plugin={plugin}
-                        ahoJJobId={ahoJJobIds[index]}
-                        ahoJJobResult={ahojJobResults[index]}
-                        onAHoJClick={handleClick}
-                    />
-                ))}
+                {pockets.length > 0 ? (
+                    pockets.map((pocket: Pocket, index: number) => (
+                        <ResultTableRow
+                            key={index}
+                            pocket={pocket}
+                            index={index}
+                            structureId={structureId}
+                            taskHash={taskHash}
+                            plugin={plugin}
+                            ahoJJobId={ahoJJobIds[index]}
+                            ahoJJobResult={ahojJobResults[index]}
+                            onAHoJClick={handleClick}
+                        />
+                    ))
+                ) : (
+                    <h2>No pockets available.</h2>
+                )}
             </div>
         </div>
     );
