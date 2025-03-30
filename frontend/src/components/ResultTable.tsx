@@ -14,7 +14,7 @@ interface ResultTableProps {
     taskHash: string;
 }
 
-function ResultTable({ taskId, pockets, plugin, structureId, taskHash }: ResultTableProps) {
+function ResultTable({ pockets, plugin, structureId, taskHash }: ResultTableProps) {
     const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(new Array(pockets.length).fill(null));
     const [ahojJobResults, setAHoJJobResults] = useState<(AHoJResponse | null)[]>(new Array(pockets.length).fill(null));
 

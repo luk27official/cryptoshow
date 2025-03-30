@@ -24,7 +24,6 @@ export default tseslint.config(
         { allowConstantExport: true },
       ],
       'quotes': ['warn', 'double'],
-      '@typescript-eslint/no-unused-vars': 'off',
     },
   },
 );
