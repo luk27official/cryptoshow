@@ -14,10 +14,11 @@ import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { Script } from "molstar/lib/mol-script/script";
 
 import { CryptoBenchResult, Pocket, Point3D, MolstarResidue } from "../types";
-import { getColor } from "../utils";
+import { getColor, getWindowWidth } from "../utils";
 
 export const initializePlugin = async () => {
     const wrapper = document.getElementById("molstar-component")!;
+    const windowWidth = getWindowWidth();
     const MolstarPlugin = await createPluginUI(
         {
             target: wrapper,
@@ -31,7 +32,7 @@ export const initializePlugin = async () => {
                         controlsDisplay: "reactive",
                         regionState: {
                             top: "hidden",
-                            left: "collapsed",
+                            left: (windowWidth > 768) ? "collapsed" : "hidden",
                             bottom: "hidden",
                             right: "hidden"
                         }

@@ -21,3 +21,7 @@ const defaultColors = [
 ];
 
 export const COMPLETED_TASKS_KEY = "completedTasks";
+
+export const getWindowWidth = () => {
+    return window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
+};
