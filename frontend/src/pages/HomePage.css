@@ -1,11 +1,36 @@
 #root {
-    max-width: 1280px;
     margin: 0 auto;
-    padding: 2rem;
+    padding: 1rem;
     text-align: center;
+    max-width: 75rem; /* 1200px / 16px = 75rem */
+    width: 100%;
 }
 
-.input-table {
-    display: flex;
-    justify-content: center;
+@media (max-width: 768px) {
+    #root {
+        padding: 0.5rem;
+    }
+
+    h2 {
+        font-size: 1.5rem;
+    }
+
+    h3 {
+        font-size: 1.2rem;
+    }
+}
+
+a {
+    display: inline-block;
+    padding: 0.5rem 0;
+}
+
+ul {
+    padding-left: 0;
+    list-style-position: inside;
+}
+
+li {
+    word-break: break-all;
+    margin-bottom: 0.5rem;
 }

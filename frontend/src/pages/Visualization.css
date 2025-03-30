@@ -15,23 +15,35 @@ ul.navigation li {
 }
 
 .viewer-container {
-    border: 1px solid #ccc;
+    border: 1px solid var(--border-color);
     padding: 2rem;
-    min-height: 400px;
+    min-height: 25rem;
     display: flex;
     justify-content: center;
 }
 
-.viewer-3d {
-    border: 1px solid red;
-    width: 800px;
-    height: 600px;
-    position: relative;
-    margin: 10px;
+@media (max-width: 768px) {
+    .viewer-container {
+        flex-direction: column;
+        padding: 1rem;
+    }
+
+    ul.navigation {
+        gap: 1rem;
+    }
 }
 
-.results-table {
-    border: 1px solid blue;
-    margin: 10px;
-    max-width: 400px;
+.viewer-3d {
+    border: 1px solid var(--accent-color);
+    width: 100%;
+    max-width: 50rem;
+    height: 37.5rem;
+    position: relative;
+    margin: 0.625rem;
+}
+
+@media (max-width: 768px) {
+    .viewer-3d {
+        height: 25rem;
+    }
 }

@@ -1,0 +1,23 @@
+.results-table {
+    margin: 0.625rem;
+    overflow: hidden;
+    max-width: 20rem;
+}
+
+.results-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+}
+
+.mobile-molstar-container {
+    display: none;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+
+@media (max-width: 768px) {
+    .mobile-molstar-container {
+        display: block;
+    }
+}

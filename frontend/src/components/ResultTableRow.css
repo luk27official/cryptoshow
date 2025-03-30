@@ -1,0 +1,193 @@
+:root {
+    /* Light mode colors */
+    --bg-primary: #f8f9fa;
+    --bg-secondary: #ffffff;
+    --text-primary: #212529;
+    --text-secondary: #495057;
+    --text-muted: #6c757d;
+    --border-color: rgba(0, 0, 0, 0.1);
+    --shadow-color: rgba(0, 0, 0, 0.08);
+    --hover-shadow: rgba(0, 0, 0, 0.15);
+    --accent-color: #007bff;
+    --accent-hover: #0069d9;
+    --accent-bg-light: #e9ecef;
+    --disabled-bg: #6c757d;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        /* Dark mode colors */
+        --bg-primary: #212529;
+        --bg-secondary: #343a40;
+        --text-primary: #f8f9fa;
+        --text-secondary: #e9ecef;
+        --text-muted: #adb5bd;
+        --border-color: rgba(255, 255, 255, 0.1);
+        --shadow-color: rgba(0, 0, 0, 0.3);
+        --hover-shadow: rgba(0, 0, 0, 0.5);
+        --accent-color: #0d6efd;
+        --accent-hover: #0a58ca;
+        --accent-bg-light: #495057;
+        --disabled-bg: #6c757d;
+    }
+}
+
+.result-row {
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border-radius: 0.5rem;
+    background-color: var(--bg-primary);
+    box-shadow: 0 0.125rem 0.25rem var(--shadow-color);
+    transition: all 0.2s ease;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.result-row:hover {
+    box-shadow: 0 0.25rem 0.5rem var(--hover-shadow);
+}
+
+.pocket-details {
+    margin-bottom: 0.75rem;
+}
+
+.pocket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.pocket-id {
+    font-size: 1.125rem;
+    font-weight: bold;
+    /* color is set inline with getColorString function */
+}
+
+.prediction-score {
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--accent-bg-light);
+    border-radius: 0.25rem;
+    color: var(--text-secondary);
+}
+
+.pocket-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.prediction-values,
+.residue-ids {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.info-value {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    color: var(--text-primary);
+}
+
+.ahoj-section {
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.ahoj-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+}
+
+.ahoj-button {
+    padding: 0.375rem 0.75rem;
+    background-color: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.ahoj-button:hover:not(:disabled) {
+    background-color: var(--accent-hover);
+}
+
+.ahoj-button:disabled {
+    background-color: var(--disabled-bg);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.job-id {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+.ahoj-results {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .ahoj-results {
+        grid-template-columns: 1fr;
+    }
+}
+
+.result-section {
+    background-color: var(--bg-secondary);
+    border-radius: 0.375rem;
+    padding: 0.75rem;
+    box-shadow: 0 0.0625rem 0.1875rem var(--shadow-color);
+}
+
+.result-heading {
+    margin-top: 0;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    font-weight: 600;
+}
+
+.structure-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.structure-link {
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--accent-bg-light);
+    border-radius: 0.25rem;
+    color: var(--accent-color);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.structure-link:hover {
+    background-color: var(--accent-color);
+    color: white;
+    text-decoration: none;
+}
+
+.no-results {
+    color: var(--text-muted);
+    font-style: italic;
+}

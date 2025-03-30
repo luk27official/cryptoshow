@@ -1,3 +1,5 @@
+import "./InputTable.css";
+
 interface InputTableProps {
     pdbCode: string;
     fileData: File | null;
