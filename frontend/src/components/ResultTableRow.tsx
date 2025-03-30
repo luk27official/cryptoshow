@@ -1,5 +1,5 @@
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
-import { Pocket, AHoJResponse } from "../types";
+import { Pocket, AHoJResponse, AHoJStructure } from "../types";
 import { getColorString, getApiUrl } from "../utils";
 import { loadStructure } from "./MolstarComponent";
 import { useState } from "react";
@@ -169,7 +169,7 @@ const AHoJResults = ({ ahoJJobResult, taskHash, plugin }: AHoJResultsProps) => (
 
 interface StructureSectionProps {
     title: string;
-    structures: { pdb_id: string; structure_file_url: string; structure_file: string; }[];
+    structures: AHoJStructure[];
     taskHash: string;
     plugin: PluginUIContext;
 }
@@ -179,16 +179,16 @@ const StructureSection = ({ title, structures, taskHash, plugin }: StructureSect
         <h4 className="result-heading">{title}</h4>
         <div className="structure-links">
             {structures.length ? (
-                structures.map((v) => (
+                structures.map((s) => (
                     <span
-                        key={v.pdb_id}
+                        key={s.pdb_id}
                         className="structure-link"
                         onClick={async () => {
-                            await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${v.structure_file_url}`));
-                            loadStructure(plugin, getApiUrl(`/file/${taskHash}/${v.structure_file}`));
+                            await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${s.structure_file_url}`));
+                            loadStructure(plugin, getApiUrl(`/file/${taskHash}/${s.structure_file}`));
                         }}
                     >
-                        {v.pdb_id}
+                        {s.pdb_id}_{s.chains.join(" ")}
                     </span>
                 ))
             ) : (
