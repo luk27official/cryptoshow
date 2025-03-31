@@ -1,9 +1,11 @@
 import { useState } from "react";
 import "./MolstarControls.css";
 import { PolymerRepresentation, PocketRepresentation } from "../types";
-
+import { usePlugin } from "../hooks/usePlugin";
 
 function MolstarControls() {
+    const plugin = usePlugin();
+
     const PolymerRepresentationValues: Record<string, PolymerRepresentation> = {
         Cartoon: "cartoon",
         BallAndStick: "ball-and-stick",
@@ -30,7 +32,7 @@ function MolstarControls() {
     };
 
     const handleResetCamera = () => {
-        console.log("Reset camera clicked");
+        plugin.canvas3d?.requestCameraReset();
     };
 
     return (

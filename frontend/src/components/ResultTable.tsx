@@ -1,20 +1,20 @@
-import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { getAHoJJobConfiguration, submitAHoJJob, pollAHoJJobStatus } from "../services/AHoJservice";
 import { AHoJResponse, Pocket } from "../types";
 import { useState } from "react";
 import ResultTableRow from "./ResultTableRow";
+import { usePlugin } from "../hooks/usePlugin";
 
 import "./ResultTable.css";
 
 interface ResultTableProps {
     taskId: string;
     pockets: Pocket[];
-    plugin: PluginUIContext;
     structureId: string;
     taskHash: string;
 }
 
-function ResultTable({ pockets, plugin, structureId, taskHash }: ResultTableProps) {
+function ResultTable({ pockets, structureId, taskHash }: ResultTableProps) {
+    const plugin = usePlugin();
     const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(new Array(pockets.length).fill(null));
     const [ahojJobResults, setAHoJJobResults] = useState<(AHoJResponse | null)[]>(new Array(pockets.length).fill(null));
 
@@ -46,7 +46,6 @@ function ResultTable({ pockets, plugin, structureId, taskHash }: ResultTableProp
                             index={index}
                             structureId={structureId}
                             taskHash={taskHash}
-                            plugin={plugin}
                             ahoJJobId={ahoJJobIds[index]}
                             ahoJJobResult={ahojJobResults[index]}
                             onAHoJClick={handleClick}

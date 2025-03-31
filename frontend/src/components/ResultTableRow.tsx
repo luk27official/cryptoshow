@@ -1,8 +1,8 @@
-import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { Pocket, AHoJResponse, AHoJStructure } from "../types";
 import { getColorString, getApiUrl } from "../utils";
 import { loadStructure } from "./MolstarComponent";
 import { useState } from "react";
+import { usePlugin } from "../hooks/usePlugin";
 
 import "./ResultTableRow.css";
 
@@ -11,7 +11,6 @@ interface ResultTableRowProps {
     index: number;
     structureId: string;
     taskHash: string;
-    plugin: PluginUIContext;
     ahoJJobId: string | null;
     ahoJJobResult: AHoJResponse | null;
     onAHoJClick: (pocket: Pocket, index: number) => void;
@@ -22,7 +21,6 @@ const ResultTableRow = ({
     index,
     structureId,
     taskHash,
-    plugin,
     ahoJJobId,
     ahoJJobResult,
     onAHoJClick
@@ -52,7 +50,6 @@ const ResultTableRow = ({
                             pocket={pocket}
                             index={index}
                             taskHash={taskHash}
-                            plugin={plugin}
                             ahoJJobId={ahoJJobId}
                             ahoJJobResult={ahoJJobResult}
                             onAHoJClick={onAHoJClick}
@@ -112,7 +109,6 @@ interface AHoJSectionProps {
     pocket: Pocket;
     index: number;
     taskHash: string;
-    plugin: PluginUIContext;
     ahoJJobId: string | null;
     ahoJJobResult: AHoJResponse | null;
     onAHoJClick: (pocket: Pocket, index: number) => void;
@@ -122,7 +118,6 @@ const AHoJSection = ({
     pocket,
     index,
     taskHash,
-    plugin,
     ahoJJobId,
     ahoJJobResult,
     onAHoJClick
@@ -140,29 +135,26 @@ const AHoJSection = ({
             {ahoJJobId && <span className="job-id">AHoJ Job ID: {ahoJJobId}</span>}
         </div>
 
-        {ahoJJobResult && <AHoJResults ahoJJobResult={ahoJJobResult} taskHash={taskHash} plugin={plugin} />}
+        {ahoJJobResult && <AHoJResults ahoJJobResult={ahoJJobResult} taskHash={taskHash} />}
     </div>
 );
 
 interface AHoJResultsProps {
     ahoJJobResult: AHoJResponse;
     taskHash: string;
-    plugin: PluginUIContext;
 }
 
-const AHoJResults = ({ ahoJJobResult, taskHash, plugin }: AHoJResultsProps) => (
+const AHoJResults = ({ ahoJJobResult, taskHash }: AHoJResultsProps) => (
     <div className="ahoj-results">
         <StructureSection
             title="APO Structures"
             structures={ahoJJobResult.queries[0]?.found_apo || []}
             taskHash={taskHash}
-            plugin={plugin}
         />
         <StructureSection
             title="HOLO Structures"
             structures={ahoJJobResult.queries[0]?.found_holo || []}
             taskHash={taskHash}
-            plugin={plugin}
         />
     </div>
 );
@@ -171,32 +163,35 @@ interface StructureSectionProps {
     title: string;
     structures: AHoJStructure[];
     taskHash: string;
-    plugin: PluginUIContext;
 }
 
-const StructureSection = ({ title, structures, taskHash, plugin }: StructureSectionProps) => (
-    <div className="result-section">
-        <h4 className="result-heading">{title}</h4>
-        <div className="structure-links">
-            {structures.length ? (
-                structures.map((s) => (
-                    <span
-                        key={s.pdb_id}
-                        className="structure-link"
-                        onClick={async () => {
-                            await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${s.structure_file_url}`));
-                            loadStructure(plugin, getApiUrl(`/file/${taskHash}/${s.structure_file}`));
-                        }}
-                    >
-                        {s.pdb_id}_{s.chains.join(" ")}
-                    </span>
-                ))
-            ) : (
-                <span className="no-results">No {title} found</span>
-            )}
+const StructureSection = ({ title, structures, taskHash }: StructureSectionProps) => {
+    const plugin = usePlugin();
+
+    return (
+        <div className="result-section">
+            <h4 className="result-heading">{title}</h4>
+            <div className="structure-links">
+                {structures.length ? (
+                    structures.map((s) => (
+                        <span
+                            key={s.pdb_id}
+                            className="structure-link"
+                            onClick={async () => {
+                                await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${s.structure_file_url}`));
+                                loadStructure(plugin, getApiUrl(`/file/${taskHash}/${s.structure_file}`));
+                            }}
+                        >
+                            {s.pdb_id}_{s.chains.join(" ")}
+                        </span>
+                    ))
+                ) : (
+                    <span className="no-results">No {title} found</span>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
+};
 
 export default ResultTableRow;
 

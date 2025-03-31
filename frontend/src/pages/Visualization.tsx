@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CryptoBenchResult } from "../types";
 import { loadPockets, initializePlugin, loadStructure } from "../components/MolstarComponent";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
+import { PluginProvider } from "../providers/PluginProvider";
 
 import "./Visualization.css";
 import ResultTable from "../components/ResultTable";
@@ -81,20 +82,22 @@ function Visualization() {
                     </ul>
                 </nav>
             </div>
+
             <div className="viewer-container">
                 <div className="left">
                     <div className="viewer-3d" id="molstar-component"></div>
-                    <MolstarControls />
+                    {plugin && <PluginProvider plugin={plugin}><MolstarControls /></PluginProvider>}
                 </div>
                 <div className="right">
                     {result && plugin && (
-                        <ResultTable
-                            taskId={taskId}
-                            pockets={result.pockets}
-                            plugin={plugin}
-                            structureId={result.structure_name}
-                            taskHash={result.file_hash}
-                        />
+                        <PluginProvider plugin={plugin}>
+                            <ResultTable
+                                taskId={taskId}
+                                pockets={result.pockets}
+                                structureId={result.structure_name}
+                                taskHash={result.file_hash}
+                            />
+                        </PluginProvider>
                     )}
                 </div>
             </div>
