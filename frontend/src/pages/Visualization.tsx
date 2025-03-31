@@ -7,6 +7,7 @@ import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 
 import "./Visualization.css";
 import ResultTable from "../components/ResultTable";
+import MolstarControls from "../components/MolstarControls";
 
 function Visualization() {
     const [result, setResult] = useState<CryptoBenchResult | null>(null);
@@ -81,16 +82,21 @@ function Visualization() {
                 </nav>
             </div>
             <div className="viewer-container">
-                <div className="viewer-3d" id="molstar-component"></div>
-                {result && plugin && (
-                    <ResultTable
-                        taskId={taskId}
-                        pockets={result.pockets}
-                        plugin={plugin}
-                        structureId={result.structure_name}
-                        taskHash={result.file_hash}
-                    />
-                )}
+                <div className="left">
+                    <div className="viewer-3d" id="molstar-component"></div>
+                    <MolstarControls />
+                </div>
+                <div className="right">
+                    {result && plugin && (
+                        <ResultTable
+                            taskId={taskId}
+                            pockets={result.pockets}
+                            plugin={plugin}
+                            structureId={result.structure_name}
+                            taskHash={result.file_hash}
+                        />
+                    )}
+                </div>
             </div>
         </div>
     );

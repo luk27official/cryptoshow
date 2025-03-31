@@ -35,8 +35,6 @@ ul.navigation li {
 
 .viewer-3d {
     border: 1px solid var(--accent-color);
-    width: 100%;
-    max-width: 50rem;
     height: 37.5rem;
     position: relative;
     margin: 0.625rem;
@@ -46,4 +44,18 @@ ul.navigation li {
     .viewer-3d {
         height: 25rem;
     }
+}
+
+.left {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    position: relative;
+}
+
+.right {
+    display: flex;
+    flex-direction: column;
+    width: 50%;
+    position: relative;
 }

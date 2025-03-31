@@ -1,0 +1,82 @@
+.molstar-controls-container {
+    background-color: #f8f9fa;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.05);
+    margin: 0.75rem 0.625rem;
+}
+
+.molstar-controls-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.molstar-control-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 12.5rem;
+}
+
+.molstar-control-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.375rem;
+}
+
+.molstar-control-select {
+    padding: 0.5rem 0.75rem;
+    border: 0.0625rem solid #ddd;
+    border-radius: 0.375rem;
+    background-color: white;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+
+.molstar-control-select:focus {
+    border-color: #4285f4;
+    box-shadow: 0 0 0 0.125rem rgba(66, 133, 244, 0.25);
+}
+
+.molstar-control-button-container {
+    display: flex;
+    align-items: flex-end;
+}
+
+.molstar-control-button {
+    padding: 0.5rem 1rem;
+    background-color: #4285f4;
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    height: 2.25rem; /* Match the height of select boxes */
+}
+
+.molstar-control-button:hover {
+    background-color: #3367d6;
+}
+
+.molstar-control-button:active {
+    transform: translateY(0.0625rem);
+}
+
+@media (max-width: 48rem) {
+    .molstar-controls-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .molstar-control-group {
+        width: 100%;
+    }
+}

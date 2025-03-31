@@ -77,3 +77,7 @@ export type AHoJResponse = {
     result_zip_url: string;
     [key: string]: unknown;
 };
+
+export type PolymerRepresentation = "cartoon" | "ball-and-stick" | "molecular-surface";
+
+export type PocketRepresentation = "cartoon" | "ball-and-stick" | "molecular-surface";
