@@ -9,11 +9,12 @@ import { createStructureRepresentationParams } from "molstar/lib/mol-plugin-stat
 import { Color } from "molstar/lib/mol-util/color";
 import { StructureSelection, StructureElement, StructureProperties, Bond } from "molstar/lib/mol-model/structure";
 import { Loci } from "molstar/lib/mol-model/loci";
-import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { Script } from "molstar/lib/mol-script/script";
+import { setSubtreeVisibility } from "molstar/lib/mol-plugin/behavior/static/state";
+import "molstar/lib/mol-plugin-ui/skin/light.scss";
 
-import { CryptoBenchResult, Pocket, Point3D, MolstarResidue } from "../types";
+import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure } from "../types";
 import { getColor, getWindowWidth } from "../utils";
 
 export const initializePlugin = async () => {
@@ -61,14 +62,48 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
     const structure: StateObjectSelector = await plugin.builders.structure.createStructure(model, { name: "model", params: {} });
 
     const polymer = await plugin.builders.structure.tryCreateComponentStatic(structure, "polymer");
+    const representations: RepresentationWithRef<PolymerRepresentationType>[] = [];
+
     if (polymer) {
-        await plugin.builders.structure.representation.addRepresentation(polymer, {
+        const cartoon = await plugin.builders.structure.representation.addRepresentation(polymer, {
             type: "cartoon",
             color: "uniform",
         });
+
+        representations.push({ type: "cartoon", object: cartoon });
+
+        const surface = await plugin.builders.structure.representation.addRepresentation(polymer, {
+            type: "molecular-surface",
+            color: "uniform",
+        });
+
+        representations.push({ type: "molecular-surface", object: surface });
+
+        const ballAndStick = await plugin.builders.structure.representation.addRepresentation(polymer, {
+            type: "ball-and-stick",
+            color: "uniform",
+        });
+
+        representations.push({ type: "ball-and-stick", object: ballAndStick });
     }
 
-    return structure;
+    const loadedStucture: LoadedStructure = {
+        structure: structure,
+        polymerRepresentations: representations,
+        pocketRepresentations: []
+    };
+
+    return loadedStucture;
+};
+
+export const showOnePolymerRepresentation = async (plugin: PluginUIContext, loadedStructure: LoadedStructure, selectedRepresentation: RepresentationWithRef<PolymerRepresentationType>) => {
+    for (const representation of loadedStructure.polymerRepresentations) {
+        if (representation.type !== selectedRepresentation.type) {
+            setSubtreeVisibility(plugin.state.data, representation.object.ref, true);
+        } else {
+            setSubtreeVisibility(plugin.state.data, representation.object.ref, false);
+        }
+    }
 };
 
 
@@ -116,7 +151,7 @@ export async function createPocketFromJson(plugin: PluginUIContext, structure: S
     const resSelection = group2.apply(StateTransforms.Model.StructureSelectionFromExpression, { expression: query });
 
     resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
-        type: "gaussian-surface",
+        type: "molecular-surface",
         color: "uniform",
         colorParams: { value: Color(color) }, // TODO: change the color
         size: "uniform",

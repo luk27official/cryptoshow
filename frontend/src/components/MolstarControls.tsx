@@ -1,33 +1,44 @@
 import { useState } from "react";
 import "./MolstarControls.css";
-import { PolymerRepresentation, PocketRepresentation } from "../types";
+import { PolymerRepresentationType, PocketRepresentationType, LoadedStructure } from "../types";
 import { usePlugin } from "../hooks/usePlugin";
+import { showOnePolymerRepresentation } from "./MolstarComponent";
 
-function MolstarControls() {
+interface MolstarControlsProps {
+    loadedStructure: LoadedStructure | null;
+}
+
+function MolstarControls({ loadedStructure }: MolstarControlsProps) {
     const plugin = usePlugin();
 
-    const PolymerRepresentationValues: Record<string, PolymerRepresentation> = {
+    const PolymerRepresentationValues: Record<string, PolymerRepresentationType> = {
         Cartoon: "cartoon",
         BallAndStick: "ball-and-stick",
         MolecularSurface: "molecular-surface"
     } as const;
 
-    const PocketRepresentationValues: Record<string, PocketRepresentation> = {
+    const PocketRepresentationValues: Record<string, PocketRepresentationType> = {
         Cartoon: "cartoon",
         BallAndStick: "ball-and-stick",
         MolecularSurface: "molecular-surface"
     } as const;
 
-    const [selectedPolymerRepresentation, setSelectedPolymerRepresentation] = useState<PolymerRepresentation>(PolymerRepresentationValues.Cartoon);
-    const [selectedPocketRepresentation, setSelectedPocketRepresentation] = useState<PocketRepresentation>(PocketRepresentationValues.Cartoon);
+    const [selectedPolymerRepresentation, setSelectedPolymerRepresentation] = useState<PolymerRepresentationType>(PolymerRepresentationValues.Cartoon);
+    const [selectedPocketRepresentation, setSelectedPocketRepresentation] = useState<PocketRepresentationType>(PocketRepresentationValues.Cartoon);
 
     const handlePolymerRepresentationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedPolymerRepresentation(e.target.value as PolymerRepresentation);
+        setSelectedPolymerRepresentation(e.target.value as PolymerRepresentationType);
+        if (loadedStructure) {
+            const selectedRepresentation = loadedStructure.polymerRepresentations.find(r => r.type === e.target.value);
+            if (selectedRepresentation) {
+                showOnePolymerRepresentation(plugin, loadedStructure, selectedRepresentation);
+            }
+        }
         console.log("Selected Polymer Representation:", e.target.value);
     };
 
     const handlePocketRepresentationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedPocketRepresentation(e.target.value as PocketRepresentation);
+        setSelectedPocketRepresentation(e.target.value as PocketRepresentationType);
         console.log("Selected Pocket Representation:", e.target.value);
     };
 

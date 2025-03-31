@@ -1,3 +1,5 @@
+import { StateObjectSelector } from "molstar/lib/mol-state";
+
 export type CryptoBenchResult = {
     status: string;
     prediction: number[];
@@ -78,6 +80,17 @@ export type AHoJResponse = {
     [key: string]: unknown;
 };
 
-export type PolymerRepresentation = "cartoon" | "ball-and-stick" | "molecular-surface";
+export type PolymerRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface";
 
-export type PocketRepresentation = "cartoon" | "ball-and-stick" | "molecular-surface";
+export type PocketRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface";
+
+export type RepresentationWithRef<T extends PolymerRepresentationType | PocketRepresentationType> = {
+    type: T;
+    object: StateObjectSelector;
+};
+
+export type LoadedStructure = {
+    structure: StateObjectSelector;
+    polymerRepresentations: RepresentationWithRef<PolymerRepresentationType>[];
+    pocketRepresentations: RepresentationWithRef<PocketRepresentationType>[];
+};

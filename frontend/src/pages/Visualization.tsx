@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { getApiUrl } from "../utils";
 import { useEffect, useState } from "react";
-import { CryptoBenchResult } from "../types";
-import { loadPockets, initializePlugin, loadStructure } from "../components/MolstarComponent";
+import { CryptoBenchResult, LoadedStructure } from "../types";
+import { loadPockets, initializePlugin, loadStructure, showOnePolymerRepresentation } from "../components/MolstarComponent";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { PluginProvider } from "../providers/PluginProvider";
 
@@ -13,6 +13,7 @@ import MolstarControls from "../components/MolstarControls";
 function Visualization() {
     const [result, setResult] = useState<CryptoBenchResult | null>(null);
     const [plugin, setPlugin] = useState<PluginUIContext | null>(null);
+    const [lStructure, setLStructure] = useState<LoadedStructure | null>(null);
 
     // get taskId from URL (viewer?id=taskId)
     const taskId = new URLSearchParams(window.location.search).get("id");
@@ -42,8 +43,13 @@ function Visualization() {
                 const pluginInstance = await initializePlugin();
                 setPlugin(pluginInstance);
                 // TODO: save s
-                const s = await loadStructure(pluginInstance, getApiUrl(`/file/${result.file_hash}/${result.input_structure}`));
-                loadPockets(pluginInstance, s, result);
+                const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${result.file_hash}/${result.input_structure}`));
+                setLStructure(loaded);
+                const initialShownRep = loaded.polymerRepresentations.find(r => r.type === "cartoon");
+                if (initialShownRep) {
+                    showOnePolymerRepresentation(pluginInstance, loaded, initialShownRep);
+                }
+                await loadPockets(pluginInstance, loaded.structure, result);
             };
 
             initPlugin();
@@ -86,7 +92,7 @@ function Visualization() {
             <div className="viewer-container">
                 <div className="left">
                     <div className="viewer-3d" id="molstar-component"></div>
-                    {plugin && <PluginProvider plugin={plugin}><MolstarControls /></PluginProvider>}
+                    {plugin && <PluginProvider plugin={plugin}><MolstarControls loadedStructure={lStructure} /></PluginProvider>}
                 </div>
                 <div className="right">
                     {result && plugin && (
