@@ -99,7 +99,7 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
 export const showOneRepresentation = async <T extends PolymerRepresentationType | PocketRepresentationType>(
     plugin: PluginUIContext,
     representations: RepresentationWithRef<T>[],
-    representationType: T
+    representationType: T | null
 ) => {
     for (const representation of representations) {
         const isVisible = representation.type !== representationType;
@@ -110,7 +110,7 @@ export const showOneRepresentation = async <T extends PolymerRepresentationType 
 export const showOnePolymerRepresentation = async (
     plugin: PluginUIContext,
     loadedStructure: LoadedStructure,
-    representationType: PolymerRepresentationType
+    representationType: PolymerRepresentationType | null
 ) => {
     return showOneRepresentation(plugin, loadedStructure.polymerRepresentations, representationType);
 };
@@ -118,7 +118,7 @@ export const showOnePolymerRepresentation = async (
 export const showOnePocketRepresentation = async (
     plugin: PluginUIContext,
     loadedStructure: LoadedStructure,
-    representationType: PocketRepresentationType
+    representationType: PocketRepresentationType | null
 ) => {
     return showOneRepresentation(plugin, loadedStructure.pocketRepresentations, representationType);
 };
