@@ -2,7 +2,7 @@ import { useState } from "react";
 import "./MolstarControls.css";
 import { PolymerRepresentationType, PocketRepresentationType, LoadedStructure } from "../types";
 import { usePlugin } from "../hooks/usePlugin";
-import { showOnePolymerRepresentation } from "./MolstarComponent";
+import { showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
 
 interface MolstarControlsProps {
     loadedStructure: LoadedStructure | null;
@@ -29,17 +29,15 @@ function MolstarControls({ loadedStructure }: MolstarControlsProps) {
     const handlePolymerRepresentationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedPolymerRepresentation(e.target.value as PolymerRepresentationType);
         if (loadedStructure) {
-            const selectedRepresentation = loadedStructure.polymerRepresentations.find(r => r.type === e.target.value);
-            if (selectedRepresentation) {
-                showOnePolymerRepresentation(plugin, loadedStructure, selectedRepresentation);
-            }
+            showOnePolymerRepresentation(plugin, loadedStructure, e.target.value as PolymerRepresentationType);
         }
-        console.log("Selected Polymer Representation:", e.target.value);
     };
 
     const handlePocketRepresentationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         setSelectedPocketRepresentation(e.target.value as PocketRepresentationType);
-        console.log("Selected Pocket Representation:", e.target.value);
+        if (loadedStructure) {
+            showOnePocketRepresentation(plugin, loadedStructure, e.target.value as PocketRepresentationType);
+        }
     };
 
     const handleResetCamera = () => {

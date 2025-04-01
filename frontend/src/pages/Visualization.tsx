@@ -45,11 +45,9 @@ function Visualization() {
                 // TODO: save s
                 const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${result.file_hash}/${result.input_structure}`));
                 setLStructure(loaded);
-                const initialShownRep = loaded.polymerRepresentations.find(r => r.type === "cartoon");
-                if (initialShownRep) {
-                    showOnePolymerRepresentation(pluginInstance, loaded, initialShownRep);
-                }
-                await loadPockets(pluginInstance, loaded.structure, result);
+                showOnePolymerRepresentation(pluginInstance, loaded, "cartoon");
+                const pocketReprs = await loadPockets(pluginInstance, loaded.structure, result);
+                loaded.pocketRepresentations = pocketReprs;
             };
 
             initPlugin();

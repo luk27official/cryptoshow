@@ -14,7 +14,7 @@ import { Script } from "molstar/lib/mol-script/script";
 import { setSubtreeVisibility } from "molstar/lib/mol-plugin/behavior/static/state";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 
-import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure } from "../types";
+import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType } from "../types";
 import { getColor, getWindowWidth } from "../utils";
 
 export const initializePlugin = async () => {
@@ -96,14 +96,31 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
     return loadedStucture;
 };
 
-export const showOnePolymerRepresentation = async (plugin: PluginUIContext, loadedStructure: LoadedStructure, selectedRepresentation: RepresentationWithRef<PolymerRepresentationType>) => {
-    for (const representation of loadedStructure.polymerRepresentations) {
-        if (representation.type !== selectedRepresentation.type) {
-            setSubtreeVisibility(plugin.state.data, representation.object.ref, true);
-        } else {
-            setSubtreeVisibility(plugin.state.data, representation.object.ref, false);
-        }
+export const showOneRepresentation = async <T extends PolymerRepresentationType | PocketRepresentationType>(
+    plugin: PluginUIContext,
+    representations: RepresentationWithRef<T>[],
+    representationType: T
+) => {
+    for (const representation of representations) {
+        const isVisible = representation.type !== representationType;
+        setSubtreeVisibility(plugin.state.data, representation.object.ref, isVisible);
     }
+};
+
+export const showOnePolymerRepresentation = async (
+    plugin: PluginUIContext,
+    loadedStructure: LoadedStructure,
+    representationType: PolymerRepresentationType
+) => {
+    return showOneRepresentation(plugin, loadedStructure.polymerRepresentations, representationType);
+};
+
+export const showOnePocketRepresentation = async (
+    plugin: PluginUIContext,
+    loadedStructure: LoadedStructure,
+    representationType: PocketRepresentationType
+) => {
+    return showOneRepresentation(plugin, loadedStructure.pocketRepresentations, representationType);
 };
 
 
@@ -111,9 +128,9 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
     const builder = plugin.state.data.build();
     const group = builder.to(structure).apply(StateTransforms.Misc.CreateGroup, { label: "Pockets" }, { ref: "pockets" });
 
-    // TODO: here we should save the pocket representations to the state (for toggling etc.)
+    const representations: RepresentationWithRef<PocketRepresentationType>[] = [];
     result.pockets.map((pocket, i) => {
-        createPocketFromJson(plugin, structure, pocket, `Pocket ${i + 1}`, group, getColor(pocket.pocket_id));
+        createPocketFromJson(plugin, structure, pocket, `Pocket ${i + 1}`, group, getColor(pocket.pocket_id), representations);
     });
     await builder.commit();
 
@@ -136,10 +153,12 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
     };
 
     plugin.managers.lociLabels.addProvider(PocketLabelProvider);
+
+    return representations;
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createPocketFromJson(plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number) {
+export async function createPocketFromJson(plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef<PocketRepresentationType>[]) {
     const group2 = group.apply(StateTransforms.Misc.CreateGroup, { label: groupName }, { ref: groupName }, { selectionTags: groupName });
 
     const query = MS.struct.generator.atomGroups({
@@ -150,13 +169,36 @@ export async function createPocketFromJson(plugin: PluginUIContext, structure: S
 
     const resSelection = group2.apply(StateTransforms.Model.StructureSelectionFromExpression, { expression: query });
 
-    resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
+    // TODO: here, we should think about saving the pocket number as well
+    const surface = resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
         type: "molecular-surface",
         color: "uniform",
         colorParams: { value: Color(color) }, // TODO: change the color
         size: "uniform",
         sizeParams: { value: 1.05 },
     }));
+
+    representations.push({ type: "molecular-surface", object: surface });
+
+    const ballAndStick = resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
+        type: "ball-and-stick",
+        color: "uniform",
+        colorParams: { value: Color(color) }, // TODO: change the color
+        size: "uniform",
+        sizeParams: { value: 1.75 },
+    }));
+
+    representations.push({ type: "ball-and-stick", object: ballAndStick });
+
+    const cartoon = resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
+        type: "cartoon",
+        color: "uniform",
+        colorParams: { value: Color(color) }, // TODO: change the color
+        size: "uniform",
+        sizeParams: { value: 1.05 },
+    }));
+
+    representations.push({ type: "cartoon", object: cartoon });
 }
 
 function getSelectionFromChainAuthId(plugin: PluginUIContext, chainId: string, positions: number[]) {
