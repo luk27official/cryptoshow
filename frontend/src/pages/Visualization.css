@@ -59,3 +59,7 @@ ul.navigation li {
     width: 50%;
     position: relative;
 }
+
+.msp-plugin .msp-plugin-content {
+    z-index: 999;
+}
