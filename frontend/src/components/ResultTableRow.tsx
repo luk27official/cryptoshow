@@ -1,6 +1,6 @@
-import { Pocket, AHoJResponse, AHoJStructure } from "../types";
+import { Pocket, AHoJResponse, AHoJStructure, LoadedStructure, PolymerRepresentationType } from "../types";
 import { getColorString, getApiUrl } from "../utils";
-import { loadStructure } from "./MolstarComponent";
+import { loadStructure, showOnePolymerRepresentation } from "./MolstarComponent";
 import { useState } from "react";
 import { usePlugin } from "../hooks/usePlugin";
 
@@ -14,6 +14,8 @@ interface ResultTableRowProps {
     ahoJJobId: string | null;
     ahoJJobResult: AHoJResponse | null;
     onAHoJClick: (pocket: Pocket, index: number) => void;
+    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
+    selectedPolymerRepresentation: PolymerRepresentationType;
 }
 
 const ResultTableRow = ({
@@ -23,7 +25,9 @@ const ResultTableRow = ({
     taskHash,
     ahoJJobId,
     ahoJJobResult,
-    onAHoJClick
+    onAHoJClick,
+    setLoadedStructures,
+    selectedPolymerRepresentation
 }: ResultTableRowProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -53,6 +57,8 @@ const ResultTableRow = ({
                             ahoJJobId={ahoJJobId}
                             ahoJJobResult={ahoJJobResult}
                             onAHoJClick={onAHoJClick}
+                            setLoadedStructures={setLoadedStructures}
+                            selectedPolymerRepresentation={selectedPolymerRepresentation}
                         />
                     )}
                 </div>
@@ -112,6 +118,8 @@ interface AHoJSectionProps {
     ahoJJobId: string | null;
     ahoJJobResult: AHoJResponse | null;
     onAHoJClick: (pocket: Pocket, index: number) => void;
+    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
+    selectedPolymerRepresentation: PolymerRepresentationType;
 }
 
 const AHoJSection = ({
@@ -120,7 +128,9 @@ const AHoJSection = ({
     taskHash,
     ahoJJobId,
     ahoJJobResult,
-    onAHoJClick
+    onAHoJClick,
+    setLoadedStructures,
+    selectedPolymerRepresentation
 }: AHoJSectionProps) => (
     <div className="ahoj-section">
         <div className="ahoj-controls">
@@ -135,26 +145,32 @@ const AHoJSection = ({
             {ahoJJobId && <span className="job-id">AHoJ Job ID: {ahoJJobId}</span>}
         </div>
 
-        {ahoJJobResult && <AHoJResults ahoJJobResult={ahoJJobResult} taskHash={taskHash} />}
+        {ahoJJobResult && <AHoJResults ahoJJobResult={ahoJJobResult} taskHash={taskHash} setLoadedStructures={setLoadedStructures} selectedPolymerRepresentation={selectedPolymerRepresentation} />}
     </div>
 );
 
 interface AHoJResultsProps {
     ahoJJobResult: AHoJResponse;
     taskHash: string;
+    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
+    selectedPolymerRepresentation: PolymerRepresentationType;
 }
 
-const AHoJResults = ({ ahoJJobResult, taskHash }: AHoJResultsProps) => (
+const AHoJResults = ({ ahoJJobResult, taskHash, setLoadedStructures, selectedPolymerRepresentation }: AHoJResultsProps) => (
     <div className="ahoj-results">
         <StructureSection
             title="APO Structures"
             structures={ahoJJobResult.queries[0]?.found_apo || []}
             taskHash={taskHash}
+            setLoadedStructures={setLoadedStructures}
+            selectedPolymerRepresentation={selectedPolymerRepresentation}
         />
         <StructureSection
             title="HOLO Structures"
             structures={ahoJJobResult.queries[0]?.found_holo || []}
             taskHash={taskHash}
+            setLoadedStructures={setLoadedStructures}
+            selectedPolymerRepresentation={selectedPolymerRepresentation}
         />
     </div>
 );
@@ -163,9 +179,11 @@ interface StructureSectionProps {
     title: string;
     structures: AHoJStructure[];
     taskHash: string;
+    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
+    selectedPolymerRepresentation: PolymerRepresentationType;
 }
 
-const StructureSection = ({ title, structures, taskHash }: StructureSectionProps) => {
+const StructureSection = ({ title, structures, taskHash, setLoadedStructures, selectedPolymerRepresentation }: StructureSectionProps) => {
     const plugin = usePlugin();
 
     return (
@@ -179,7 +197,10 @@ const StructureSection = ({ title, structures, taskHash }: StructureSectionProps
                             className="structure-link"
                             onClick={async () => {
                                 await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${s.structure_file_url}`));
-                                loadStructure(plugin, getApiUrl(`/file/${taskHash}/${s.structure_file}`));
+                                const ld = await loadStructure(plugin, getApiUrl(`/file/${taskHash}/${s.structure_file}`));
+
+                                setLoadedStructures(prev => [...prev, ld]);
+                                showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
                             }}
                         >
                             {s.pdb_id}_{s.chains.join(" ")}
@@ -194,4 +215,3 @@ const StructureSection = ({ title, structures, taskHash }: StructureSectionProps
 };
 
 export default ResultTableRow;
-

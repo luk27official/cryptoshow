@@ -84,6 +84,18 @@ export type PolymerRepresentationType = "cartoon" | "ball-and-stick" | "molecula
 
 export type PocketRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface";
 
+export const PolymerRepresentationValues: Record<string, PolymerRepresentationType> = {
+    Cartoon: "cartoon",
+    BallAndStick: "ball-and-stick",
+    MolecularSurface: "molecular-surface"
+} as const;
+
+export const PocketRepresentationValues: Record<string, PocketRepresentationType> = {
+    Cartoon: "cartoon",
+    BallAndStick: "ball-and-stick",
+    MolecularSurface: "molecular-surface"
+} as const;
+
 export type RepresentationWithRef<T extends PolymerRepresentationType | PocketRepresentationType> = {
     type: T;
     object: StateObjectSelector;

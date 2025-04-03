@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { getApiUrl } from "../utils";
 import { useEffect, useState } from "react";
-import { CryptoBenchResult, LoadedStructure } from "../types";
+import { CryptoBenchResult, LoadedStructure, PolymerRepresentationType, PocketRepresentationType, PolymerRepresentationValues, PocketRepresentationValues } from "../types";
 import { loadPockets, initializePlugin, loadStructure, showOnePolymerRepresentation } from "../components/MolstarComponent";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { PluginProvider } from "../providers/PluginProvider";
@@ -13,7 +13,9 @@ import MolstarControls from "../components/MolstarControls";
 function Visualization() {
     const [result, setResult] = useState<CryptoBenchResult | null>(null);
     const [plugin, setPlugin] = useState<PluginUIContext | null>(null);
-    const [lStructure, setLStructure] = useState<LoadedStructure | null>(null);
+    const [loadedStructures, setLoadedStructures] = useState<LoadedStructure[]>([]);
+    const [selectedPolymerRepresentation, setSelectedPolymerRepresentation] = useState<PolymerRepresentationType>(PolymerRepresentationValues.Cartoon);
+    const [selectedPocketRepresentation, setSelectedPocketRepresentation] = useState<PocketRepresentationType>(PocketRepresentationValues.Cartoon);
 
     // get taskId from URL (viewer?id=taskId)
     const taskId = new URLSearchParams(window.location.search).get("id");
@@ -42,17 +44,16 @@ function Visualization() {
             const initPlugin = async () => {
                 const pluginInstance = await initializePlugin();
                 setPlugin(pluginInstance);
-                // TODO: save s
                 const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${result.file_hash}/${result.input_structure}`));
-                setLStructure(loaded);
-                showOnePolymerRepresentation(pluginInstance, loaded, "cartoon");
+                setLoadedStructures(prevStructures => [...prevStructures, loaded]);
+                showOnePolymerRepresentation(pluginInstance, loaded, selectedPolymerRepresentation);
                 const pocketReprs = await loadPockets(pluginInstance, loaded.structure, result);
                 loaded.pocketRepresentations = pocketReprs;
             };
 
             initPlugin();
         }
-    }, [result, plugin]);
+    }, [result, plugin, selectedPolymerRepresentation]);
 
     if (!taskId) {
         return (
@@ -90,7 +91,15 @@ function Visualization() {
             <div className="viewer-container">
                 <div className="left">
                     <div className="viewer-3d" id="molstar-component"></div>
-                    {plugin && <PluginProvider plugin={plugin}><MolstarControls loadedStructure={lStructure} /></PluginProvider>}
+                    {plugin && <PluginProvider plugin={plugin}>
+                        <MolstarControls
+                            loadedStructures={loadedStructures}
+                            selectedPolymerRepresentation={selectedPolymerRepresentation}
+                            setSelectedPolymerRepresentation={setSelectedPolymerRepresentation}
+                            selectedPocketRepresentation={selectedPocketRepresentation}
+                            setSelectedPocketRepresentation={setSelectedPocketRepresentation}
+                        />
+                    </PluginProvider>}
                 </div>
                 <div className="right">
                     {result && plugin && (
@@ -100,6 +109,8 @@ function Visualization() {
                                 pockets={result.pockets}
                                 structureId={result.structure_name}
                                 taskHash={result.file_hash}
+                                setLoadedStructures={setLoadedStructures}
+                                selectedPolymerRepresentation={selectedPolymerRepresentation}
                             />
                         </PluginProvider>
                     )}

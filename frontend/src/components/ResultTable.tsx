@@ -1,5 +1,5 @@
 import { getAHoJJobConfiguration, submitAHoJJob, pollAHoJJobStatus } from "../services/AHoJservice";
-import { AHoJResponse, Pocket } from "../types";
+import { AHoJResponse, LoadedStructure, Pocket, PolymerRepresentationType } from "../types";
 import { useState } from "react";
 import ResultTableRow from "./ResultTableRow";
 import { usePlugin } from "../hooks/usePlugin";
@@ -11,9 +11,11 @@ interface ResultTableProps {
     pockets: Pocket[];
     structureId: string;
     taskHash: string;
+    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
+    selectedPolymerRepresentation: PolymerRepresentationType;
 }
 
-function ResultTable({ pockets, structureId, taskHash }: ResultTableProps) {
+function ResultTable({ pockets, structureId, taskHash, setLoadedStructures, selectedPolymerRepresentation }: ResultTableProps) {
     const plugin = usePlugin();
     const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(new Array(pockets.length).fill(null));
     const [ahojJobResults, setAHoJJobResults] = useState<(AHoJResponse | null)[]>(new Array(pockets.length).fill(null));
@@ -49,6 +51,8 @@ function ResultTable({ pockets, structureId, taskHash }: ResultTableProps) {
                             ahoJJobId={ahoJJobIds[index]}
                             ahoJJobResult={ahojJobResults[index]}
                             onAHoJClick={handleClick}
+                            setLoadedStructures={setLoadedStructures}
+                            selectedPolymerRepresentation={selectedPolymerRepresentation}
                         />
                     ))
                 ) : (
