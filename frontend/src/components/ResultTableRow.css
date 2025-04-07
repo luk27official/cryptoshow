@@ -177,7 +177,6 @@
 
 .job-id {
     font-size: 0.75rem;
-    color: var(--text-muted);
     font-family: monospace;
 }
 
@@ -239,4 +238,101 @@
 .no-results {
     color: var(--text-muted);
     font-style: italic;
+}
+
+.structure-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.5rem;
+}
+
+.structure-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border-radius: 0.375rem;
+    background-color: var(--bg-secondary, #f5f7fa);
+    border: 1px solid var(--border-color, #e2e8f0);
+    transition: background-color 0.2s;
+}
+
+.structure-row:hover {
+    background-color: var(--bg-hover, #edf2f7);
+}
+
+.structure-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.structure-id {
+    font-weight: 600;
+    color: var(--text-primary, #2d3748);
+}
+
+.structure-chains,
+.structure-ligands,
+.structure-resolution {
+    font-size: 0.875rem;
+    color: var(--text-secondary, #4a5568);
+}
+
+.load-structure-button {
+    padding: 0.5rem 0.75rem;
+    background-color: var(--primary-color, #4285f4);
+    color: white;
+    border: none;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    white-space: nowrap;
+}
+
+.load-structure-button:hover {
+    background-color: var(--primary-hover, #3367d6);
+}
+
+.load-structure-button:active {
+    transform: translateY(0.0625rem);
+}
+
+.no-results {
+    padding: 0.75rem;
+    font-style: italic;
+    color: var(--text-muted, #718096);
+    background-color: var(--bg-secondary, #f5f7fa);
+    border-radius: 0.375rem;
+    text-align: center;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .structure-row {
+        background-color: var(--bg-secondary, #2d3748);
+        border-color: var(--border-color, #4a5568);
+    }
+
+    .structure-row:hover {
+        background-color: var(--bg-hover, #283141);
+    }
+
+    .structure-id {
+        color: var(--text-primary, #e2e8f0);
+    }
+
+    .structure-chains,
+    .structure-ligands,
+    .structure-resolution {
+        color: var(--text-secondary, #a0aec0);
+    }
+
+    .no-results {
+        color: var(--text-muted, #a0aec0);
+        background-color: var(--bg-secondary, #2d3748);
+    }
 }

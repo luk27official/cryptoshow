@@ -142,7 +142,7 @@ const AHoJSection = ({
                 {ahoJJobResult ? "Job Completed" : ahoJJobId ? "Loading..." : "Run AHoJ"}
             </button>
 
-            {ahoJJobId && <span className="job-id">AHoJ Job ID: {ahoJJobId}</span>}
+            {ahoJJobId && <a href={`https://apoholo.cz/job/${ahoJJobId}`} target="_blank" rel="noopener noreferrer" className="job-id">AHoJ Job ID: {ahoJJobId}</a>}
         </div>
 
         {ahoJJobResult && <AHoJResults ahoJJobResult={ahoJJobResult} taskHash={taskHash} setLoadedStructures={setLoadedStructures} selectedPolymerRepresentation={selectedPolymerRepresentation} />}
@@ -185,29 +185,59 @@ interface StructureSectionProps {
 
 const StructureSection = ({ title, structures, taskHash, setLoadedStructures, selectedPolymerRepresentation }: StructureSectionProps) => {
     const plugin = usePlugin();
+    const [visibleCount, setVisibleCount] = useState(5);
+
+    const showMore = () => {
+        setVisibleCount(prev => prev + 5);
+    };
+
+    const visibleStructures = structures.slice(0, visibleCount);
+    const hasMore = visibleCount < structures.length;
 
     return (
         <div className="result-section">
-            <h4 className="result-heading">{title}</h4>
-            <div className="structure-links">
+            <h4 className="result-heading">{title} ({structures.length})</h4>
+            <div className="structure-list">
                 {structures.length ? (
-                    structures.map((s) => (
-                        <span
-                            key={s.pdb_id}
-                            className="structure-link"
-                            onClick={async () => {
-                                await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${s.structure_file_url}`));
-                                const ld = await loadStructure(plugin, getApiUrl(`/file/${taskHash}/${s.structure_file}`));
+                    <>
+                        {visibleStructures.map((s) => (
+                            <div key={`${s.pdb_id}_${s.structure_file}`} className="structure-row">
+                                <div className="structure-info">
+                                    <div className="structure-id">{s.pdb_id}</div>
+                                    <div className="structure-chains">Chains: {s.chains.join(", ")}</div>
+                                    {/* {s.ligand_ids && s.ligand_ids.length > 0 && (
+                                        <div className="structure-ligands">Ligands: {s.ligand_ids.join(", ")}</div>
+                                    )} */}
+                                    {s.rmsd && (
+                                        <div className="structure-resolution">RMSD: {s.rmsd.toFixed(2)} Å</div>
+                                    )}
+                                </div>
+                                <button
+                                    className="load-structure-button"
+                                    onClick={async () => {
+                                        await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${s.structure_file_url}`));
+                                        const ld = await loadStructure(plugin, getApiUrl(`/file/${taskHash}/${s.structure_file}`));
 
-                                setLoadedStructures(prev => [...prev, ld]);
-                                showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
-                            }}
-                        >
-                            {s.pdb_id}_{s.chains.join(" ")}
-                        </span>
-                    ))
+                                        setLoadedStructures(prev => [...prev, ld]);
+                                        showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
+                                    }}
+                                >
+                                    Load Structure
+                                </button>
+                            </div>
+                        ))}
+
+                        {hasMore && (
+                            <button
+                                className="show-more-button"
+                                onClick={showMore}
+                            >
+                                Show More ({structures.length - visibleCount} remaining)
+                            </button>
+                        )}
+                    </>
                 ) : (
-                    <span className="no-results">No {title} found</span>
+                    <div className="no-results">No {title} found</div>
                 )}
             </div>
         </div>
