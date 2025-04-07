@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { getApiUrl } from "../utils";
 import { useEffect, useState } from "react";
 import { CryptoBenchResult, LoadedStructure, PolymerRepresentationType, PocketRepresentationType, PolymerRepresentationValues, PocketRepresentationValues } from "../types";
-import { loadPockets, initializePlugin, loadStructure, showOnePolymerRepresentation } from "../components/MolstarComponent";
+import { loadPockets, initializePlugin, loadStructure, showOnePolymerRepresentation, showOnePocketRepresentation } from "../components/MolstarComponent";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { PluginProvider } from "../providers/PluginProvider";
 
@@ -53,11 +53,12 @@ function Visualization() {
                 showOnePolymerRepresentation(pluginInstance, loaded, selectedPolymerRepresentation);
                 const pocketReprs = await loadPockets(pluginInstance, loaded.structure, result);
                 loaded.pocketRepresentations = pocketReprs;
+                showOnePocketRepresentation(pluginInstance, loaded, selectedPocketRepresentation);
             };
 
             initPlugin();
         }
-    }, [result, plugin, selectedPolymerRepresentation]);
+    }, [result, plugin, selectedPolymerRepresentation, selectedPocketRepresentation]);
 
     if (!taskId) {
         return (
