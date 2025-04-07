@@ -59,6 +59,17 @@ function ResultTable({ pockets, structureId, taskHash, setLoadedStructures, sele
                     <h2>No pockets available.</h2>
                 )}
             </div>
+            <div className="download-results">
+                {taskHash && (
+                    <a
+                        href={`./api/file/${taskHash}/results.zip`}
+                        className="download-button"
+                        download
+                    >
+                        Download Results
+                    </a>
+                )}
+            </div>
         </div>
     );
 }

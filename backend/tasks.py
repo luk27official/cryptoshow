@@ -167,4 +167,19 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     with open(RESULTS_FILE, "w") as f:
         json.dump(task_data, f)
 
+    # zip the files to enable download
+    RESULTS_ZIP_FILE = os.path.join(JOB_PATH, "results")
+    temp_dir = os.path.join(JOB_PATH, "temp_for_zip")
+    os.makedirs(temp_dir, exist_ok=True)
+
+    for file in os.listdir(JOB_PATH):
+        if file != "temp_for_zip" and not file.endswith(".zip"):
+            src_path = os.path.join(JOB_PATH, file)
+            dst_path = os.path.join(temp_dir, file)
+            if os.path.isfile(src_path):
+                shutil.copy2(src_path, dst_path)
+
+    shutil.make_archive(RESULTS_ZIP_FILE, "zip", temp_dir)
+    shutil.rmtree(temp_dir)
+
     return task_data
