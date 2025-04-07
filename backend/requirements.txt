@@ -20,6 +20,12 @@ scikit-learn
 # Sequence + Structure functionality
 biotite
 
+# Trajectory generation
+numpy
+MDAnalysis
+gemmi
+scipy
+
 # CryptoBench (Large), not used now
 # tensorflow==2.18.0
 # tf-keras==2.18.0
