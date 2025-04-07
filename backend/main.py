@@ -20,7 +20,7 @@ ssl._create_default_https_context = ssl._create_unverified_context
 import biotite.database.rcsb as rcsb
 
 from .tasks import celery_app
-from .utils import get_existing_result, generate_random_folder_name
+from .utils import get_existing_result, generate_random_folder_name, download_cif_file
 from celery.result import AsyncResult
 
 app = FastAPI(openapi_url="/api/openapi")
@@ -152,7 +152,27 @@ async def calculate_custom(file: UploadFile = File(...)):
 
 @app.get("/task-status/{task_id}")
 def get_status(task_id: str):
-    """Check the status of a processing task."""
+    """
+    Check the status of a processing task.
+    If a hash of the structure is used, look for a folder with such a name in the /app/data/jobs directory.
+    """
+
+    BASE_PATH = "/app/data/jobs"
+    RESULTS_FILE = os.path.join(BASE_PATH, task_id, "results.json")
+
+    if os.path.exists(RESULTS_FILE):
+        with open(RESULTS_FILE, "r") as f:
+            return {"status": "SUCCESS", "result": json.load(f)}
+
+    elif len(task_id) < 8:
+        # Consider this to be a PDB/AF id.
+        try:
+            result = get_existing_result(download_cif_file(task_id))
+            if result:
+                return {"status": "SUCCESS", "result": result}
+        except Exception as e:
+            return {"status: 'FAILURE', result": f"Failed to find the task result: {str(e)}"}
+
     task_result: AsyncResult = celery_app.AsyncResult(task_id)
 
     # Serialize exceptions to string

@@ -29,10 +29,14 @@ function Visualization() {
             try {
                 const response = await fetch(getApiUrl(`/task-status/${taskId}`));
                 const data = await response.json();
-                setResult(data["result"]);
+                if (data["result"]) {
+                    setResult(data["result"]);
+                } else {
+                    setTimeout(() => fetchData(), 3000);
+                }
             } catch (error) {
                 console.error("Error fetching task status:", error);
-                setTimeout(() => fetchData(), 1000);
+                setTimeout(() => fetchData(), 3000);
             }
         };
 
@@ -70,6 +74,7 @@ function Visualization() {
                 <h2>3D Structure Viewer</h2>
                 <p>Fetching task...</p>
                 <p>Click here to reset the page: <a href={`/viewer?id=${taskId}`}>Reset</a></p>
+                <p>If this takes too long, either the computation is still in progress or you may have made a typo in the task id.</p>
             </div>
         );
     }
