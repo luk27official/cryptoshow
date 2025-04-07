@@ -25,6 +25,7 @@ numpy
 MDAnalysis
 gemmi
 scipy
+# biopython # biopython is already installed above
 
 # CryptoBench (Large), not used now
 # tensorflow==2.18.0
