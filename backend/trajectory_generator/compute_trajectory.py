@@ -5,7 +5,6 @@ import numpy as np
 import gemmi
 
 from scipy.interpolate import CubicSpline
-from Bio.Align import PairwiseAligner
 
 protein_letters_3to1 = {
     "ALA": "A",
@@ -64,47 +63,39 @@ def get_sequence_and_residues(universe):
 seq1, res1 = get_sequence_and_residues(u1)
 seq2, res2 = get_sequence_and_residues(u2)
 
-# align the sequences
-aligner = PairwiseAligner()
-aligner.mode = "global"
-aligner.match_score = 1
-aligner.mismatch_score = 0
-aligner.open_gap_score = 0
-aligner.extend_gap_score = 0
-
-alignment = aligner.align(seq1, seq2)[0]
+# we do NOT need alignment here, because we only need to animate the LCS...
+# e.g. we could not align T-VALYDYESRT with TFVALYDYESRT because there is a gap
 
 
-def apply_alignment(seq, aligned_blocks, total_len):
-    """Applies the alignment to the sequence."""
-    aligned = ["-"] * total_len
-    offset = 0
-    for start, end in aligned_blocks:
-        for i in range(start, end):
-            aligned[offset] = seq[i]
-            offset += 1
-    return "".join(aligned)
+def longest_common_substring(s1, s2):
+    """Finds the longest common substring of two strings."""
+    m = [[0] * (1 + len(s2)) for i in range(1 + len(s1))]
+    longest, x_longest = 0, 0
+    for x in range(1, 1 + len(s1)):
+        for y in range(1, 1 + len(s2)):
+            if s1[x - 1] == s2[y - 1]:
+                m[x][y] = m[x - 1][y - 1] + 1
+                if m[x][y] > longest:
+                    longest = m[x][y]
+                    x_longest = x
+            else:
+                m[x][y] = 0
+    start = x_longest - longest
+    return s1[start:x_longest]
 
 
-max_len = max(alignment.shape)
-aligned_seq1 = apply_alignment(seq1, alignment.aligned[0], max_len)
-aligned_seq2 = apply_alignment(seq2, alignment.aligned[1], max_len)
+lcs = longest_common_substring(seq1, seq2)
 
-trimmed_res1 = []
-trimmed_res2 = []
-i1 = i2 = 0
+start_index_seq1 = seq1.find(lcs)
+start_index_seq2 = seq2.find(lcs)
 
-for a1, a2 in zip(aligned_seq1, aligned_seq2):
-    if a1 != "-" and a2 != "-":
-        trimmed_res1.append(res1[i1])
-        trimmed_res2.append(res2[i2])
-    if a1 != "-":
-        i1 += 1
-    if a2 != "-":
-        i2 += 1
+trimmed_res1 = res1[start_index_seq1 : start_index_seq1 + len(lcs)]
+trimmed_res2 = res2[start_index_seq2 : start_index_seq2 + len(lcs)]
 
 atoms1 = []
 atoms2 = []
+
+assert len(trimmed_res1) == len(trimmed_res2), "Mismatch in number of residues!"
 
 for r1, r2 in zip(trimmed_res1, trimmed_res2):
     a1_dict = {a.name: a for a in r1.atoms}
