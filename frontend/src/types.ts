@@ -80,14 +80,15 @@ export type AHoJResponse = {
     [key: string]: unknown;
 };
 
-export type PolymerRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface";
+export type PolymerRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface" | "backbone";
 
 export type PocketRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface";
 
 export const PolymerRepresentationValues: Record<string, PolymerRepresentationType> = {
     Cartoon: "cartoon",
     BallAndStick: "ball-and-stick",
-    MolecularSurface: "molecular-surface"
+    MolecularSurface: "molecular-surface",
+    Backbone: "backbone"
 } as const;
 
 export const PocketRepresentationValues: Record<string, PocketRepresentationType> = {
@@ -103,6 +104,14 @@ export type RepresentationWithRef<T extends PolymerRepresentationType | PocketRe
 
 export type LoadedStructure = {
     structure: StateObjectSelector;
+    data: StateObjectSelector;
     polymerRepresentations: RepresentationWithRef<PolymerRepresentationType>[];
     pocketRepresentations: RepresentationWithRef<PocketRepresentationType>[];
+    structureUrl: string;
+};
+
+export type TrajectoryTaskResult = {
+    status: string;
+    trajectory: string;
+    trimmed_pdb: string;
 };

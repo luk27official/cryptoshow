@@ -46,6 +46,7 @@ function MolstarControls({ loadedStructures, selectedPocketRepresentation, selec
                         <option value={PolymerRepresentationValues.Cartoon}>Cartoon</option>
                         <option value={PolymerRepresentationValues.BallAndStick}>Ball and Stick</option>
                         <option value={PolymerRepresentationValues.MolecularSurface}>Surface</option>
+                        <option value={PolymerRepresentationValues.Backbone}>Backbone</option>
                     </select>
                 </div>
 

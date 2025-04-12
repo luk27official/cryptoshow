@@ -12,6 +12,8 @@ import { Loci } from "molstar/lib/mol-model/loci";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { Script } from "molstar/lib/mol-script/script";
 import { setSubtreeVisibility } from "molstar/lib/mol-plugin/behavior/static/state";
+import { TrajectoryFromModelAndCoordinates } from "molstar/lib/mol-plugin-state/transforms/model";
+import { Download } from "molstar/lib/mol-plugin-state/transforms/data";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 
 import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType } from "../types";
@@ -47,22 +49,61 @@ export const initializePlugin = async () => {
     return MolstarPlugin;
 };
 
-export const loadStructure = async (plugin: PluginUIContext, structureUrl: string) => {
-    const data = await plugin.builders.data.download({
+export const loadStructure = async (plugin: PluginUIContext, structureUrl: string, trajectoryUrl: string | null) => {
+    let structureNameShort;
+
+    // for aligned structures, we want to prettify the name if possible
+    if (structureUrl.includes("/")) {
+        const structureName = structureUrl.split("/").pop()!;
+        const structureNameSplit = structureName.split("_");
+
+        if (structureNameSplit.length >= 6) {
+            structureNameShort = structureNameSplit[2] + "_" + structureNameSplit[5];
+        }
+    }
+
+    const pdbData = await plugin.builders.data.download({
         url: Asset.Url(structureUrl),
-        isBinary: false
+        isBinary: false,
+        label: structureNameShort ?? undefined
     }, { state: { isGhost: true } });
 
     let trajectory;
-    if (structureUrl.endsWith("cif")) trajectory = await plugin.builders.structure.parseTrajectory(data, "mmcif");
-    else trajectory = await plugin.builders.structure.parseTrajectory(data, "pdb");
+    let structure: StateObjectSelector;
+    let polymer;
 
-    //create the initial model
-    const model = await plugin.builders.structure.createModel(trajectory);
-    const structure: StateObjectSelector = await plugin.builders.structure.createStructure(model, { name: "model", params: {} });
-
-    const polymer = await plugin.builders.structure.tryCreateComponentStatic(structure, "polymer");
     const representations: RepresentationWithRef<PolymerRepresentationType>[] = [];
+
+    if (structureUrl.endsWith("cif")) trajectory = await plugin.builders.structure.parseTrajectory(pdbData, "mmcif");
+    else trajectory = await plugin.builders.structure.parseTrajectory(pdbData, "pdb");
+    const model = await plugin.builders.structure.createModel(trajectory);
+
+    // we are loading the xtc file as well here
+    if (trajectoryUrl) {
+        const data = plugin.state.data.build().to(trajectory.ref).apply(Download, {
+            url: Asset.Url(trajectoryUrl),
+            isBinary: true,
+            label: (structureNameShort ?? "") + "_traj"
+        });
+        const trajectoryData = await data.commit({ revertOnError: true });
+
+        const provider = plugin.dataFormats.get("xtc");
+        const coords = await provider!.parse(plugin, trajectoryData);
+
+        trajectory = await plugin.build().to(trajectory.ref).apply(TrajectoryFromModelAndCoordinates, {
+            modelRef: model.ref,
+            coordinatesRef: coords.ref,
+        }, { dependsOn: [model.ref, coords.ref] }).commit();
+
+        const trajectoryModel = await plugin.builders.structure.createModel(trajectory);
+        structure = await plugin.builders.structure.createStructure(trajectoryModel, { name: "model", params: {} });
+        polymer = await plugin.builders.structure.tryCreateComponentStatic(structure, "polymer");
+    }
+
+    else {
+        structure = await plugin.builders.structure.createStructure(model, { name: "model", params: {} });
+        polymer = await plugin.builders.structure.tryCreateComponentStatic(structure, "polymer");
+    }
 
     if (polymer) {
         const cartoon = await plugin.builders.structure.representation.addRepresentation(polymer, {
@@ -72,12 +113,15 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
 
         representations.push({ type: "cartoon", object: cartoon });
 
-        const surface = await plugin.builders.structure.representation.addRepresentation(polymer, {
-            type: "molecular-surface",
-            color: "uniform",
-        });
+        if (!structureNameShort) {
+            // only create molecular surface if not aligning, this one is really heavy
+            const surface = await plugin.builders.structure.representation.addRepresentation(polymer, {
+                type: "molecular-surface",
+                color: "uniform",
+            });
 
-        representations.push({ type: "molecular-surface", object: surface });
+            representations.push({ type: "molecular-surface", object: surface });
+        }
 
         const ballAndStick = await plugin.builders.structure.representation.addRepresentation(polymer, {
             type: "ball-and-stick",
@@ -85,12 +129,21 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
         });
 
         representations.push({ type: "ball-and-stick", object: ballAndStick });
+
+        const backbone = await plugin.builders.structure.representation.addRepresentation(polymer, {
+            type: "backbone",
+            color: "uniform",
+        });
+
+        representations.push({ type: "backbone", object: backbone });
     }
 
     const loadedStucture: LoadedStructure = {
         structure: structure,
+        data: pdbData,
         polymerRepresentations: representations,
-        pocketRepresentations: []
+        pocketRepresentations: [],
+        structureUrl: structureUrl
     };
 
     return loadedStucture;
@@ -265,4 +318,8 @@ export function getResidueInformation(plugin: PluginUIContext, residue: string) 
     };
 
     return r;
+}
+
+export async function removeFromStateTree(plugin: PluginUIContext, ref: string) {
+    await plugin.state.data.build().delete(ref).commit();
 }

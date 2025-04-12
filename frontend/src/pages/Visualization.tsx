@@ -48,7 +48,7 @@ function Visualization() {
             const initPlugin = async () => {
                 const pluginInstance = await initializePlugin();
                 setPlugin(pluginInstance);
-                const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${result.file_hash}/${result.input_structure}`));
+                const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${result.file_hash}/${result.input_structure}`), null);
                 setLoadedStructures(prevStructures => [...prevStructures, loaded]);
                 showOnePolymerRepresentation(pluginInstance, loaded, selectedPolymerRepresentation);
                 const pocketReprs = await loadPockets(pluginInstance, loaded.structure, result);

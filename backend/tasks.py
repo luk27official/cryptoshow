@@ -199,4 +199,8 @@ def generate_trajectory(self, task_hash: str, aligned_structure_filename: str):
     """
     trimmed_pdb_path, trajectory_path = compute_trajectory(task_hash, aligned_structure_filename)
 
-    return {"status": "SUCCESS", "trajectory": trajectory_path, "trimmed_pdb": trimmed_pdb_path}
+    # keep just the base name of the file
+    trimmed_pdb_path_base = os.path.basename(trimmed_pdb_path)
+    trajectory_path_base = os.path.basename(trajectory_path)
+
+    return {"status": "SUCCESS", "trajectory": trajectory_path_base, "trimmed_pdb": trimmed_pdb_path_base}

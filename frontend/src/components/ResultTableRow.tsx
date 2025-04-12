@@ -1,6 +1,6 @@
-import { Pocket, AHoJResponse, AHoJStructure, LoadedStructure, PolymerRepresentationType } from "../types";
+import { Pocket, AHoJResponse, AHoJStructure, LoadedStructure, PolymerRepresentationType, TrajectoryTaskResult } from "../types";
 import { getColorString, getApiUrl } from "../utils";
-import { loadStructure, showOnePolymerRepresentation } from "./MolstarComponent";
+import { loadStructure, removeFromStateTree, showOnePolymerRepresentation } from "./MolstarComponent";
 import { useState } from "react";
 import { usePlugin } from "../hooks/usePlugin";
 
@@ -216,13 +216,45 @@ const StructureSection = ({ title, structures, taskHash, setLoadedStructures, se
                                     className="load-structure-button"
                                     onClick={async () => {
                                         await fetch(getApiUrl(`/proxy/ahoj/${taskHash}/${s.structure_file_url}`));
-                                        const ld = await loadStructure(plugin, getApiUrl(`/file/${taskHash}/${s.structure_file}`));
+                                        // after fetching the structure, we might calculate the animation
+                                        // TODO: handle errors here
+                                        const res = await fetch(getApiUrl(`/animate/${taskHash}/${s.structure_file}`));
+                                        const animationTask = await res.json();
+                                        const animationTaskId = animationTask.task_id;
 
-                                        setLoadedStructures(prev => [...prev, ld]);
-                                        showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
+                                        const ws = new WebSocket(`ws://localhost/ws/task-status/${animationTaskId}`);
+                                        ws.onopen = () => {
+                                            console.log("WebSocket connected");
+                                        };
+
+                                        ws.onmessage = async (event) => {
+                                            const data = event.data ? JSON.parse(event.data) : { "status": "unknown" };
+
+                                            if (data.status === "SUCCESS") {
+                                                ws.close(); // close ASAP to prevent multiple loads
+
+                                                const result: TrajectoryTaskResult = data.result;
+                                                const ld = await loadStructure(plugin, getApiUrl(`/file/${taskHash}/${result.trimmed_pdb}`), getApiUrl(`/file/${taskHash}/${result.trajectory}`));
+                                                setLoadedStructures(prev => {
+                                                    prev.forEach((s) => { removeFromStateTree(plugin, s.data.ref); });
+                                                    return [...prev, ld];
+                                                });
+                                                showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
+                                                plugin.canvas3d?.requestCameraReset();
+
+                                                // TODO: add the pocket here
+                                                // TODO: how to handle the case when the user wants to go back?
+                                                // TODO: here we maybe want to add pocket in the ball-and-stick representation
+                                                // TODO: autoplay the animation?
+
+                                            } else if (data.status === "FAILURE") {
+                                                ws.close();
+                                            }
+                                        };
                                     }}
                                 >
-                                    Load Structure
+                                    {/* TODO: maybe use an icon here */}
+                                    Play Animation
                                 </button>
                             </div>
                         ))}
