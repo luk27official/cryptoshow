@@ -222,36 +222,35 @@ export async function createPocketFromJson(plugin: PluginUIContext, structure: S
 
     const resSelection = group2.apply(StateTransforms.Model.StructureSelectionFromExpression, { expression: query });
 
-    // TODO: here, we should think about saving the pocket number as well
     const surface = resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
         type: "molecular-surface",
         color: "uniform",
-        colorParams: { value: Color(color) }, // TODO: change the color
+        colorParams: { value: Color(color) },
         size: "uniform",
         sizeParams: { value: 1.05 },
     }));
 
-    representations.push({ type: "molecular-surface", object: surface });
+    representations.push({ type: "molecular-surface", object: surface, id: pocket.pocket_id });
 
     const ballAndStick = resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
         type: "ball-and-stick",
         color: "uniform",
-        colorParams: { value: Color(color) }, // TODO: change the color
+        colorParams: { value: Color(color) },
         size: "uniform",
         sizeParams: { value: 1.75 },
     }));
 
-    representations.push({ type: "ball-and-stick", object: ballAndStick });
+    representations.push({ type: "ball-and-stick", object: ballAndStick, id: pocket.pocket_id });
 
     const cartoon = resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
         type: "cartoon",
         color: "uniform",
-        colorParams: { value: Color(color) }, // TODO: change the color
+        colorParams: { value: Color(color) },
         size: "uniform",
         sizeParams: { value: 1.05 },
     }));
 
-    representations.push({ type: "cartoon", object: cartoon });
+    representations.push({ type: "cartoon", object: cartoon, id: pocket.pocket_id });
 }
 
 function getSelectionFromChainAuthId(plugin: PluginUIContext, chainId: string, positions: number[]) {

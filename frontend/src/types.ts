@@ -100,6 +100,7 @@ export const PocketRepresentationValues: Record<string, PocketRepresentationType
 export type RepresentationWithRef<T extends PolymerRepresentationType | PocketRepresentationType> = {
     type: T;
     object: StateObjectSelector;
+    id?: number;
 };
 
 export type LoadedStructure = {

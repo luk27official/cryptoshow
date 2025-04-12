@@ -12,6 +12,7 @@ export const getColor = (value: number) => {
     return defaultColors[vFl % defaultColors.length];
 };
 
+// TODO: change the default colors to a more suitable set
 const defaultColors = [
     0xff0000,
     0xff8000,
