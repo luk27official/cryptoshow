@@ -197,6 +197,20 @@ def get_file(task_hash: str, filename: str):
     return JSONResponse(status_code=404, content={"error": f"File not found: {path}"})
 
 
+@app.get("/animate/{task_hash}/{aligned_structure_filename}")
+def get_animated_file(task_hash: str, aligned_structure_filename: str):
+    """Create an animated CIF file from the given task hash and filename."""
+    if ".." in task_hash or ".." in aligned_structure_filename:
+        return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
+
+    task: AsyncResult = celery_app.send_task(
+        "celery_app.generate_trajectory",
+        args=(task_hash, aligned_structure_filename),
+    )
+
+    return {"task_id": task.id}
+
+
 @app.websocket("/ws/task-status/{task_id}")
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
     """Websocket endpoint for getting the status of a processing task."""

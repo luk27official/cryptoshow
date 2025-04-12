@@ -13,6 +13,7 @@ from biotite.sequence import ProteinSequence
 from esm2_generator import compute_esm2
 from cb_small import compute_prediction
 from clustering import compute_clusters
+from trajectory_generator import compute_trajectory
 from utils import get_file_hash
 
 celery_app = Celery(
@@ -183,3 +184,19 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     shutil.rmtree(temp_dir)
 
     return task_data
+
+
+@celery_app.task(name="celery_app.generate_trajectory", bind=True)
+def generate_trajectory(self, task_hash: str, aligned_structure_filename: str):
+    """Generate a trajectory for the given aligned structure.
+
+    Parameters
+    ----------
+    task_hash : str
+        The hash of the task.
+    aligned_structure_filename : str
+        The filename of the aligned structure.
+    """
+    trimmed_pdb_path, trajectory_path = compute_trajectory(task_hash, aligned_structure_filename)
+
+    return {"status": "SUCCESS", "trajectory": trajectory_path, "trimmed_pdb": trimmed_pdb_path}

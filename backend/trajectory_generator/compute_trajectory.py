@@ -1,6 +1,8 @@
 import MDAnalysis as mda
 from MDAnalysis.coordinates.XTC import XTCWriter
 
+import os
+import json
 import numpy as np
 import gemmi
 
@@ -31,17 +33,10 @@ protein_letters_3to1 = {
 
 
 def convert_cif_to_pdb(cif_path: str, pdb_path: str):
-    """Used to convert CIF files to PDB format."""
+    """Convert CIF files to PDB format."""
     structure = gemmi.read_structure(cif_path)
     structure.remove_alternative_conformations()
     structure.write_pdb(pdb_path)
-
-
-convert_cif_to_pdb("cndt_2h8hA_aligned_to_2srcA.cif", "aligned.pdb")
-convert_cif_to_pdb("2src.cif", "2src.pdb")
-
-u1 = mda.Universe("aligned.pdb")
-u2 = mda.Universe("2src.pdb")  # reference
 
 
 def get_sequence_and_residues(universe):
@@ -58,13 +53,6 @@ def get_sequence_and_residues(universe):
             print(f"Unknown residue: {res.resname} at {res.resid}")
             continue  # skip unknown residues
     return seq, valid_res
-
-
-seq1, res1 = get_sequence_and_residues(u1)
-seq2, res2 = get_sequence_and_residues(u2)
-
-# we do NOT need alignment here, because we only need to animate the LCS...
-# e.g. we could not align T-VALYDYESRT with TFVALYDYESRT because there is a gap
 
 
 def longest_common_substring(s1, s2):
@@ -84,58 +72,111 @@ def longest_common_substring(s1, s2):
     return s1[start:x_longest]
 
 
-lcs = longest_common_substring(seq1, seq2)
+def compute_trajectory(task_hash: str, aligned_structure_filename: str):
+    """Main function to compute the trajectory."""
 
-start_index_seq1 = seq1.find(lcs)
-start_index_seq2 = seq2.find(lcs)
+    BASE_PATH = "/app/data/jobs"
+    RESULT_FILE = os.path.join(BASE_PATH, task_hash, "results.json")
 
-trimmed_res1 = res1[start_index_seq1 : start_index_seq1 + len(lcs)]
-trimmed_res2 = res2[start_index_seq2 : start_index_seq2 + len(lcs)]
+    # Open the result file and get the "input_structure" field
+    if not os.path.exists(RESULT_FILE):
+        raise FileNotFoundError(f"Result file {RESULT_FILE} not found.")
 
-atoms1 = []
-atoms2 = []
+    with open(RESULT_FILE, "r") as f:
+        result_data = json.load(f)
+        input_structure = result_data.get("input_structure")
+        if not input_structure:
+            raise ValueError("No input structure found in the result file.")
 
-assert len(trimmed_res1) == len(trimmed_res2), "Mismatch in number of residues!"
+    STRUCTURE_FILE = os.path.join(BASE_PATH, task_hash, input_structure)
+    ALIGNED_STRUCTURE_FILE = os.path.join(BASE_PATH, task_hash, aligned_structure_filename)
 
-for r1, r2 in zip(trimmed_res1, trimmed_res2):
-    a1_dict = {a.name: a for a in r1.atoms}
-    a2_dict = {a.name: a for a in r2.atoms}
-    for name in a1_dict.keys() & a2_dict.keys():
-        atoms1.append(a1_dict[name])
-        atoms2.append(a2_dict[name])
+    if not os.path.exists(STRUCTURE_FILE) or not os.path.exists(ALIGNED_STRUCTURE_FILE):
+        raise FileNotFoundError(f"Structure files {STRUCTURE_FILE} or {ALIGNED_STRUCTURE_FILE} not found.")
 
-if not atoms1 or not atoms2:
-    raise ValueError("No matching atoms found in aligned residues!")
+    pdb_file = STRUCTURE_FILE
+    aligned_pdb_file = ALIGNED_STRUCTURE_FILE
 
-assert len(atoms1) == len(atoms2), "Mismatch in number of atoms!"
+    if STRUCTURE_FILE.endswith(".cif"):
+        pdb_file = STRUCTURE_FILE.replace(".cif", ".pdb")
+        if not os.path.exists(pdb_file):
+            convert_cif_to_pdb(STRUCTURE_FILE, pdb_file)
 
-# interpolation
-n_frames = 50
-ag1 = atoms1[0].universe.atoms[[atom.index for atom in atoms1]]
-ag2 = atoms2[0].universe.atoms[[atom.index for atom in atoms2]]
+    if ALIGNED_STRUCTURE_FILE.endswith(".cif"):
+        aligned_pdb_file = ALIGNED_STRUCTURE_FILE.replace(".cif", ".pdb")
+        if not os.path.exists(aligned_pdb_file):
+            convert_cif_to_pdb(ALIGNED_STRUCTURE_FILE, aligned_pdb_file)
 
-# save the trimmed structure
-with mda.Writer("trimmed_structure.pdb", n_atoms=len(ag1)) as pdb_writer:
-    pdb_writer.write(ag1)
+    u1 = mda.Universe(aligned_pdb_file)
+    u2 = mda.Universe(pdb_file)
 
-positions1 = ag1.positions  # Starting positions (frame 1)
-positions2 = ag2.positions  # Ending positions (frame n + 1)
+    seq1, res1 = get_sequence_and_residues(u1)
+    seq2, res2 = get_sequence_and_residues(u2)
 
-n_atoms = len(ag1)
-splines = []
-for i in range(3):  # for each axis (x, y, z)
-    # create a spline for each axis using the positions from both frames
-    spline = CubicSpline([0, 1], np.array([positions1[:, i], positions2[:, i]]))
-    splines.append(spline)
+    # we do NOT need alignment here, because we only need to animate the LCS...
+    # e.g. we could not align T-VALYDYESRT with TFVALYDYESRT because there is a gap
+    # and we need animation between exact residues
+    lcs = longest_common_substring(seq1, seq2)
 
-with XTCWriter("interpolated_trajectory_spline.xtc", n_atoms=n_atoms) as writer:
-    for i in range(n_frames + 1):
-        alpha = i / n_frames
+    start_index_seq1 = seq1.find(lcs)
+    start_index_seq2 = seq2.find(lcs)
 
-        # apply spline interpolation for each axis
-        interpolated_positions = np.column_stack([spline(alpha) for spline in splines])
+    trimmed_res1 = res1[start_index_seq1 : start_index_seq1 + len(lcs)]
+    trimmed_res2 = res2[start_index_seq2 : start_index_seq2 + len(lcs)]
 
-        ag1.positions = interpolated_positions
-        writer.write(ag1)
+    assert len(trimmed_res1) == len(trimmed_res2), "Mismatch in number of residues!"
 
-print(f"Successfully wrote interpolated trajectory to 'interpolated_trajectory_spline.xtc'")
+    atoms1 = []
+    atoms2 = []
+
+    # Extract atoms from the trimmed residues
+    for r1, r2 in zip(trimmed_res1, trimmed_res2):
+        a1_dict = {a.name: a for a in r1.atoms}
+        a2_dict = {a.name: a for a in r2.atoms}
+        for name in a1_dict.keys() & a2_dict.keys():
+            atoms1.append(a1_dict[name])
+            atoms2.append(a2_dict[name])
+
+    assert len(atoms1) == len(atoms2), "Mismatch in number of atoms!"
+    assert len(atoms1) > 0, "No common atoms found!"
+
+    # Interpolation
+    n_frames = 50
+    ag1 = atoms1[0].universe.atoms[[atom.index for atom in atoms1]]
+    ag2 = atoms2[0].universe.atoms[[atom.index for atom in atoms2]]
+
+    # Save the trimmed structure
+    TRIMMED_PDB_FILE = os.path.join(
+        BASE_PATH, task_hash, f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.pdb"
+    )
+
+    with mda.Writer(TRIMMED_PDB_FILE, n_atoms=len(ag1)) as pdb_writer:
+        pdb_writer.write(ag1)
+
+    positions1 = ag1.positions  # Starting positions (frame 1)
+    positions2 = ag2.positions  # Ending positions (frame n + 1)
+
+    n_atoms = len(ag1)
+    splines = []
+    for i in range(3):  # for each axis (x, y, z)
+        # create a spline for each axis using the positions from both frames
+        spline = CubicSpline([0, 1], np.array([positions1[:, i], positions2[:, i]]))
+        splines.append(spline)
+
+    TRAJECTORY_FILE = os.path.join(
+        BASE_PATH,
+        task_hash,
+        f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.xtc",
+    )
+
+    with XTCWriter(TRAJECTORY_FILE, n_atoms=n_atoms) as writer:
+        for i in range(n_frames + 1):
+            alpha = i / n_frames
+
+            # apply spline interpolation for each axis
+            interpolated_positions = np.column_stack([spline(alpha) for spline in splines])
+
+            ag1.positions = interpolated_positions
+            writer.write(ag1)
+
+    return TRIMMED_PDB_FILE, TRAJECTORY_FILE
