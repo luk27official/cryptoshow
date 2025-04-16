@@ -1,7 +1,7 @@
 import "./MolstarControls.css";
 import { PolymerRepresentationType, PocketRepresentationType, LoadedStructure, PolymerRepresentationValues, PocketRepresentationValues } from "../types";
 import { usePlugin } from "../hooks/usePlugin";
-import { showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
+import { resetCamera, showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
 
 interface MolstarControlsProps {
     loadedStructures: LoadedStructure[];
@@ -29,7 +29,7 @@ function MolstarControls({ loadedStructures, selectedPocketRepresentation, selec
     };
 
     const handleResetCamera = () => {
-        plugin.canvas3d?.requestCameraReset();
+        resetCamera(plugin);
     };
 
     return (
