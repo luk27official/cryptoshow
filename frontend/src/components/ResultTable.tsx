@@ -1,5 +1,5 @@
 import { getAHoJJobConfiguration, submitAHoJJob, pollAHoJJobStatus } from "../services/AHoJservice";
-import { AHoJResponse, LoadedStructure, Pocket, PolymerRepresentationType } from "../types";
+import { AHoJResponse, CryptoBenchResult, LoadedStructure, Pocket, PocketRepresentationType, PolymerRepresentationType } from "../types";
 import { useState } from "react";
 import ResultTableRow from "./ResultTableRow";
 import { usePlugin } from "../hooks/usePlugin";
@@ -7,21 +7,20 @@ import { usePlugin } from "../hooks/usePlugin";
 import "./ResultTable.css";
 
 interface ResultTableProps {
+    cryptoBenchResult: CryptoBenchResult;
     taskId: string;
-    pockets: Pocket[];
-    structureId: string;
-    taskHash: string;
     setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
     selectedPolymerRepresentation: PolymerRepresentationType;
+    selectedPocketRepresentation: PocketRepresentationType;
 }
 
-function ResultTable({ pockets, structureId, taskHash, setLoadedStructures, selectedPolymerRepresentation }: ResultTableProps) {
+function ResultTable({ cryptoBenchResult, setLoadedStructures, selectedPolymerRepresentation, selectedPocketRepresentation }: ResultTableProps) {
     const plugin = usePlugin();
-    const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(new Array(pockets.length).fill(null));
-    const [ahojJobResults, setAHoJJobResults] = useState<(AHoJResponse | null)[]>(new Array(pockets.length).fill(null));
+    const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(new Array(cryptoBenchResult.pockets.length).fill(null));
+    const [ahojJobResults, setAHoJJobResults] = useState<(AHoJResponse | null)[]>(new Array(cryptoBenchResult.pockets.length).fill(null));
 
     const handleClick = async (pocket: Pocket, idx: number) => {
-        const config = getAHoJJobConfiguration(pocket, plugin, structureId);
+        const config = getAHoJJobConfiguration(pocket, plugin, cryptoBenchResult.structure_name);
 
         const postData = await submitAHoJJob(config);
 
@@ -30,7 +29,7 @@ function ResultTable({ pockets, structureId, taskHash, setLoadedStructures, sele
             setAHoJJobIds([...ahoJJobIds]);
             console.log(postData);
 
-            const jobResult = await pollAHoJJobStatus(taskHash, postData["job_id"]);
+            const jobResult = await pollAHoJJobStatus(cryptoBenchResult.file_hash, postData["job_id"]);
             ahojJobResults[idx] = jobResult;
             setAHoJJobResults([...ahojJobResults]);
             console.log("AHoJ Job Result:", jobResult);
@@ -40,19 +39,19 @@ function ResultTable({ pockets, structureId, taskHash, setLoadedStructures, sele
     return (
         <div className="results-table">
             <div>
-                {pockets.length > 0 ? (
-                    pockets.map((pocket: Pocket, index: number) => (
+                {cryptoBenchResult.pockets.length > 0 ? (
+                    cryptoBenchResult.pockets.map((pocket: Pocket, index: number) => (
                         <ResultTableRow
                             key={index}
                             pocket={pocket}
                             index={index}
-                            structureId={structureId}
-                            taskHash={taskHash}
                             ahoJJobId={ahoJJobIds[index]}
                             ahoJJobResult={ahojJobResults[index]}
                             onAHoJClick={handleClick}
                             setLoadedStructures={setLoadedStructures}
                             selectedPolymerRepresentation={selectedPolymerRepresentation}
+                            selectedPocketRepresentation={selectedPocketRepresentation}
+                            cryptoBenchResult={cryptoBenchResult}
                         />
                     ))
                 ) : (
@@ -60,9 +59,9 @@ function ResultTable({ pockets, structureId, taskHash, setLoadedStructures, sele
                 )}
             </div>
             <div className="download-results">
-                {taskHash && (
+                {cryptoBenchResult.file_hash && (
                     <a
-                        href={`./api/file/${taskHash}/results.zip`}
+                        href={`./api/file/${cryptoBenchResult.file_hash}/results.zip`}
                         className="download-button"
                         download
                     >

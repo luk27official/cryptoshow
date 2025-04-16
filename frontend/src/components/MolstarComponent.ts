@@ -14,6 +14,7 @@ import { Script } from "molstar/lib/mol-script/script";
 import { setSubtreeVisibility } from "molstar/lib/mol-plugin/behavior/static/state";
 import { TrajectoryFromModelAndCoordinates } from "molstar/lib/mol-plugin-state/transforms/model";
 import { Download } from "molstar/lib/mol-plugin-state/transforms/data";
+import { AnimateModelIndex } from "molstar/lib/mol-plugin-state/animation/built-in/model-index";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 
 import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType } from "../types";
@@ -110,6 +111,7 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
             type: "cartoon",
             color: "uniform",
         });
+        await plugin.build().commit();
 
         representations.push({ type: "cartoon", object: cartoon });
 
@@ -119,6 +121,7 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
                 type: "molecular-surface",
                 color: "uniform",
             });
+            await plugin.build().commit();
 
             representations.push({ type: "molecular-surface", object: surface });
         }
@@ -127,6 +130,7 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
             type: "ball-and-stick",
             color: "uniform",
         });
+        await plugin.build().commit();
 
         representations.push({ type: "ball-and-stick", object: ballAndStick });
 
@@ -134,6 +138,7 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
             type: "backbone",
             color: "uniform",
         });
+        await plugin.build().commit();
 
         representations.push({ type: "backbone", object: backbone });
     }
@@ -177,14 +182,23 @@ export const showOnePocketRepresentation = async (
 };
 
 
-export const loadPockets = async (plugin: PluginUIContext, structure: StateObjectSelector, result: CryptoBenchResult) => {
+export const loadPockets = async (plugin: PluginUIContext, structure: StateObjectSelector, result: CryptoBenchResult, pocketId: number | null) => {
     const builder = plugin.state.data.build();
-    const group = builder.to(structure).apply(StateTransforms.Misc.CreateGroup, { label: "Pockets" }, { ref: "pockets" });
+    const group = builder.to(structure).apply(StateTransforms.Misc.CreateGroup, { label: "Pockets" });
 
     const representations: RepresentationWithRef<PocketRepresentationType>[] = [];
-    result.pockets.map((pocket, i) => {
-        createPocketFromJson(plugin, structure, pocket, `Pocket ${i + 1}`, group, getColor(pocket.pocket_id), representations);
-    });
+
+    if (pocketId !== null) {
+        const pocket = result.pockets[pocketId];
+        createPocketFromJson(plugin, structure, pocket, `Pocket ${pocketId + 1}`, group, getColor(pocket.pocket_id), representations);
+    }
+
+    else {
+        result.pockets.map((pocket, i) => {
+            createPocketFromJson(plugin, structure, pocket, `Pocket ${i + 1}`, group, getColor(pocket.pocket_id), representations);
+        });
+    }
+
     await builder.commit();
 
     const PocketLabelProvider = {
@@ -212,7 +226,7 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function createPocketFromJson(plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef<PocketRepresentationType>[]) {
-    const group2 = group.apply(StateTransforms.Misc.CreateGroup, { label: groupName }, { ref: groupName }, { selectionTags: groupName });
+    const group2 = group.apply(StateTransforms.Misc.CreateGroup, { label: groupName });
 
     const query = MS.struct.generator.atomGroups({
         "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), pocket.residue_ids[0].split("_")[0]]), // TODO: fix multiple chains
@@ -321,4 +335,15 @@ export function getResidueInformation(plugin: PluginUIContext, residue: string) 
 
 export async function removeFromStateTree(plugin: PluginUIContext, ref: string) {
     await plugin.state.data.build().delete(ref).commit();
+}
+
+export function playAnimation(plugin: PluginUIContext, fps: number) {
+    plugin.managers.animation.play(AnimateModelIndex, {
+        duration: { name: "computed", params: { targetFps: fps } },
+        mode: { name: "loop", params: { direction: "forward" } }
+    });
+}
+
+export function resetCamera(plugin: PluginUIContext) {
+    plugin.canvas3d?.requestCameraReset();
 }

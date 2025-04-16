@@ -51,7 +51,7 @@ function Visualization() {
                 const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${result.file_hash}/${result.input_structure}`), null);
                 setLoadedStructures(prevStructures => [...prevStructures, loaded]);
                 showOnePolymerRepresentation(pluginInstance, loaded, selectedPolymerRepresentation);
-                const pocketReprs = await loadPockets(pluginInstance, loaded.structure, result);
+                const pocketReprs = await loadPockets(pluginInstance, loaded.structure, result, null);
                 loaded.pocketRepresentations = pocketReprs;
                 showOnePocketRepresentation(pluginInstance, loaded, selectedPocketRepresentation);
             };
@@ -112,11 +112,10 @@ function Visualization() {
                         <PluginProvider plugin={plugin}>
                             <ResultTable
                                 taskId={taskId}
-                                pockets={result.pockets}
-                                structureId={result.structure_name}
-                                taskHash={result.file_hash}
+                                cryptoBenchResult={result}
                                 setLoadedStructures={setLoadedStructures}
                                 selectedPolymerRepresentation={selectedPolymerRepresentation}
+                                selectedPocketRepresentation={selectedPocketRepresentation}
                             />
                         </PluginProvider>
                     )}
