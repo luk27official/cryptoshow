@@ -143,6 +143,8 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
         representations.push({ type: "backbone", object: backbone });
     }
 
+    await createLigandRepresentations(plugin, structure);
+
     const loadedStucture: LoadedStructure = {
         structure: structure,
         data: pdbData,
@@ -153,6 +155,21 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
 
     return loadedStucture;
 };
+
+async function createLigandRepresentations(plugin: PluginUIContext, structure: StateObjectSelector) {
+    const shownGroups = ["ion", "ligand", "nucleic", "lipid", "branched", "non-standard", "coarse"] as const;
+
+    for (const group of shownGroups) {
+        const component = await plugin.builders.structure.tryCreateComponentStatic(structure, group);
+        if (component) {
+            await plugin.builders.structure.representation.addRepresentation(component, {
+                type: "ball-and-stick"
+            });
+        }
+    }
+
+    await plugin.build().commit();
+}
 
 export const showOneRepresentation = async <T extends PolymerRepresentationType | PocketRepresentationType>(
     plugin: PluginUIContext,
@@ -240,8 +257,8 @@ export async function createPocketFromJson(plugin: PluginUIContext, structure: S
         type: "molecular-surface",
         color: "uniform",
         colorParams: { value: Color(color) },
-        size: "uniform",
-        sizeParams: { value: 1.05 },
+        size: "physical",
+        sizeParams: { scale: 1.05 },
     }));
 
     representations.push({ type: "molecular-surface", object: surface, id: pocket.pocket_id });
@@ -250,8 +267,8 @@ export async function createPocketFromJson(plugin: PluginUIContext, structure: S
         type: "ball-and-stick",
         color: "uniform",
         colorParams: { value: Color(color) },
-        size: "uniform",
-        sizeParams: { value: 1.75 },
+        size: "physical",
+        sizeParams: { scale: 1.5 },
     }));
 
     representations.push({ type: "ball-and-stick", object: ballAndStick, id: pocket.pocket_id });
