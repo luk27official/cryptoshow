@@ -1,8 +1,9 @@
-import { Pocket, AHoJResponse, AHoJStructure, LoadedStructure, PolymerRepresentationType, TrajectoryTaskResult, CryptoBenchResult, PocketRepresentationType } from "../types";
+import { Pocket, AHoJResponse, AHoJStructure, TrajectoryTaskResult, LoadedStructure } from "../types";
 import { getColorString, getApiUrl } from "../utils";
 import { loadPockets, loadStructure, playAnimation, removeFromStateTree, resetCamera, setStructureTransparency, showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
 import { useState } from "react";
 import { usePlugin } from "../hooks/usePlugin";
+import { useAppContext } from "../hooks/useApp";
 
 import "./ResultTableRow.css";
 
@@ -12,10 +13,6 @@ interface ResultTableRowProps {
     ahoJJobId: string | null;
     ahoJJobResult: AHoJResponse | null;
     onAHoJClick: (pocket: Pocket, index: number) => void;
-    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
-    selectedPolymerRepresentation: PolymerRepresentationType;
-    selectedPocketRepresentation: PocketRepresentationType;
-    cryptoBenchResult: CryptoBenchResult;
 }
 
 const ResultTableRow = ({
@@ -24,12 +21,9 @@ const ResultTableRow = ({
     ahoJJobId,
     ahoJJobResult,
     onAHoJClick,
-    setLoadedStructures,
-    selectedPolymerRepresentation,
-    selectedPocketRepresentation,
-    cryptoBenchResult
 }: ResultTableRowProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
+    const { cryptoBenchResult } = useAppContext();
 
     const toggleExpand = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -48,18 +42,13 @@ const ResultTableRow = ({
                 <div className="pocket-content">
                     <PocketDetails pocket={pocket} />
 
-                    {/* AHoJ should be available only for public structures */}
-                    {cryptoBenchResult.structure_name !== "custom" && (
+                    {cryptoBenchResult!.structure_name !== "custom" && (
                         <AHoJSection
                             pocket={pocket}
                             index={index}
                             ahoJJobId={ahoJJobId}
                             ahoJJobResult={ahoJJobResult}
                             onAHoJClick={onAHoJClick}
-                            setLoadedStructures={setLoadedStructures}
-                            selectedPolymerRepresentation={selectedPolymerRepresentation}
-                            selectedPocketRepresentation={selectedPocketRepresentation}
-                            cryptoBenchResult={cryptoBenchResult}
                         />
                     )}
                 </div>
@@ -118,10 +107,6 @@ interface AHoJSectionProps {
     ahoJJobId: string | null;
     ahoJJobResult: AHoJResponse | null;
     onAHoJClick: (pocket: Pocket, index: number) => void;
-    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
-    selectedPolymerRepresentation: PolymerRepresentationType;
-    selectedPocketRepresentation: PocketRepresentationType;
-    cryptoBenchResult: CryptoBenchResult;
 }
 
 const AHoJSection = ({
@@ -130,10 +115,6 @@ const AHoJSection = ({
     ahoJJobId,
     ahoJJobResult,
     onAHoJClick,
-    setLoadedStructures,
-    selectedPolymerRepresentation,
-    selectedPocketRepresentation,
-    cryptoBenchResult
 }: AHoJSectionProps) => (
     <div className="ahoj-section">
         <div className="ahoj-controls">
@@ -148,40 +129,26 @@ const AHoJSection = ({
             {ahoJJobId && <a href={`https://apoholo.cz/job/${ahoJJobId}`} target="_blank" rel="noopener noreferrer" className="job-id">AHoJ Job ID: {ahoJJobId}</a>}
         </div>
 
-        {ahoJJobResult && <AHoJResults pocket={pocket} ahoJJobResult={ahoJJobResult} setLoadedStructures={setLoadedStructures}
-            selectedPolymerRepresentation={selectedPolymerRepresentation} cryptoBenchResult={cryptoBenchResult}
-            selectedPocketRepresentation={selectedPocketRepresentation} />}
+        {ahoJJobResult && <AHoJResults pocket={pocket} ahoJJobResult={ahoJJobResult} />}
     </div>
 );
 
 interface AHoJResultsProps {
     pocket: Pocket;
     ahoJJobResult: AHoJResponse;
-    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
-    selectedPolymerRepresentation: PolymerRepresentationType;
-    selectedPocketRepresentation: PocketRepresentationType;
-    cryptoBenchResult: CryptoBenchResult;
 }
 
-const AHoJResults = ({ pocket, ahoJJobResult, setLoadedStructures, selectedPolymerRepresentation, selectedPocketRepresentation, cryptoBenchResult }: AHoJResultsProps) => (
+const AHoJResults = ({ pocket, ahoJJobResult }: AHoJResultsProps) => (
     <div className="ahoj-results">
         <StructureSection
             pocket={pocket}
             title="APO Structures"
             structures={ahoJJobResult.queries[0]?.found_apo || []}
-            setLoadedStructures={setLoadedStructures}
-            selectedPolymerRepresentation={selectedPolymerRepresentation}
-            selectedPocketRepresentation={selectedPocketRepresentation}
-            cryptoBenchResult={cryptoBenchResult}
         />
         <StructureSection
             pocket={pocket}
             title="HOLO Structures"
             structures={ahoJJobResult.queries[0]?.found_holo || []}
-            setLoadedStructures={setLoadedStructures}
-            selectedPolymerRepresentation={selectedPolymerRepresentation}
-            selectedPocketRepresentation={selectedPocketRepresentation}
-            cryptoBenchResult={cryptoBenchResult}
         />
     </div>
 );
@@ -190,14 +157,17 @@ interface StructureSectionProps {
     pocket: Pocket;
     title: string;
     structures: AHoJStructure[];
-    setLoadedStructures: React.Dispatch<React.SetStateAction<LoadedStructure[]>>;
-    selectedPolymerRepresentation: PolymerRepresentationType;
-    selectedPocketRepresentation: PocketRepresentationType;
-    cryptoBenchResult: CryptoBenchResult;
 }
 
-const StructureSection = ({ pocket, title, structures, setLoadedStructures, selectedPolymerRepresentation, selectedPocketRepresentation, cryptoBenchResult }: StructureSectionProps) => {
+const StructureSection = ({ pocket, title, structures }: StructureSectionProps) => {
     const plugin = usePlugin();
+    const {
+        loadedStructures,
+        setLoadedStructures,
+        selectedPolymerRepresentation,
+        selectedPocketRepresentation,
+        cryptoBenchResult
+    } = useAppContext();
     const [visibleCount, setVisibleCount] = useState(5);
     const [loading, setLoading] = useState(false);
 
@@ -219,9 +189,6 @@ const StructureSection = ({ pocket, title, structures, setLoadedStructures, sele
                                 <div className="structure-info">
                                     <div className="structure-id">{s.pdb_id}</div>
                                     <div className="structure-chains">Chains: {s.chains.join(", ")}</div>
-                                    {/* {s.ligand_ids && s.ligand_ids.length > 0 && (
-                                        <div className="structure-ligands">Ligands: {s.ligand_ids.join(", ")}</div>
-                                    )} */}
                                     {s.rmsd && (
                                         <div className="structure-resolution">RMSD: {s.rmsd.toFixed(2)} Å</div>
                                     )}
@@ -229,10 +196,8 @@ const StructureSection = ({ pocket, title, structures, setLoadedStructures, sele
                                 <button
                                     className="load-structure-button"
                                     onClick={async () => {
-                                        await fetch(getApiUrl(`/proxy/ahoj/${cryptoBenchResult.file_hash}/${s.structure_file_url}`));
-                                        // after fetching the structure, we might calculate the animation
-                                        // TODO: handle errors here
-                                        const res = await fetch(getApiUrl(`/animate/${cryptoBenchResult.file_hash}/${s.structure_file}`));
+                                        await fetch(getApiUrl(`/proxy/ahoj/${cryptoBenchResult!.file_hash}/${s.structure_file_url}`));
+                                        const res = await fetch(getApiUrl(`/animate/${cryptoBenchResult!.file_hash}/${s.structure_file}`));
                                         const animationTask = await res.json();
                                         const animationTaskId = animationTask.task_id;
 
@@ -245,43 +210,38 @@ const StructureSection = ({ pocket, title, structures, setLoadedStructures, sele
                                             const data = event.data ? JSON.parse(event.data) : { "status": "unknown" };
 
                                             if (data.status === "SUCCESS") {
-                                                ws.close(); // close ASAP to prevent multiple loads
+                                                ws.close();
 
                                                 if (loading) return;
                                                 setLoading(true);
 
-                                                console.log("Animation task completed", data);
-
                                                 const result: TrajectoryTaskResult = data.result;
-                                                const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult.file_hash}/${result.trajectory}`));
+                                                const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trajectory}`));
                                                 showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
 
-                                                const pocketReprs = await loadPockets(plugin, ld.structure, cryptoBenchResult, pocket.pocket_id);
+                                                const pocketReprs = await loadPockets(plugin, ld.structure, cryptoBenchResult!, pocket.pocket_id);
                                                 ld.pocketRepresentations = pocketReprs;
                                                 showOnePocketRepresentation(plugin, ld, selectedPocketRepresentation);
 
-                                                // TODO: how to handle the case when the user wants to go back?
                                                 playAnimation(plugin, 10);
                                                 resetCamera(plugin);
 
-                                                console.log("A");
-                                                setLoadedStructures(prev => {
-                                                    prev.forEach(async (s) => {
+                                                const updatedStructures = await Promise.all(
+                                                    loadedStructures.map(async (s) => {
                                                         if (s.structureName.includes("structure")) {
-                                                            console.log("removing structure", s);
                                                             await setStructureTransparency(plugin, 0.25, s.polymerRepresentations, s.structure);
                                                             await setStructureTransparency(plugin, 0.25, s.pocketRepresentations, s.structure);
-                                                            return;
+                                                            return s;
+                                                        } else {
+                                                            removeFromStateTree(plugin, s.data.ref);
+                                                            return null;
                                                         }
-                                                        s.pocketRepresentations = [];
-                                                        s.polymerRepresentations = [];
-                                                        removeFromStateTree(plugin, s.data.ref);
-                                                    });
+                                                    })
+                                                );
 
-                                                    console.log(prev);
+                                                const filtered: LoadedStructure[] = updatedStructures.filter((s: LoadedStructure | null) => s !== null);
+                                                setLoadedStructures([...filtered, ld]);
 
-                                                    return [...prev, ld];
-                                                });
                                                 setLoading(false);
                                             } else if (data.status === "FAILURE") {
                                                 ws.close();
@@ -289,7 +249,6 @@ const StructureSection = ({ pocket, title, structures, setLoadedStructures, sele
                                         };
                                     }}
                                 >
-                                    {/* TODO: maybe use an icon here */}
                                     Play Animation
                                 </button>
                             </div>

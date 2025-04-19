@@ -1,30 +1,32 @@
 import "./MolstarControls.css";
-import { PolymerRepresentationType, PocketRepresentationType, LoadedStructure, PolymerRepresentationValues, PocketRepresentationValues } from "../types";
+import { PolymerRepresentationValues, PocketRepresentationValues, PolymerRepresentationType, PocketRepresentationType } from "../types";
 import { usePlugin } from "../hooks/usePlugin";
 import { resetCamera, showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
+import { useAppContext } from "../hooks/useApp";
 
-interface MolstarControlsProps {
-    loadedStructures: LoadedStructure[];
-    selectedPolymerRepresentation: PolymerRepresentationType;
-    selectedPocketRepresentation: PocketRepresentationType;
-    setSelectedPolymerRepresentation: React.Dispatch<React.SetStateAction<PolymerRepresentationType>>;
-    setSelectedPocketRepresentation: React.Dispatch<React.SetStateAction<PocketRepresentationType>>;
-}
-
-function MolstarControls({ loadedStructures, selectedPocketRepresentation, selectedPolymerRepresentation, setSelectedPocketRepresentation, setSelectedPolymerRepresentation }: MolstarControlsProps) {
+function MolstarControls() {
     const plugin = usePlugin();
+    const {
+        loadedStructures,
+        selectedPolymerRepresentation,
+        setSelectedPolymerRepresentation,
+        selectedPocketRepresentation,
+        setSelectedPocketRepresentation
+    } = useAppContext();
 
     const handlePolymerRepresentationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedPolymerRepresentation(e.target.value as PolymerRepresentationType);
+        const newRepresentation = e.target.value as PolymerRepresentationType;
+        setSelectedPolymerRepresentation(newRepresentation);
         loadedStructures.forEach(loadedStructure => {
-            showOnePolymerRepresentation(plugin, loadedStructure, e.target.value as PolymerRepresentationType);
+            showOnePolymerRepresentation(plugin, loadedStructure, newRepresentation);
         });
     };
 
     const handlePocketRepresentationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setSelectedPocketRepresentation(e.target.value as PocketRepresentationType);
+        const newRepresentation = e.target.value as PocketRepresentationType;
+        setSelectedPocketRepresentation(newRepresentation);
         loadedStructures.forEach(loadedStructure => {
-            showOnePocketRepresentation(plugin, loadedStructure, e.target.value as PocketRepresentationType);
+            showOnePocketRepresentation(plugin, loadedStructure, newRepresentation);
         });
     };
 

@@ -1,21 +1,26 @@
 import { Link } from "react-router-dom";
 import { getApiUrl } from "../utils";
 import { useEffect, useState } from "react";
-import { CryptoBenchResult, LoadedStructure, PolymerRepresentationType, PocketRepresentationType, PolymerRepresentationValues, PocketRepresentationValues } from "../types";
 import { loadPockets, initializePlugin, loadStructure, showOnePolymerRepresentation, showOnePocketRepresentation } from "../components/MolstarComponent";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { PluginProvider } from "../providers/PluginProvider";
+import { AppProvider } from "../providers/AppProvider";
+import { useAppContext } from "../hooks/useApp";
 
 import "./Visualization.css";
 import ResultTable from "../components/ResultTable";
 import MolstarControls from "../components/MolstarControls";
 
-function Visualization() {
-    const [result, setResult] = useState<CryptoBenchResult | null>(null);
+function VisualizationContent() {
+    const {
+        setLoadedStructures,
+        selectedPolymerRepresentation,
+        selectedPocketRepresentation,
+        cryptoBenchResult,
+        setCryptoBenchResult
+    } = useAppContext();
+
     const [plugin, setPlugin] = useState<PluginUIContext | null>(null);
-    const [loadedStructures, setLoadedStructures] = useState<LoadedStructure[]>([]);
-    const [selectedPolymerRepresentation, setSelectedPolymerRepresentation] = useState<PolymerRepresentationType>(PolymerRepresentationValues.Cartoon);
-    const [selectedPocketRepresentation, setSelectedPocketRepresentation] = useState<PocketRepresentationType>(PocketRepresentationValues.Cartoon);
 
     // get taskId from URL (viewer?id=taskId)
     const taskId = new URLSearchParams(window.location.search).get("id");
@@ -24,13 +29,14 @@ function Visualization() {
         if (!taskId) {
             return;
         }
-
+        setCryptoBenchResult(null);
+        setLoadedStructures([]);
         const fetchData = async () => {
             try {
                 const response = await fetch(getApiUrl(`/task-status/${taskId}`));
                 const data = await response.json();
                 if (data["result"]) {
-                    setResult(data["result"]);
+                    setCryptoBenchResult(data["result"]);
                 } else {
                     setTimeout(() => fetchData(), 3000);
                 }
@@ -39,26 +45,24 @@ function Visualization() {
                 setTimeout(() => fetchData(), 3000);
             }
         };
-
         fetchData();
-    }, [taskId]);
+    }, [taskId, setCryptoBenchResult, setLoadedStructures]);
 
     useEffect(() => {
-        if (result && !plugin) {
+        if (cryptoBenchResult && !plugin) {
             const initPlugin = async () => {
                 const pluginInstance = await initializePlugin();
                 setPlugin(pluginInstance);
-                const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${result.file_hash}/${result.input_structure}`), null);
+                const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${cryptoBenchResult!.input_structure}`), null);
                 setLoadedStructures(prevStructures => [...prevStructures, loaded]);
                 showOnePolymerRepresentation(pluginInstance, loaded, selectedPolymerRepresentation);
-                const pocketReprs = await loadPockets(pluginInstance, loaded.structure, result, null);
+                const pocketReprs = await loadPockets(pluginInstance, loaded.structure, cryptoBenchResult!, null);
                 loaded.pocketRepresentations = pocketReprs;
                 showOnePocketRepresentation(pluginInstance, loaded, selectedPocketRepresentation);
             };
-
             initPlugin();
         }
-    }, [result, plugin, selectedPolymerRepresentation, selectedPocketRepresentation]);
+    }, [cryptoBenchResult, plugin, selectedPolymerRepresentation, selectedPocketRepresentation, setLoadedStructures]);
 
     if (!taskId) {
         return (
@@ -69,7 +73,7 @@ function Visualization() {
         );
     }
 
-    if (!result) {
+    if (!cryptoBenchResult) {
         return (
             <div>
                 <h2>3D Structure Viewer</h2>
@@ -98,30 +102,27 @@ function Visualization() {
                 <div className="left">
                     <div className="viewer-3d" id="molstar-component"></div>
                     {plugin && <PluginProvider plugin={plugin}>
-                        <MolstarControls
-                            loadedStructures={loadedStructures}
-                            selectedPolymerRepresentation={selectedPolymerRepresentation}
-                            setSelectedPolymerRepresentation={setSelectedPolymerRepresentation}
-                            selectedPocketRepresentation={selectedPocketRepresentation}
-                            setSelectedPocketRepresentation={setSelectedPocketRepresentation}
-                        />
+                        <MolstarControls />
                     </PluginProvider>}
                 </div>
                 <div className="right">
-                    {result && plugin && (
+                    {cryptoBenchResult && plugin && (
                         <PluginProvider plugin={plugin}>
-                            <ResultTable
-                                taskId={taskId}
-                                cryptoBenchResult={result}
-                                setLoadedStructures={setLoadedStructures}
-                                selectedPolymerRepresentation={selectedPolymerRepresentation}
-                                selectedPocketRepresentation={selectedPocketRepresentation}
-                            />
+                            <ResultTable />
                         </PluginProvider>
                     )}
                 </div>
             </div>
         </div>
+    );
+}
+
+
+function Visualization() {
+    return (
+        <AppProvider>
+            <VisualizationContent />
+        </AppProvider>
     );
 }
 
