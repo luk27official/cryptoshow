@@ -1,6 +1,6 @@
 import { Pocket, AHoJResponse, AHoJStructure, TrajectoryTaskResult, LoadedStructure } from "../types";
 import { getColorString, getApiUrl } from "../utils";
-import { loadPockets, loadStructure, playAnimation, removeFromStateTree, resetCamera, setStructureTransparency, showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
+import { loadStructure, playAnimation, removeFromStateTree, resetCamera, setStructureTransparency, showOnePolymerRepresentation } from "./MolstarComponent";
 import { useState } from "react";
 import { usePlugin } from "../hooks/usePlugin";
 import { useAppContext } from "../hooks/useApp";
@@ -138,135 +138,153 @@ interface AHoJResultsProps {
     ahoJJobResult: AHoJResponse;
 }
 
-const AHoJResults = ({ pocket, ahoJJobResult }: AHoJResultsProps) => (
-    <div className="ahoj-results">
-        <StructureSection
-            pocket={pocket}
-            title="APO Structures"
-            structures={ahoJJobResult.queries[0]?.found_apo || []}
-        />
-        <StructureSection
-            pocket={pocket}
-            title="HOLO Structures"
-            structures={ahoJJobResult.queries[0]?.found_holo || []}
-        />
-    </div>
-);
-
-interface StructureSectionProps {
-    pocket: Pocket;
-    title: string;
-    structures: AHoJStructure[];
-}
-
-const StructureSection = ({ pocket, title, structures }: StructureSectionProps) => {
+const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
     const plugin = usePlugin();
     const {
         loadedStructures,
         setLoadedStructures,
         selectedPolymerRepresentation,
-        selectedPocketRepresentation,
         cryptoBenchResult
     } = useAppContext();
-    const [visibleCount, setVisibleCount] = useState(5);
-    const [loading, setLoading] = useState(false);
+    const [loadingStructure, setLoadingStructure] = useState<string | null>(null);
+    const [visibleCount, setVisibleCount] = useState(10); // State for pagination
+
+    const apoStructures = ahoJJobResult.queries[0]?.found_apo.map(s => ({ ...s, type: "APO" })) || [];
+    const holoStructures = ahoJJobResult.queries[0]?.found_holo.map(s => ({ ...s, type: "HOLO" })) || [];
+    const allStructures = [...apoStructures, ...holoStructures];
 
     const showMore = () => {
-        setVisibleCount(prev => prev + 5);
+        setVisibleCount(prev => prev + 10);
     };
 
-    const visibleStructures = structures.slice(0, visibleCount);
-    const hasMore = visibleCount < structures.length;
+    const visibleStructures = allStructures.slice(0, visibleCount);
+    const hasMore = visibleCount < allStructures.length;
+
+    const handlePlayAnimation = async (structure: AHoJStructure & { type: string; }) => {
+        if (loadingStructure) return;
+        setLoadingStructure(structure.structure_file);
+
+        try {
+            await fetch(getApiUrl(`/proxy/ahoj/${cryptoBenchResult!.file_hash}/${structure.structure_file_url}`));
+
+            const res = await fetch(getApiUrl(`/animate/${cryptoBenchResult!.file_hash}/${structure.structure_file}`));
+            if (!res.ok) throw new Error(`Failed to start animation task: ${res.statusText}`);
+            const animationTask = await res.json();
+            const animationTaskId = animationTask.task_id;
+
+            // TODO: use dynamic host
+            const ws = new WebSocket(`ws://localhost/ws/task-status/${animationTaskId}`);
+
+            ws.onopen = () => console.log("Animation WebSocket connected");
+            ws.onerror = (err) => {
+                console.error("WebSocket error:", err);
+                setLoadingStructure(null);
+                ws.close();
+            };
+            ws.onclose = () => console.log("Animation WebSocket closed");
+
+            ws.onmessage = async (event) => {
+                const data = event.data ? JSON.parse(event.data) : { status: "unknown" };
+
+                if (data.status === "SUCCESS") {
+                    ws.close();
+                    const result: TrajectoryTaskResult = data.result;
+
+                    const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trajectory}`));
+                    showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
+
+                    const updatedStructures = await Promise.all(
+                        loadedStructures.map(async (s) => {
+                            if (s.structureName.includes("structure")) {
+                                await setStructureTransparency(plugin, 0.25, s.polymerRepresentations, s.structure);
+                                await setStructureTransparency(plugin, 0.4, s.pocketRepresentations, s.structure);
+                                return s;
+                            } else {
+                                removeFromStateTree(plugin, s.data.ref);
+                                return null;
+                            }
+                        })
+                    );
+
+                    const filtered: LoadedStructure[] = updatedStructures.filter((s): s is LoadedStructure => s !== null);
+                    setLoadedStructures([...filtered, ld]);
+
+                    playAnimation(plugin, 10);
+                    resetCamera(plugin);
+                    setLoadingStructure(null);
+
+                } else if (data.status === "FAILURE") {
+                    console.error("Animation task failed:", data.error || "Unknown error");
+                    ws.close();
+                    setLoadingStructure(null);
+                }
+            };
+
+        } catch (error) {
+            console.error("Error during animation process:", error);
+            setLoadingStructure(null);
+        }
+    };
+
 
     return (
-        <div className="result-section">
-            <h4 className="result-heading">{title} ({structures.length})</h4>
-            <div className="structure-list">
-                {structures.length ? (
-                    <>
-                        {visibleStructures.map((s) => (
-                            <div key={`${s.pdb_id}_${s.structure_file}`} className="structure-row">
-                                <div className="structure-info">
-                                    <div className="structure-id">{s.pdb_id}</div>
-                                    <div className="structure-chains">Chains: {s.chains.join(", ")}</div>
-                                    {s.rmsd && (
-                                        <div className="structure-resolution">RMSD: {s.rmsd.toFixed(2)} Å</div>
-                                    )}
-                                </div>
-                                <button
-                                    className="load-structure-button"
-                                    onClick={async () => {
-                                        await fetch(getApiUrl(`/proxy/ahoj/${cryptoBenchResult!.file_hash}/${s.structure_file_url}`));
-                                        const res = await fetch(getApiUrl(`/animate/${cryptoBenchResult!.file_hash}/${s.structure_file}`));
-                                        const animationTask = await res.json();
-                                        const animationTaskId = animationTask.task_id;
-
-                                        const ws = new WebSocket(`ws://localhost/ws/task-status/${animationTaskId}`);
-                                        ws.onopen = () => {
-                                            console.log("WebSocket connected");
-                                        };
-
-                                        ws.onmessage = async (event) => {
-                                            const data = event.data ? JSON.parse(event.data) : { "status": "unknown" };
-
-                                            if (data.status === "SUCCESS") {
-                                                ws.close();
-
-                                                if (loading) return;
-                                                setLoading(true);
-
-                                                const result: TrajectoryTaskResult = data.result;
-                                                const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trajectory}`));
-                                                showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
-
-                                                const pocketReprs = await loadPockets(plugin, ld.structure, cryptoBenchResult!, pocket.pocket_id);
-                                                ld.pocketRepresentations = pocketReprs;
-                                                showOnePocketRepresentation(plugin, ld, selectedPocketRepresentation);
-
-                                                playAnimation(plugin, 10);
-                                                resetCamera(plugin);
-
-                                                const updatedStructures = await Promise.all(
-                                                    loadedStructures.map(async (s) => {
-                                                        if (s.structureName.includes("structure")) {
-                                                            await setStructureTransparency(plugin, 0.25, s.polymerRepresentations, s.structure);
-                                                            await setStructureTransparency(plugin, 0.25, s.pocketRepresentations, s.structure);
-                                                            return s;
-                                                        } else {
-                                                            removeFromStateTree(plugin, s.data.ref);
-                                                            return null;
-                                                        }
-                                                    })
-                                                );
-
-                                                const filtered: LoadedStructure[] = updatedStructures.filter((s: LoadedStructure | null) => s !== null);
-                                                setLoadedStructures([...filtered, ld]);
-
-                                                setLoading(false);
-                                            } else if (data.status === "FAILURE") {
-                                                ws.close();
-                                            }
-                                        };
-                                    }}
-                                >
-                                    Play Animation
-                                </button>
-                            </div>
-                        ))}
-
-                        {hasMore && (
-                            <button
-                                className="show-more-button"
-                                onClick={showMore}
-                            >
-                                Show More ({structures.length - visibleCount} remaining)
-                            </button>
-                        )}
-                    </>
-                ) : (
-                    <div className="no-results">No {title} found</div>
-                )}
-            </div>
+        <div className="ahoj-results">
+            {allStructures.length > 0 ? (
+                <>
+                    <div className="ahoj-results-table-container">
+                        <table className="ahoj-results-table">
+                            <thead>
+                                <tr>
+                                    <th>Structure</th>
+                                    <th>Type</th>
+                                    <th>RMSD (Å)</th>
+                                    <th>SASA (Å²)</th>
+                                    <th>Chains</th>
+                                    <th>Animation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {visibleStructures.map((s) => (
+                                    <tr key={`${s.pdb_id}_${s.structure_file}`}>
+                                        <td>
+                                            {s.pdb_id.length === 4 ? (
+                                                <a href={`https://www.rcsb.org/structure/${s.pdb_id}`} target="_blank" rel="noopener noreferrer">
+                                                    {s.pdb_id}
+                                                </a>
+                                            ) : (
+                                                s.pdb_id
+                                            )}
+                                        </td>
+                                        <td>{s.type}</td>
+                                        <td>{s.rmsd ? s.rmsd.toFixed(2) : "N/A"}</td>
+                                        <td>{s.sasa ? s.sasa.toFixed(2) : "N/A"}</td>
+                                        <td>{s.chains.join(", ")}</td>
+                                        <td>
+                                            <button
+                                                className="load-structure-button"
+                                                onClick={() => handlePlayAnimation(s)}
+                                                disabled={loadingStructure === s.structure_file}
+                                            >
+                                                {loadingStructure === s.structure_file ? "Loading..." : "Play"}
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                    {hasMore && (
+                        <button
+                            className="show-more-button"
+                            onClick={showMore}
+                        >
+                            Show More ({allStructures.length - visibleCount} remaining)
+                        </button>
+                    )}
+                </>
+            ) : (
+                <div className="no-results">No APO or HOLO structures found by AHoJ.</div>
+            )}
         </div>
     );
 };
