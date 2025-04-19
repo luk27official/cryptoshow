@@ -1,6 +1,6 @@
 # cryptoshow
 
-build: `docker compose --profile <cpu/gpu> build`
+build: `docker compose --profile <cpu/gpu> build` or `docker buildx bake <cpu/gpu>`
 
 run: `docker compose --profile <cpu/gpu> up`
 
