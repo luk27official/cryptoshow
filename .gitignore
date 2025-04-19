@@ -3,3 +3,4 @@ data/
 cache/
 .DS_Store
 .vscode/
+**/.env
