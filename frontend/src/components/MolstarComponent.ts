@@ -15,7 +15,9 @@ import { setSubtreeVisibility } from "molstar/lib/mol-plugin/behavior/static/sta
 import { TrajectoryFromModelAndCoordinates } from "molstar/lib/mol-plugin-state/transforms/model";
 import { Download } from "molstar/lib/mol-plugin-state/transforms/data";
 import { AnimateModelIndex } from "molstar/lib/mol-plugin-state/animation/built-in/model-index";
+import { Bundle } from "molstar/lib/mol-model/structure/structure/element/bundle";
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
+
 
 import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType } from "../types";
 import { getColor, getWindowWidth } from "../utils";
@@ -50,7 +52,7 @@ export const initializePlugin = async () => {
     return MolstarPlugin;
 };
 
-export const loadStructure = async (plugin: PluginUIContext, structureUrl: string, trajectoryUrl: string | null) => {
+export const loadStructure = async (plugin: PluginUIContext, structureUrl: string, trajectoryUrl: string | null): Promise<LoadedStructure> => {
     let structureNameShort;
 
     // for aligned structures, we want to prettify the name if possible
@@ -150,7 +152,8 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
         data: pdbData,
         polymerRepresentations: representations,
         pocketRepresentations: [],
-        structureUrl: structureUrl
+        structureUrl: structureUrl,
+        structureName: structureUrl.split("/").pop()!
     };
 
     return loadedStucture;
@@ -363,4 +366,33 @@ export function playAnimation(plugin: PluginUIContext, fps: number) {
 
 export function resetCamera(plugin: PluginUIContext) {
     plugin.canvas3d?.requestCameraReset();
+}
+
+export async function setStructureTransparency(plugin: PluginUIContext, alpha: number, polymerRepresentations: RepresentationWithRef<PocketRepresentationType | PolymerRepresentationType>[], structure: StateObjectSelector) {
+    type TransparencyParams = {
+        bundle: Bundle;
+        value: number;
+    };
+
+    const params: TransparencyParams[] = [];
+
+    const query = MS.struct.generator.all;
+    const sel = Script.getStructureSelection(query, structure.cell!.obj!.data);
+    const bundle = Bundle.fromSelection(sel);
+
+    params.push({
+        bundle: bundle,
+        value: 1 - alpha
+    });
+
+    for (const element of polymerRepresentations) {
+        const builder = plugin.state.data.build();
+        if (element.transparentObject) {
+            builder.to(element.object.ref).delete(element.transparentObject.ref);
+        }
+        await builder.commit();
+
+        const r = await plugin.state.data.build().to(element.object.ref).apply(StateTransforms.Representation.TransparencyStructureRepresentation3DFromBundle, { layers: params }).commit();
+        element.transparentObject = r;
+    }
 }

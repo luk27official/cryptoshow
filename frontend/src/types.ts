@@ -100,6 +100,7 @@ export const PocketRepresentationValues: Record<string, PocketRepresentationType
 export type RepresentationWithRef<T extends PolymerRepresentationType | PocketRepresentationType> = {
     type: T;
     object: StateObjectSelector;
+    transparentObject?: StateObjectSelector;
     id?: number;
 };
 
@@ -109,6 +110,7 @@ export type LoadedStructure = {
     polymerRepresentations: RepresentationWithRef<PolymerRepresentationType>[];
     pocketRepresentations: RepresentationWithRef<PocketRepresentationType>[];
     structureUrl: string;
+    structureName: string;
 };
 
 export type TrajectoryTaskResult = {

@@ -1,6 +1,6 @@
 import { Pocket, AHoJResponse, AHoJStructure, LoadedStructure, PolymerRepresentationType, TrajectoryTaskResult, CryptoBenchResult, PocketRepresentationType } from "../types";
 import { getColorString, getApiUrl } from "../utils";
-import { loadPockets, loadStructure, playAnimation, removeFromStateTree, resetCamera, showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
+import { loadPockets, loadStructure, playAnimation, removeFromStateTree, resetCamera, setStructureTransparency, showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
 import { useState } from "react";
 import { usePlugin } from "../hooks/usePlugin";
 
@@ -249,13 +249,17 @@ const StructureSection = ({ pocket, title, structures, setLoadedStructures, sele
                                                 const result: TrajectoryTaskResult = data.result;
                                                 const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult.file_hash}/${result.trajectory}`));
                                                 setLoadedStructures(prev => {
-                                                    prev.forEach((s) => {
+                                                    prev.forEach(async (s) => {
+                                                        if (s.structureName.includes("structure")) {
+                                                            await setStructureTransparency(plugin, 0.25, s.polymerRepresentations, s.structure);
+                                                            await setStructureTransparency(plugin, 0.25, s.pocketRepresentations, s.structure);
+                                                            return;
+                                                        }
                                                         s.pocketRepresentations = [];
                                                         s.polymerRepresentations = [];
                                                         removeFromStateTree(plugin, s.data.ref);
                                                     });
 
-                                                    // TODO: do we even need all loaded structures? isn't one enough?
                                                     return [...prev, ld];
                                                 });
                                                 showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
