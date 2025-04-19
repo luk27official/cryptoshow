@@ -122,10 +122,12 @@
 }
 
 .prediction-values,
-.residue-ids {
+.residue-ids,
+.pymol-export {
     display: flex;
     flex-wrap: wrap;
     gap: 0.5rem;
+    align-items: baseline;
 }
 
 .info-label {
@@ -138,6 +140,17 @@
     overflow-wrap: break-word;
     max-width: 100%;
     color: var(--text-primary);
+}
+
+.code-block {
+    display: inline;
+    font-family: monospace;
+    background-color: var(--accent-bg-light);
+    padding: 0.1em 0.4em;
+    border-radius: 0.25rem;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    word-break: break-all;
 }
 
 .ahoj-section {
