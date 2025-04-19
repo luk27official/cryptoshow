@@ -151,8 +151,8 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str):
         BASE_PATH, task_hash, f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.pdb"
     )
 
-    with mda.Writer(TRIMMED_PDB_FILE, n_atoms=len(ag1)) as pdb_writer:
-        pdb_writer.write(ag1)
+    with mda.Writer(TRIMMED_PDB_FILE, n_atoms=len(ag2)) as pdb_writer:
+        pdb_writer.write(ag2)
 
     positions1 = ag1.positions  # Starting positions (frame 1)
     positions2 = ag2.positions  # Ending positions (frame n + 1)
