@@ -368,7 +368,7 @@ export function resetCamera(plugin: PluginUIContext) {
     plugin.canvas3d?.requestCameraReset();
 }
 
-export async function setStructureTransparency(plugin: PluginUIContext, alpha: number, polymerRepresentations: RepresentationWithRef<PocketRepresentationType | PolymerRepresentationType>[], structure: StateObjectSelector) {
+export async function setStructureTransparency(plugin: PluginUIContext, alpha: number, representations: RepresentationWithRef<PocketRepresentationType | PolymerRepresentationType>[], structure: StateObjectSelector) {
     type TransparencyParams = {
         bundle: Bundle;
         value: number;
@@ -385,14 +385,14 @@ export async function setStructureTransparency(plugin: PluginUIContext, alpha: n
         value: 1 - alpha
     });
 
-    for (const element of polymerRepresentations) {
+    for (const element of representations) {
         const builder = plugin.state.data.build();
-        if (element.transparentObject) {
-            builder.to(element.object.ref).delete(element.transparentObject.ref);
+        if (element.transparentObjectRef) {
+            builder.to(element.object.ref).delete(element.transparentObjectRef);
         }
         await builder.commit();
 
         const r = await plugin.state.data.build().to(element.object.ref).apply(StateTransforms.Representation.TransparencyStructureRepresentation3DFromBundle, { layers: params }).commit();
-        element.transparentObject = r;
+        element.transparentObjectRef = r.ref;
     }
 }

@@ -199,6 +199,7 @@ interface StructureSectionProps {
 const StructureSection = ({ pocket, title, structures, setLoadedStructures, selectedPolymerRepresentation, selectedPocketRepresentation, cryptoBenchResult }: StructureSectionProps) => {
     const plugin = usePlugin();
     const [visibleCount, setVisibleCount] = useState(5);
+    const [loading, setLoading] = useState(false);
 
     const showMore = () => {
         setVisibleCount(prev => prev + 5);
@@ -246,11 +247,28 @@ const StructureSection = ({ pocket, title, structures, setLoadedStructures, sele
                                             if (data.status === "SUCCESS") {
                                                 ws.close(); // close ASAP to prevent multiple loads
 
+                                                if (loading) return;
+                                                setLoading(true);
+
+                                                console.log("Animation task completed", data);
+
                                                 const result: TrajectoryTaskResult = data.result;
                                                 const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult.file_hash}/${result.trajectory}`));
+                                                showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
+
+                                                const pocketReprs = await loadPockets(plugin, ld.structure, cryptoBenchResult, pocket.pocket_id);
+                                                ld.pocketRepresentations = pocketReprs;
+                                                showOnePocketRepresentation(plugin, ld, selectedPocketRepresentation);
+
+                                                // TODO: how to handle the case when the user wants to go back?
+                                                playAnimation(plugin, 10);
+                                                resetCamera(plugin);
+
+                                                console.log("A");
                                                 setLoadedStructures(prev => {
                                                     prev.forEach(async (s) => {
                                                         if (s.structureName.includes("structure")) {
+                                                            console.log("removing structure", s);
                                                             await setStructureTransparency(plugin, 0.25, s.polymerRepresentations, s.structure);
                                                             await setStructureTransparency(plugin, 0.25, s.pocketRepresentations, s.structure);
                                                             return;
@@ -260,19 +278,11 @@ const StructureSection = ({ pocket, title, structures, setLoadedStructures, sele
                                                         removeFromStateTree(plugin, s.data.ref);
                                                     });
 
+                                                    console.log(prev);
+
                                                     return [...prev, ld];
                                                 });
-                                                showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
-
-                                                const pocketReprs = await loadPockets(plugin, ld.structure, cryptoBenchResult, pocket.pocket_id);
-                                                ld.pocketRepresentations = pocketReprs;
-                                                showOnePocketRepresentation(plugin, ld, selectedPocketRepresentation);
-
-                                                // TODO: how to handle the case when the user wants to go back?
-
-                                                playAnimation(plugin, 10);
-                                                resetCamera(plugin);
-
+                                                setLoading(false);
                                             } else if (data.status === "FAILURE") {
                                                 ws.close();
                                             }
