@@ -21,6 +21,7 @@ import biotite.database.rcsb as rcsb
 
 from .tasks import celery_app
 from .utils import get_existing_result, generate_random_folder_name, download_cif_file
+from .commons import JOBS_BASE_PATH
 from celery.result import AsyncResult
 
 app = FastAPI(openapi_url="/api/openapi")
@@ -82,7 +83,7 @@ async def calculate(request: dict):
 
     pdb_id = request["pdb"]
 
-    tmp_dir = f"/app/data/jobs/{generate_random_folder_name()}"
+    tmp_dir = os.path.join(JOBS_BASE_PATH, generate_random_folder_name())
     os.makedirs(tmp_dir, exist_ok=True)
 
     try:
@@ -126,7 +127,7 @@ async def calculate_custom(file: UploadFile = File(...)):
     if not file.filename.lower().endswith((".pdb", ".cif", ".pdb1")):
         return JSONResponse(status_code=400, content={"error": "Only .pdb, .pdb1 and .cif files are supported."})
 
-    tmp_dir = f"/app/data/jobs/{generate_random_folder_name()}"
+    tmp_dir = os.path.join(JOBS_BASE_PATH, generate_random_folder_name())
     os.makedirs(tmp_dir, exist_ok=True)
 
     file_path = os.path.join(tmp_dir, file.filename)
@@ -157,8 +158,7 @@ def get_status(task_id: str):
     If a hash of the structure is used, look for a folder with such a name in the /app/data/jobs directory.
     """
 
-    BASE_PATH = "/app/data/jobs"
-    RESULTS_FILE = os.path.join(BASE_PATH, task_id, "results.json")
+    RESULTS_FILE = os.path.join(JOBS_BASE_PATH, task_id, "results.json")
 
     if os.path.exists(RESULTS_FILE):
         with open(RESULTS_FILE, "r") as f:
@@ -189,7 +189,7 @@ def get_file(task_hash: str, filename: str):
     if ".." in task_hash or ".." in filename:
         return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
 
-    path = os.path.join("/app/data/jobs", task_hash, filename)
+    path = os.path.join(JOBS_BASE_PATH, task_hash, filename)
 
     if os.path.exists(path):
         return FileResponse(path, filename=filename, media_type="application/octet-stream")
@@ -269,7 +269,7 @@ async def proxy_ahoj_get(task_hash: str, path: str):
 
             else:
                 file_name = path.split("/")[-1]
-                file_path = os.path.join("/app/data/jobs", task_hash, file_name)
+                file_path = os.path.join(JOBS_BASE_PATH, task_hash, file_name)
 
                 os.makedirs(os.path.dirname(file_path), exist_ok=True)  # this should already exist, but just in case
                 with open(file_path, "wb") as f:

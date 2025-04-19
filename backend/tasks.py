@@ -15,6 +15,7 @@ from cb_small import compute_prediction
 from clustering import compute_clusters
 from trajectory_generator import compute_trajectory
 from utils import get_file_hash
+from commons import JOBS_BASE_PATH
 
 celery_app = Celery(
     "celery_app",
@@ -49,7 +50,7 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     USED_HASH_TYPE = "md5"
 
     FILE_HASH = get_file_hash(structure_path_original)
-    JOB_PATH = f"/app/data/jobs/{FILE_HASH[USED_HASH_TYPE]}"
+    JOB_PATH = os.path.join(JOBS_BASE_PATH, FILE_HASH[USED_HASH_TYPE])
 
     os.makedirs(JOB_PATH, exist_ok=True)
 

@@ -10,6 +10,8 @@ import gemmi
 from scipy.interpolate import CubicSpline
 from typing import List, Tuple
 
+from commons import JOBS_BASE_PATH
+
 protein_letters_3to1 = {
     "ALA": "A",
     "CYS": "C",
@@ -79,8 +81,7 @@ def longest_common_substring(s1: str, s2: str) -> str:
 def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple[str, str]:
     """Main function to compute the trajectory."""
 
-    BASE_PATH: str = "/app/data/jobs"
-    RESULT_FILE: str = os.path.join(BASE_PATH, task_hash, "results.json")
+    RESULT_FILE: str = os.path.join(JOBS_BASE_PATH, task_hash, "results.json")
 
     # Open the result file and get the "input_structure" field
     if not os.path.exists(RESULT_FILE):
@@ -92,8 +93,8 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple
         if not input_structure:
             raise ValueError("No input structure found in the result file.")
 
-    STRUCTURE_FILE: str = os.path.join(BASE_PATH, task_hash, input_structure)
-    ALIGNED_STRUCTURE_FILE: str = os.path.join(BASE_PATH, task_hash, aligned_structure_filename)
+    STRUCTURE_FILE: str = os.path.join(JOBS_BASE_PATH, task_hash, input_structure)
+    ALIGNED_STRUCTURE_FILE: str = os.path.join(JOBS_BASE_PATH, task_hash, aligned_structure_filename)
 
     if not os.path.exists(STRUCTURE_FILE) or not os.path.exists(ALIGNED_STRUCTURE_FILE):
         raise FileNotFoundError(f"Structure files {STRUCTURE_FILE} or {ALIGNED_STRUCTURE_FILE} not found.")
@@ -155,7 +156,7 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple
 
     # Save the trimmed structure
     TRIMMED_PDB_FILE: str = os.path.join(
-        BASE_PATH, task_hash, f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.pdb"
+        JOBS_BASE_PATH, task_hash, f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.pdb"
     )
 
     with mda.Writer(TRIMMED_PDB_FILE, n_atoms=len(ag2)) as pdb_writer:
@@ -172,7 +173,7 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple
         splines.append(spline)
 
     TRAJECTORY_FILE: str = os.path.join(
-        BASE_PATH,
+        JOBS_BASE_PATH,
         task_hash,
         f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.xtc",
     )

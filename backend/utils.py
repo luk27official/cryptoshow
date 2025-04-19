@@ -7,6 +7,8 @@ import shutil
 from typing import TypedDict
 import biotite.database.rcsb as rcsb
 
+from commons import JOBS_BASE_PATH
+
 
 class FileHash(TypedDict):
     """A dictionary containing the MD5 and SHA1 hash of a file."""
@@ -45,7 +47,7 @@ def get_existing_result(file_path: str):
     """Check if the result for a given file already exists (caching)."""
     FILE_HASH = get_file_hash(file_path)
     TASK_HASH = FILE_HASH["md5"]
-    RESULTS_PATH = os.path.join("/app/data/jobs", TASK_HASH, "results.json")
+    RESULTS_PATH = os.path.join(JOBS_BASE_PATH, TASK_HASH, "results.json")
 
     if os.path.exists(RESULTS_PATH):
         with open(RESULTS_PATH, "r") as f:
@@ -56,7 +58,7 @@ def get_existing_result(file_path: str):
 
 def download_cif_file(pdb_id: str):
     """Download a CIF file from the RCSB database."""
-    tmp_dir = f"/app/data/jobs/{generate_random_folder_name()}"
+    tmp_dir = os.path.join(JOBS_BASE_PATH, generate_random_folder_name())
     os.makedirs(tmp_dir, exist_ok=True)
 
     try:
