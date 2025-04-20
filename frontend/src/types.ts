@@ -59,6 +59,7 @@ export type MolstarResidue = {
 export type AHoJStructure = {
     pdb_id: string;
     chains: string[];
+    ligands: string[];
     rmsd: number;
     sasa: number;
     structure_file: string;

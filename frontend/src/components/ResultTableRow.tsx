@@ -168,11 +168,12 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
         cryptoBenchResult
     } = useAppContext();
     const [loadingStructure, setLoadingStructure] = useState<string | null>(null);
-    const [visibleCount, setVisibleCount] = useState(10); // State for pagination
+    const [visibleCount, setVisibleCount] = useState(10);
 
     const apoStructures = ahoJJobResult.queries[0]?.found_apo.map(s => ({ ...s, type: "APO" })) || [];
     const holoStructures = ahoJJobResult.queries[0]?.found_holo.map(s => ({ ...s, type: "HOLO" })) || [];
-    const allStructures = [...apoStructures, ...holoStructures];
+    const alphaFoldStructures = ahoJJobResult.queries[0]?.found_alphafold.map(s => ({ ...s, type: "AlphaFold" })) || [];
+    const allStructures = [...holoStructures, ...apoStructures, ...alphaFoldStructures];
 
     const showMore = () => {
         setVisibleCount(prev => prev + 10);
@@ -261,6 +262,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                     <th>RMSD (Å)</th>
                                     <th>SASA (Å²)</th>
                                     <th>Chains</th>
+                                    <th>Ligands</th>
                                     <th>Animation</th>
                                 </tr>
                             </thead>
@@ -273,13 +275,25 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                                     {s.pdb_id}
                                                 </a>
                                             ) : (
-                                                s.pdb_id
+                                                s.uniprot_ids && s.uniprot_ids.length > 0 ? (
+                                                    s.uniprot_ids.map((uniprotId, index) => (
+                                                        <>
+                                                            <a href={`https://alphafold.ebi.ac.uk/entry/${uniprotId}`} target="_blank" rel="noopener noreferrer">
+                                                                {uniprotId}
+                                                            </a>
+                                                            {index < s.uniprot_ids.length - 1 && ", "}
+                                                        </>
+                                                    ))
+                                                ) : (
+                                                    s.pdb_id // if no uniprot IDs
+                                                )
                                             )}
                                         </td>
                                         <td>{s.type}</td>
                                         <td>{s.rmsd ? s.rmsd.toFixed(2) : "N/A"}</td>
                                         <td>{s.sasa ? s.sasa.toFixed(2) : "N/A"}</td>
                                         <td>{s.chains.join(", ")}</td>
+                                        <td>{s.ligands.filter((e) => e !== "").length > 0 ? s.ligands.filter((e) => e !== "").join(", ") : "N/A"}</td>
                                         <td>
                                             <button
                                                 className="load-structure-button"
