@@ -112,64 +112,71 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple
         if not os.path.exists(aligned_pdb_file):
             convert_cif_to_pdb(ALIGNED_STRUCTURE_FILE, aligned_pdb_file)
 
-    u1: mda.Universe = mda.Universe(aligned_pdb_file)
-    u2: mda.Universe = mda.Universe(pdb_file)
+    universe_aligned: mda.Universe = mda.Universe(aligned_pdb_file)
+    universe_original: mda.Universe = mda.Universe(pdb_file)
 
-    seq1: str
-    res1: List[Residue]
-    seq2: str
-    res2: List[Residue]
-    seq1, res1 = get_sequence_and_residues(u1)
-    seq2, res2 = get_sequence_and_residues(u2)
+    seq_aligned, res_aligned = get_sequence_and_residues(universe_aligned)
+    seq_original, res_original = get_sequence_and_residues(universe_original)
 
     # we do NOT need alignment here, because we only need to animate the LCS...
     # e.g. we could not align T-VALYDYESRT with TFVALYDYESRT because there is a gap
     # and we need animation between exact residues
-    lcs: str = longest_common_substring(seq1, seq2)
+    lcs: str = longest_common_substring(seq_aligned, seq_original)
 
-    start_index_seq1: int = seq1.find(lcs)
-    start_index_seq2: int = seq2.find(lcs)
+    start_index_seq_aligned: int = seq_aligned.find(lcs)
+    start_index_seq_original: int = seq_original.find(lcs)
 
-    trimmed_res1: List[Residue] = res1[start_index_seq1 : start_index_seq1 + len(lcs)]
-    trimmed_res2: List[Residue] = res2[start_index_seq2 : start_index_seq2 + len(lcs)]
+    trimmed_res_aligned: List[Residue] = res_aligned[start_index_seq_aligned : start_index_seq_aligned + len(lcs)]
+    trimmed_res_original: List[Residue] = res_original[start_index_seq_original : start_index_seq_original + len(lcs)]
 
-    assert len(trimmed_res1) == len(trimmed_res2), "Mismatch in number of residues!"
+    assert len(trimmed_res_aligned) == len(trimmed_res_original), "Mismatch in number of residues!"
 
-    atoms1: List[Atom] = []
-    atoms2: List[Atom] = []
+    atoms_aligned: List[Atom] = []
+    atoms_original: List[Atom] = []
 
     # Extract atoms from the trimmed residues
-    for r1, r2 in zip(trimmed_res1, trimmed_res2):
-        a1_dict = {a.name: a for a in r1.atoms}
-        a2_dict = {a.name: a for a in r2.atoms}
+    for res_aligned, res_original in zip(trimmed_res_aligned, trimmed_res_original):
+        a1_dict = {a.name: a for a in res_aligned.atoms}
+        a2_dict = {a.name: a for a in res_original.atoms}
         for name in a1_dict.keys() & a2_dict.keys():
-            atoms1.append(a1_dict[name])
-            atoms2.append(a2_dict[name])
+            atoms_aligned.append(a1_dict[name])
+            atoms_original.append(a2_dict[name])
 
-    assert len(atoms1) == len(atoms2), "Mismatch in number of atoms!"
-    assert len(atoms1) > 0, "No common atoms found!"
+    assert len(atoms_aligned) == len(atoms_original), "Mismatch in number of atoms!"
+    assert len(atoms_aligned) > 0, "No common atoms found!"
 
     # Interpolation
     n_frames: int = 50
-    ag1: AtomGroup = atoms1[0].universe.atoms[[atom.index for atom in atoms1]]
-    ag2: AtomGroup = atoms2[0].universe.atoms[[atom.index for atom in atoms2]]
+    atom_group_aligned: AtomGroup = atoms_aligned[0].universe.atoms[[atom.index for atom in atoms_aligned]]
+    atom_group_original: AtomGroup = atoms_original[0].universe.atoms[[atom.index for atom in atoms_original]]
+
+    # Get ligands from the aligned universe
+    ligands_aligned: AtomGroup = universe_aligned.select_atoms("not protein and not resname HOH")
+    for atom in ligands_aligned.atoms:
+        atom.segment.segid = "LG"  # segid is used for chain identifiers in PDB files
+
+    # Append the ligands to both atom groups
+    atom_group_aligned = atom_group_aligned + ligands_aligned
+
+    u_new = mda.Merge(atom_group_original, ligands_aligned)
+    atom_group_original = u_new.select_atoms("all")
 
     # Save the trimmed structure
     TRIMMED_PDB_FILE: str = os.path.join(
         JOBS_BASE_PATH, task_hash, f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.pdb"
     )
 
-    with mda.Writer(TRIMMED_PDB_FILE, n_atoms=len(ag2)) as pdb_writer:
-        pdb_writer.write(ag2)
+    with mda.Writer(TRIMMED_PDB_FILE, n_atoms=len(atom_group_original)) as pdb_writer:
+        pdb_writer.write(atom_group_original)
 
-    positions1: np.ndarray = ag1.positions  # Starting positions (frame 1)
-    positions2: np.ndarray = ag2.positions  # Ending positions (frame n + 1)
+    positions_aligned: np.ndarray = atom_group_aligned.positions  # Starting positions (frame 1)
+    positions_original: np.ndarray = atom_group_original.positions  # Ending positions (frame n + 1)
 
-    n_atoms: int = len(ag1)
+    n_atoms: int = len(atom_group_aligned)
     splines: List[CubicSpline] = []
     for i in range(3):  # for each axis (x, y, z)
         # create a spline for each axis using the positions from both frames
-        spline: CubicSpline = CubicSpline([0, 1], np.array([positions1[:, i], positions2[:, i]]))
+        spline: CubicSpline = CubicSpline([0, 1], np.array([positions_aligned[:, i], positions_original[:, i]]))
         splines.append(spline)
 
     TRAJECTORY_FILE: str = os.path.join(
@@ -185,7 +192,7 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple
             # apply spline interpolation for each axis
             interpolated_positions: np.ndarray = np.column_stack([spline(alpha) for spline in splines])
 
-            ag1.positions = interpolated_positions
-            writer.write(ag1)
+            atom_group_aligned.positions = interpolated_positions
+            writer.write(atom_group_aligned)
 
     return TRIMMED_PDB_FILE, TRAJECTORY_FILE
