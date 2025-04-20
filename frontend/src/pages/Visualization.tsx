@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { getApiUrl } from "../utils";
 import { useEffect, useState } from "react";
 import { loadPockets, initializePlugin, loadStructure, showOnePolymerRepresentation, showOnePocketRepresentation } from "../components/MolstarComponent";
@@ -86,18 +85,7 @@ function VisualizationContent() {
 
     return (
         <div>
-            <div>
-                <h2>3D Structure Viewer</h2>
-            </div>
-            <div>
-                <nav>
-                    <ul className="navigation">
-                        <li><Link to="/">Home</Link></li>
-                        <li><Link to="/viewer">3D Viewer</Link></li>
-                    </ul>
-                </nav>
-            </div>
-
+            <h2>3D Structure Viewer: {cryptoBenchResult.structure_name}</h2>
             <div className="viewer-container">
                 <div className="left">
                     <div className="viewer-3d" id="molstar-component"></div>
