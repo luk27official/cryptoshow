@@ -60,6 +60,13 @@ ul.navigation li {
     position: relative;
 }
 
+@media (max-width: 768px) {
+    .left,
+    .right {
+        width: 100%;
+    }
+}
+
 .msp-plugin .msp-plugin-content {
     z-index: 999;
 }
