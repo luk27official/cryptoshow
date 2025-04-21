@@ -70,6 +70,13 @@ function MolstarControls() {
                     <button className="molstar-control-button" onClick={handleResetCamera}>Reset camera</button>
                 </div>
             </div>
+            {loadedStructures.length >= 2 && (
+                <div className="molstar-controls-row">
+                    <p>
+                        To control the animation, use the button next to the "Model" label in the 3D viewer.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }
