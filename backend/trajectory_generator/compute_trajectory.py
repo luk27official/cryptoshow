@@ -45,7 +45,6 @@ def convert_cif_to_pdb(cif_path: str, pdb_path: str) -> None:
 
 def get_sequence_and_residues(universe: mda.Universe) -> Tuple[str, List[Residue]]:
     """Extracts the sequence and valid residues from a protein universe."""
-    # TODO: what does this do with ligands?
     residues: AtomGroup = universe.select_atoms("protein").residues
     seq: str = ""
     valid_res: List[Residue] = []

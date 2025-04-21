@@ -309,7 +309,8 @@ function getStructureElementLoci(loci: Loci): StructureElement.Loci | undefined 
 export function getResidueCoordinates(plugin: PluginUIContext, residues: string[]) {
     const coordinates: Point3D[] = [];
 
-    //TODO: could this be potentially improved? not sure whether we can do it just with one selection
+    // could this be potentially improved? not sure whether we can do it just with one selection
+    // but it is still pretty fast
     for (const res of residues) {
         const sel = getSelectionFromChainAuthId(plugin, res.split("_")[0], [Number(res.split("_")[1])]);
         const loci = getStructureElementLoci(StructureSelection.toLociWithSourceUnits(sel));
