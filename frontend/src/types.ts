@@ -67,8 +67,8 @@ export type AHoJStructure = {
     uniprot_ids: string[];
 };
 
-// TODO: we might add more fields here if needed
 export type AHoJResponse = {
+    // if needed, more fields can be added here based on the AHoJ response
     job_id: string;
     done: boolean;
     queries: {

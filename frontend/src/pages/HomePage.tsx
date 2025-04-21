@@ -62,6 +62,7 @@ function HomePage() {
     };
 
     const webSocketCheck = (taskId: string) => {
+        // TODO: add proper host here later
         const ws = new WebSocket(`ws://localhost/ws/task-status/${taskId}`);
         ws.onopen = () => {
             console.log("WebSocket connected");
