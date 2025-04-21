@@ -1,13 +1,14 @@
 import "./MolstarControls.css";
-import { PolymerRepresentationValues, PocketRepresentationValues, PolymerRepresentationType, PocketRepresentationType } from "../types";
+import { PolymerRepresentationValues, PocketRepresentationValues, PolymerRepresentationType, PocketRepresentationType, LoadedStructure } from "../types";
 import { usePlugin } from "../hooks/usePlugin";
-import { resetCamera, showOnePocketRepresentation, showOnePolymerRepresentation } from "./MolstarComponent";
+import { resetCamera, showOnePocketRepresentation, showOnePolymerRepresentation, removeFromStateTree, setStructureTransparency } from "./MolstarComponent";
 import { useAppContext } from "../hooks/useApp";
 
 function MolstarControls() {
     const plugin = usePlugin();
     const {
         loadedStructures,
+        setLoadedStructures,
         selectedPolymerRepresentation,
         setSelectedPolymerRepresentation,
         selectedPocketRepresentation,
@@ -32,6 +33,23 @@ function MolstarControls() {
 
     const handleResetCamera = () => {
         resetCamera(plugin);
+    };
+
+    const removeSuperposition = async () => {
+        const structurePromises = loadedStructures.map(async (s) => {
+            if (s.structureName.includes("structure")) {
+                await setStructureTransparency(plugin, 1, s.polymerRepresentations, s.structure);
+                await setStructureTransparency(plugin, 1, s.pocketRepresentations, s.structure);
+                return s;
+            } else {
+                removeFromStateTree(plugin, s.data.ref);
+                return null;
+            }
+        });
+
+        const resolvedStructures = await Promise.all(structurePromises);
+        const filteredStructures = resolvedStructures.filter((s): s is LoadedStructure => s !== null);
+        setLoadedStructures(filteredStructures);
     };
 
     return (
@@ -69,6 +87,12 @@ function MolstarControls() {
                 <div className="molstar-control-button-container">
                     <button className="molstar-control-button" onClick={handleResetCamera}>Reset camera</button>
                 </div>
+
+                {loadedStructures.length >= 2 && (
+                    <div className="molstar-control-button-container">
+                        <button className="molstar-control-button" onClick={removeSuperposition}>Remove superposition</button>
+                    </div>
+                )}
             </div>
             {loadedStructures.length >= 2 && (
                 <div className="molstar-controls-row">
