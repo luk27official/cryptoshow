@@ -48,9 +48,8 @@ const InputTable: React.FC<InputTableProps> = ({
                             onChange={(e) => {
                                 const file = e.target.files?.[0];
                                 if (file) {
-                                    setPdbCode(""); // Clear PDB code when file is selected
+                                    setPdbCode("");
                                     setFileData(file);
-                                    console.log(file);
                                 }
                             }}
                             disabled={isLoading}
