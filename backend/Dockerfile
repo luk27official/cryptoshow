@@ -10,7 +10,7 @@ RUN mkdir -p /home/cryptoshow/.cache/torch/hub/checkpoints && \
     chown -R cryptoshow:cryptoshow /app /app/data /app/cryptobench-small
 
 # ESM-2 downloader
-FROM base as downloader
+FROM base AS downloader
 
 WORKDIR /download
 
@@ -22,7 +22,7 @@ USER cryptoshow
 RUN wget https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t33_650M_UR50D.pt -O /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
 
 # Main image
-FROM base as final
+FROM base AS final
 
 WORKDIR /app
 
