@@ -1,0 +1,34 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+.project-name {
+    font-size: 1.25rem;
+    font-weight: bold;
+    text-decoration: none;
+    color: var(--text-color);
+}
+
+.project-name:hover {
+    text-decoration: underline;
+}
+
+.header-right {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.header-link {
+    color: var(--link-color);
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+
+.header-link:hover {
+    text-decoration: underline;
+}

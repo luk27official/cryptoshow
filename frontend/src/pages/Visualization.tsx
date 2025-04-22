@@ -5,6 +5,7 @@ import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { PluginProvider } from "../providers/PluginProvider";
 import { AppProvider } from "../providers/AppProvider";
 import { useAppContext } from "../hooks/useApp";
+import Header from "../components/Header";
 
 import "./Visualization.css";
 import ResultTable from "../components/ResultTable";
@@ -66,6 +67,7 @@ function VisualizationContent() {
     if (!taskId) {
         return (
             <div>
+                <Header />
                 <h2>3D Structure Viewer</h2>
                 <p>Task ID not found in URL.</p>
             </div>
@@ -75,6 +77,7 @@ function VisualizationContent() {
     if (!cryptoBenchResult) {
         return (
             <div>
+                <Header />
                 <h2>3D Structure Viewer</h2>
                 <p>Fetching task...</p>
                 <p>Click here to reset the page: <a href={`/viewer?id=${taskId}`}>Reset</a></p>
@@ -85,6 +88,7 @@ function VisualizationContent() {
 
     return (
         <div>
+            <Header />
             <h2>3D Structure Viewer: {cryptoBenchResult.structure_name}</h2>
             <div className="viewer-container">
                 <div className="left">
