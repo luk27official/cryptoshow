@@ -248,6 +248,9 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
         }
     };
 
+    const checkNameInLoadedStructures = (s: AHoJStructure) => {
+        return loadedStructures.some((ld) => ld.structureName.split(".")[0] === "anim_" + s.structure_file.split(".")[0]);
+    };
 
     return (
         <div className="ahoj-results">
@@ -296,11 +299,14 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                         <td>{s.ligands.filter((e) => e !== "").length > 0 ? s.ligands.filter((e) => e !== "").join(", ") : "N/A"}</td>
                                         <td>
                                             <button
-                                                className="load-structure-button"
+                                                className={`load-structure-button ${checkNameInLoadedStructures(s) ? "loaded" : ""
+                                                    }`}
                                                 onClick={() => handlePlayAnimation(s)}
                                                 disabled={loadingStructure === s.structure_file}
                                             >
-                                                {loadingStructure === s.structure_file ? "Loading..." : "Play"}
+                                                {loadingStructure === s.structure_file
+                                                    ? "Loading..." : checkNameInLoadedStructures(s)
+                                                        ? "Loaded" : "Play"}
                                             </button>
                                         </td>
                                     </tr>

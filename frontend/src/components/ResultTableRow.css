@@ -273,6 +273,11 @@
     opacity: 0.7;
 }
 
+.ahoj-results-table .load-structure-button.loaded {
+    background-color: green;
+    color: white;
+}
+
 .no-results {
     color: var(--text-muted);
     font-style: italic;
