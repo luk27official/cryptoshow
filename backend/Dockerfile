@@ -46,17 +46,13 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
 
-# === Full build (with ESM2) ===
+# === Full build (with ESM-2) ===
 FROM common AS full
 
 RUN wget --progress=dot:giga https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t33_650M_UR50D.pt \
     -O /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
 
-COPY --from=downloader --chown=cryptoshow:cryptoshow \
-    /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt \
-    /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
-
-# === Fast build (no ESM2) ===
+# === Fast build (no ESM-2) ===
 FROM common AS fast
 
-# skips downloader and COPY entirely
+# skips the ESM-2 download
