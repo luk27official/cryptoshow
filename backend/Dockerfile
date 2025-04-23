@@ -23,7 +23,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-RUN wget -q https://github.com/skrhakv/TinyCryptoBench/raw/3adde8c5489f5f52b3df6c5b1bbd80898ea3a2c2/data/model-650M.pt -O /app/cryptobench-small/model-650M.pt
+RUN wget --progress=dot:giga https://github.com/skrhakv/TinyCryptoBench/raw/3adde8c5489f5f52b3df6c5b1bbd80898ea3a2c2/data/model-650M.pt -O /app/cryptobench-small/model-650M.pt
 
 ENV PATH="/home/cryptoshow/.local/bin:$PATH"
 
@@ -49,7 +49,7 @@ CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
 # === Full build (with ESM2) ===
 FROM common AS full
 
-RUN wget -q https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t33_650M_UR50D.pt \
+RUN wget --progress=dot:giga https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t33_650M_UR50D.pt \
     -O /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
 
 COPY --from=downloader --chown=cryptoshow:cryptoshow \
