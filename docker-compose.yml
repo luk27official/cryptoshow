@@ -30,7 +30,7 @@ services:
     build: 
       context: ./backend
       dockerfile: Dockerfile
-      target: ${BUILD_TARGET:-full}
+      target: common
     command: celery -A tasks.celery_app worker --loglevel=info
     volumes:
       - ./data:/app/data
@@ -69,7 +69,7 @@ services:
     build: 
       context: ./backend
       dockerfile: Dockerfile
-      target: ${BUILD_TARGET:-full}
+      target: common
     command: celery -A tasks.celery_app worker --loglevel=info
     volumes:
       - ./data:/app/data
