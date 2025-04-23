@@ -1,6 +1,9 @@
 services:
   backend:
-    build: ./backend
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+      target: ${BUILD_TARGET:-full}
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints

@@ -9,8 +9,8 @@ RUN mkdir -p /home/cryptoshow/.cache/torch/hub/checkpoints && \
     mkdir /app/data && \
     chown -R cryptoshow:cryptoshow /app /app/data /app/cryptobench-small
 
-# ESM-2 downloader
-FROM base AS downloader
+# === shared setup (requirements, CryptoBench) ===
+FROM base AS common
 
 WORKDIR /download
 
@@ -19,21 +19,19 @@ RUN mkdir -p /home/cryptoshow/.cache/torch/hub/checkpoints && \
 
 USER cryptoshow
 
-RUN wget https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t33_650M_UR50D.pt -O /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
-
-# Main image
-FROM base AS final
-
 WORKDIR /app
 
 COPY requirements.txt .
 
-RUN wget -q https://github.com/skrhakv/TinyCryptoBench/raw/3adde8c5489f5f52b3df6c5b1bbd80898ea3a2c2/data/model-650M.pt -O /app/cryptobench-small/model-650M.pt && \
-    pip install --no-cache-dir -r requirements.txt
+RUN wget -q https://github.com/skrhakv/TinyCryptoBench/raw/3adde8c5489f5f52b3df6c5b1bbd80898ea3a2c2/data/model-650M.pt -O /app/cryptobench-small/model-650M.pt
 
-COPY --from=downloader --chown=cryptoshow:cryptoshow /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
+ENV PATH="/home/cryptoshow/.local/bin:$PATH"
+
+RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+
+USER root
 
 RUN chown -R cryptoshow:cryptoshow /app
 
@@ -47,3 +45,18 @@ USER cryptoshow
 ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
+
+# === Full build (with ESM2) ===
+FROM common AS full
+
+RUN wget -q https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t33_650M_UR50D.pt \
+    -O /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
+
+COPY --from=downloader --chown=cryptoshow:cryptoshow \
+    /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt \
+    /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
+
+# === Fast build (no ESM2) ===
+FROM common AS fast
+
+# skips downloader and COPY entirely
