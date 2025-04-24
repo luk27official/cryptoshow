@@ -2,7 +2,7 @@ import "./Header.css";
 
 const Header = () => {
     return (
-        <header className="header">
+        <header className="header" id="header">
             <div className="header-left">
                 <a href="/" className="project-name">CryptoShow</a>
             </div>
@@ -10,8 +10,8 @@ const Header = () => {
                 <a href="https://github.com/luk27official/cryptoshow" target="_blank" rel="noopener noreferrer" className="header-link">
                     GitHub
                 </a>
-                <a href="/help" className="header-link">
-                    Help
+                <a href="/about" className="header-link">
+                    About
                 </a>
             </div>
         </header>

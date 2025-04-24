@@ -49,6 +49,12 @@ export const initializePlugin = async () => {
                 }
             }
         });
+
+    MolstarPlugin.layout.events.updated.subscribe(() => {
+        const header = document.getElementById("header")!;
+        header.style.display = MolstarPlugin.layout.state.isExpanded ? "none" : "flex";
+    });
+
     return MolstarPlugin;
 };
 

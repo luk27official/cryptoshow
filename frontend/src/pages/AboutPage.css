@@ -1,0 +1,33 @@
+.about-container {
+    padding: 1rem 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.about-container h2,
+.about-container h3 {
+    margin-bottom: 1rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.about-container p {
+    margin-bottom: 1rem;
+    line-height: 1.6;
+}
+
+.about-container ul {
+    list-style-type: disc;
+    margin-left: 2rem;
+    margin-bottom: 1rem;
+}
+
+.about-container li {
+    margin-bottom: 0.5rem;
+}
+
+@media (max-width: 768px) {
+    .about-container {
+        padding: 1rem;
+    }
+}

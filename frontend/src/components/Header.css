@@ -3,8 +3,12 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 1rem;
-    background-color: var(--background-color);
-    color: var(--text-color);
+    background-color: var(--bg-primary, #242424);
+    color: var(--text-primary, rgba(255, 255, 255, 0.87));
+    border-bottom: 0.0625rem solid var(--border-color, rgba(255, 255, 255, 0.1));
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.1);
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .project-name {
@@ -24,7 +28,7 @@
 }
 
 .header-link {
-    color: var(--link-color);
+    color: var(--accent-color, #646cff);
     text-decoration: none;
     font-size: 0.875rem;
 }
