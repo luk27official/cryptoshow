@@ -3,6 +3,7 @@ import uuid
 import os
 import json
 import shutil
+import requests
 
 from typing import TypedDict
 import biotite.database.rcsb as rcsb
@@ -56,16 +57,32 @@ def get_existing_result(file_path: str):
     return None
 
 
-def download_cif_file(pdb_id: str):
+def download_cif_file(pdb_id: str, tmp_dir: str = "") -> str:
     """Download a CIF file from the RCSB database."""
-    tmp_dir = os.path.join(JOBS_BASE_PATH, generate_random_folder_name())
-    os.makedirs(tmp_dir, exist_ok=True)
+    if not tmp_dir:
+        tmp_dir = os.path.join(JOBS_BASE_PATH, generate_random_folder_name())
+        os.makedirs(tmp_dir, exist_ok=True)
 
     try:
-        cif_file_path: str = rcsb.fetch(pdb_id, "cif", tmp_dir)  # type: ignore
-        with open(cif_file_path, "r") as f:
-            cif_file_content = f
-            if "400 Bad Request" in cif_file_content.read() or "404 Not Found" in cif_file_content.read():
+        if len(pdb_id) == 4:
+            cif_file_path: str = rcsb.fetch(pdb_id, "cif", tmp_dir)  # type: ignore
+            with open(cif_file_path, "r") as f:
+                cif_file_content = f
+                if "400 Bad Request" in cif_file_content.read() or "404 Not Found" in cif_file_content.read():
+                    shutil.rmtree(tmp_dir)
+                    return ""
+        else:
+            # Assuming pdb_id is a UniProt ID if not 4 characters
+            uniprot_id = pdb_id
+            alphafold_url = f"https://alphafold.ebi.ac.uk/files/AF-{uniprot_id}-F1-model_v4.cif"
+            cif_file_path = os.path.join(tmp_dir, f"{uniprot_id}.cif")
+
+            response = requests.get(alphafold_url, stream=True)
+            if response.status_code == 200:
+                with open(cif_file_path, "wb") as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        f.write(chunk)
+            else:
                 shutil.rmtree(tmp_dir)
                 return ""
 

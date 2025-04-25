@@ -17,8 +17,6 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 # TODO remove
 
-import biotite.database.rcsb as rcsb
-
 from .tasks import celery_app
 from .utils import get_existing_result, generate_random_folder_name, download_cif_file
 from .commons import JOBS_BASE_PATH
@@ -87,7 +85,10 @@ async def calculate(request: dict):
     os.makedirs(tmp_dir, exist_ok=True)
 
     try:
-        cif_file_path: str = rcsb.fetch(pdb_id, "cif", tmp_dir)  # type: ignore
+        cif_file_path: str = download_cif_file(pdb_id, tmp_dir)  # type: ignore
+        if not cif_file_path:
+            return JSONResponse(status_code=400, content={"error": "PDB ID not found."})
+
         # Here, we check if the file is actually a CIF file, and not an error message - wrong PDB ID might return a HTML file.
         with open(cif_file_path, "r") as f:
             cif_file_content = f

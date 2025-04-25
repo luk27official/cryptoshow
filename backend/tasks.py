@@ -4,7 +4,6 @@ import os
 import json
 import shutil
 
-import biotite.database.rcsb as rcsb
 import biotite.structure.io.pdbx as pdbx
 import biotite.structure.io.pdb as pdb
 from biotite.structure import AtomArray
