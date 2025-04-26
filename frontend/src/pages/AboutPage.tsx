@@ -14,6 +14,9 @@ function AboutPage() {
             <p>
                 For more details, check out the <a href="https://github.com/luk27official/cryptoshow" target="_blank" rel="noopener noreferrer">GitHub repository</a>.
             </p>
+            <p>
+                Contact us at <i>admin [at] lukaspolak.cz</i>
+            </p>
         </div>
     );
 }
