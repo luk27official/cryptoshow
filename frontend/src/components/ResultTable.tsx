@@ -23,12 +23,10 @@ function ResultTable() {
         if (postData) {
             ahoJJobIds[idx] = postData["job_id"];
             setAHoJJobIds([...ahoJJobIds]);
-            console.log(postData);
 
             const jobResult = await pollAHoJJobStatus(cryptoBenchResult!.file_hash, postData["job_id"]);
             ahojJobResults[idx] = jobResult;
             setAHoJJobResults([...ahojJobResults]);
-            console.log("AHoJ Job Result:", jobResult);
         }
     };
 

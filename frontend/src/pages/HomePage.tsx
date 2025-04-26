@@ -51,7 +51,6 @@ function HomePage() {
                 return;
             }
 
-            console.log(data);
             setTaskId(data.task_id!);
             webSocketCheck(data.task_id!);
         } catch (error) {
@@ -64,9 +63,6 @@ function HomePage() {
     const webSocketCheck = (taskId: string) => {
         // TODO: add proper host here later
         const ws = new WebSocket(`ws://localhost/ws/task-status/${taskId}`);
-        ws.onopen = () => {
-            console.log("WebSocket connected");
-        };
 
         ws.onmessage = (event) => {
             const data: TaskStatus = event.data ? JSON.parse(event.data) : { "status": "unknown" };
@@ -88,10 +84,6 @@ function HomePage() {
             } else {
                 setResultStatus("Unknown status: " + data.status);
             }
-        };
-
-        ws.onclose = () => {
-            console.log("WebSocket closed");
         };
     };
 

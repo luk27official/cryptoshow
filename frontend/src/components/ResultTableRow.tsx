@@ -197,13 +197,11 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
             // TODO: use dynamic host
             const ws = new WebSocket(`ws://localhost/ws/task-status/${animationTaskId}`);
 
-            ws.onopen = () => console.log("Animation WebSocket connected");
             ws.onerror = (err) => {
                 console.error("WebSocket error:", err);
                 setLoadingStructure(null);
                 ws.close();
             };
-            ws.onclose = () => console.log("Animation WebSocket closed");
 
             ws.onmessage = async (event) => {
                 const data = event.data ? JSON.parse(event.data) : { status: "unknown" };
