@@ -254,13 +254,23 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
 export async function createPocketFromJson(plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef<PocketRepresentationType>[]) {
     const group2 = group.apply(StateTransforms.Misc.CreateGroup, { label: groupName });
 
-    const query = MS.struct.generator.atomGroups({
-        "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), pocket.residue_ids[0].split("_")[0]]), // TODO: fix multiple chains
-        "residue-test": MS.core.set.has([MS.set(...pocket.residue_ids.map((e) => Number(e.split("_")[1]))), MS.struct.atomProperty.macromolecular.auth_seq_id()]),
-        "group-by": MS.struct.atomProperty.macromolecular.residueKey()
-    });
+    const queries = [];
 
-    const resSelection = group2.apply(StateTransforms.Model.StructureSelectionFromExpression, { expression: query });
+    const chains = pocket.residue_ids.map((e) => e.split("_")[0]);
+    const uniqueChains = [...new Set(chains)];
+
+    for (const chain of uniqueChains) {
+        const query = MS.struct.generator.atomGroups({
+            "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), chain]),
+            "residue-test": MS.core.set.has([MS.set(...pocket.residue_ids.map((e) => Number(e.split("_")[1]))), MS.struct.atomProperty.macromolecular.auth_seq_id()]),
+            "group-by": MS.struct.atomProperty.macromolecular.residueKey()
+        });
+        queries.push(query);
+    }
+
+    const union = MS.struct.modifier.union(queries);
+
+    const resSelection = group2.apply(StateTransforms.Model.StructureSelectionFromExpression, { expression: union });
 
     const surface = resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
         type: "molecular-surface",
@@ -295,7 +305,7 @@ export async function createPocketFromJson(plugin: PluginUIContext, structure: S
 
 function getSelectionFromChainAuthId(plugin: PluginUIContext, chainId: string, positions: number[]) {
     const query = MS.struct.generator.atomGroups({
-        "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), chainId]), // TODO: fix multiple chains
+        "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), chainId]),
         "residue-test": MS.core.set.has([MS.set(...positions), MS.struct.atomProperty.macromolecular.auth_seq_id()]),
         "group-by": MS.struct.atomProperty.macromolecular.residueKey()
     });
