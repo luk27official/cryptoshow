@@ -12,13 +12,16 @@ export const getColor = (value: number) => {
     return defaultColors[vFl % defaultColors.length];
 };
 
-// TODO: change the default colors to a more suitable set
+// https://davidmathlogic.com/colorblind/#%23332288-%23117733-%2344AA99-%2388CCEE-%23DDCC77-%23CC6677-%23AA4499-%23882255
 const defaultColors = [
-    0xff0000,
-    0xff8000,
-    0xffff00,
-    0x80ff00,
-    0x00ff00,
+    0x332288,
+    0x117733,
+    0x44aa99,
+    0x88ccee,
+    0xddcc77,
+    0xcc6677,
+    0xaa4499,
+    0x882255,
 ];
 
 export const COMPLETED_TASKS_KEY = "completedTasks";
