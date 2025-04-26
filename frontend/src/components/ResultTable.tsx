@@ -36,16 +36,21 @@ function ResultTable() {
         <div className="results-table">
             <div>
                 {cryptoBenchResult!.pockets.length > 0 ? (
-                    cryptoBenchResult!.pockets.map((pocket: Pocket, index: number) => (
-                        <ResultTableRow
-                            key={index}
-                            pocket={pocket}
-                            index={index}
-                            ahoJJobId={ahoJJobIds[index]}
-                            ahoJJobResult={ahojJobResults[index]}
-                            onAHoJClick={handleClick}
-                        />
-                    ))
+                    cryptoBenchResult!.pockets
+                        .map((pocket, index) => ({ pocket, originalIndex: index }))
+                        .sort((a, b) => {
+                            return a.pocket.pocket_id - b.pocket.pocket_id;
+                        })
+                        .map(({ pocket, originalIndex }) => (
+                            <ResultTableRow
+                                key={originalIndex}
+                                pocket={pocket}
+                                index={originalIndex}
+                                ahoJJobId={ahoJJobIds[originalIndex]}
+                                ahoJJobResult={ahojJobResults[originalIndex]}
+                                onAHoJClick={handleClick}
+                            />
+                        ))
                 ) : (
                     <h2>No pockets available.</h2>
                 )}
