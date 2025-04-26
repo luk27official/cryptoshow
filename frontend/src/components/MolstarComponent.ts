@@ -22,6 +22,10 @@ import "molstar/lib/mol-plugin-ui/skin/light.scss";
 import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType } from "../types";
 import { getColor, getWindowWidth } from "../utils";
 
+/**
+ * Initializes the Mol* plugin and sets up the layout.
+ * @returns Mol* plugin instance
+ */
 export const initializePlugin = async () => {
     const wrapper = document.getElementById("molstar-component")!;
     const windowWidth = getWindowWidth();
@@ -50,6 +54,7 @@ export const initializePlugin = async () => {
             }
         });
 
+    // Handle fullscreen mode
     MolstarPlugin.layout.events.updated.subscribe(() => {
         const header = document.getElementById("header")!;
         header.style.display = MolstarPlugin.layout.state.isExpanded ? "none" : "flex";
@@ -58,6 +63,13 @@ export const initializePlugin = async () => {
     return MolstarPlugin;
 };
 
+/**
+ * Loads a structure and its trajectory (if present) into the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param structureUrl Structure URL
+ * @param trajectoryUrl Trajectory URL (optional)
+ * @returns Loaded structure object containing the structure, data, and representations
+ */
 export const loadStructure = async (plugin: PluginUIContext, structureUrl: string, trajectoryUrl: string | null): Promise<LoadedStructure> => {
     let structureNameShort;
 
@@ -165,7 +177,12 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
     return loadedStucture;
 };
 
-async function createLigandRepresentations(plugin: PluginUIContext, structure: StateObjectSelector) {
+/**
+ * Creates ligand representations in the Mol* plugin for a given structure.
+ * @param plugin Mol* plugin instance
+ * @param structure Structure object
+ */
+const createLigandRepresentations = async (plugin: PluginUIContext, structure: StateObjectSelector) => {
     const shownGroups = ["ion", "ligand", "nucleic", "lipid", "branched", "non-standard", "coarse"] as const;
 
     for (const group of shownGroups) {
@@ -178,8 +195,14 @@ async function createLigandRepresentations(plugin: PluginUIContext, structure: S
     }
 
     await plugin.build().commit();
-}
+};
 
+/**
+ * Sets the visibility of a subtree in the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param representations Array of representations
+ * @param representationType Type of representation to show 
+ */
 export const showOneRepresentation = async <T extends PolymerRepresentationType | PocketRepresentationType>(
     plugin: PluginUIContext,
     representations: RepresentationWithRef<T>[],
@@ -191,6 +214,13 @@ export const showOneRepresentation = async <T extends PolymerRepresentationType 
     }
 };
 
+/**
+ * Shows a specific polymer representation in the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param loadedStructure Loaded structure object
+ * @param representationType Type of representation to show
+ * @returns Promise that resolves when the representation is shown
+ */
 export const showOnePolymerRepresentation = async (
     plugin: PluginUIContext,
     loadedStructure: LoadedStructure,
@@ -199,6 +229,13 @@ export const showOnePolymerRepresentation = async (
     return showOneRepresentation(plugin, loadedStructure.polymerRepresentations, representationType);
 };
 
+/**
+ * Shows a specific pocket representation in the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param loadedStructure Loaded structure object
+ * @param representationType Type of representation to show
+ * @returns Promise that resolves when the representation is shown
+ */
 export const showOnePocketRepresentation = async (
     plugin: PluginUIContext,
     loadedStructure: LoadedStructure,
@@ -207,7 +244,14 @@ export const showOnePocketRepresentation = async (
     return showOneRepresentation(plugin, loadedStructure.pocketRepresentations, representationType);
 };
 
-
+/**
+ * Loads pockets into the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param structure Structure object (Mol*)
+ * @param result CryptoBench result object
+ * @param pocketId Pocket ID to load (null for all pockets)
+ * @returns Promise containing Mol* representations that resolves when the pockets are loaded
+ */
 export const loadPockets = async (plugin: PluginUIContext, structure: StateObjectSelector, result: CryptoBenchResult, pocketId: number | null) => {
     const builder = plugin.state.data.build();
     const group = builder.to(structure).apply(StateTransforms.Misc.CreateGroup, { label: "Pockets" });
@@ -250,8 +294,18 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
     return representations;
 };
 
+/**
+ * Creates a pocket representation in the Mol* plugin from a JSON object.
+ * @param plugin Mol* plugin instance
+ * @param structure Structure object (Mol*)
+ * @param pocket Pocket object (CryptoBench result object)
+ * @param groupName Group name for the state tree
+ * @param group State object reference for the group
+ * @param color Color for the representation
+ * @param representations Array of pocket representations (mutable)
+ */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export async function createPocketFromJson(plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef<PocketRepresentationType>[]) {
+export const createPocketFromJson = async (plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef<PocketRepresentationType>[]) => {
     const group2 = group.apply(StateTransforms.Misc.CreateGroup, { label: groupName });
 
     const queries = [];
@@ -301,28 +355,46 @@ export async function createPocketFromJson(plugin: PluginUIContext, structure: S
     }));
 
     representations.push({ type: "cartoon", object: cartoon, id: pocket.pocket_id });
-}
+};
 
-function getSelectionFromChainAuthId(plugin: PluginUIContext, chainId: string, positions: number[]) {
+/**
+ * Gets the selection from the chain ID and auth IDs for specified residues.
+ * @param plugin Mol* plugin instance
+ * @param chainId Chain ID
+ * @param positions Array of residue positions
+ * @returns Selection object
+ */
+const getSelectionFromChainAuthId = (plugin: PluginUIContext, chainId: string, positions: number[]) => {
     const query = MS.struct.generator.atomGroups({
         "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), chainId]),
         "residue-test": MS.core.set.has([MS.set(...positions), MS.struct.atomProperty.macromolecular.auth_seq_id()]),
         "group-by": MS.struct.atomProperty.macromolecular.residueKey()
     });
     return Script.getStructureSelection(query, plugin.managers.structure.hierarchy.current.structures[0].cell.obj!.data);
-}
+};
 
 //cc: https://github.com/scheuerv/molart/
-function getStructureElementLoci(loci: Loci): StructureElement.Loci | undefined {
+/**
+ * Gets the structure element loci from the given loci.
+ * @param loci Loci object
+ * @returns Element loci or undefined
+ */
+const getStructureElementLoci = (loci: Loci): StructureElement.Loci | undefined => {
     if (loci.kind == "bond-loci") {
         return Bond.toStructureElementLoci(loci);
     } else if (loci.kind == "element-loci") {
         return loci;
     }
     return undefined;
-}
+};
 
-export function getResidueCoordinates(plugin: PluginUIContext, residues: string[]) {
+/**
+ * Gets the coordinates of residues in the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param residues Array of residue strings (e.g., "A_1")
+ * @returns Array of coordinates
+ */
+export const getResidueCoordinates = (plugin: PluginUIContext, residues: string[]) => {
     const coordinates: Point3D[] = [];
 
     // could this be potentially improved? not sure whether we can do it just with one selection
@@ -339,9 +411,15 @@ export function getResidueCoordinates(plugin: PluginUIContext, residues: string[
     }
 
     return coordinates;
-}
+};
 
-export function getResidueInformation(plugin: PluginUIContext, residue: string) {
+/**
+ * Gets the residue information from the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param residue Residue string (e.g., "A_1")
+ * @returns Residue object containing information about the residue
+ */
+export const getResidueInformation = (plugin: PluginUIContext, residue: string) => {
     const sel = getSelectionFromChainAuthId(plugin, residue.split("_")[0], [Number(residue.split("_")[1])]);
     const loci = getStructureElementLoci(StructureSelection.toLociWithSourceUnits(sel));
     if (!loci) return null;
@@ -368,24 +446,45 @@ export function getResidueInformation(plugin: PluginUIContext, residue: string) 
     };
 
     return r;
-}
+};
 
-export async function removeFromStateTree(plugin: PluginUIContext, ref: string) {
+/**
+ * Removes a structure from the Mol* plugin state tree.
+ * @param plugin Mol* plugin instance
+ * @param ref Reference to the object to remove
+ */
+export const removeFromStateTree = async (plugin: PluginUIContext, ref: string) => {
     await plugin.state.data.build().delete(ref).commit();
-}
+};
 
-export function playAnimation(plugin: PluginUIContext, fps: number) {
+/**
+ * Plays an animation in the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param fps Frames per second for the animation
+ */
+export const playAnimation = (plugin: PluginUIContext, fps: number) => {
     plugin.managers.animation.play(AnimateModelIndex, {
         duration: { name: "computed", params: { targetFps: fps } },
         mode: { name: "loop", params: { direction: "forward" } }
     });
-}
+};
 
-export function resetCamera(plugin: PluginUIContext) {
+/**
+ * Resets the camera in the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ */
+export const resetCamera = (plugin: PluginUIContext) => {
     plugin.canvas3d?.requestCameraReset();
-}
+};
 
-export async function setStructureTransparency(plugin: PluginUIContext, alpha: number, representations: RepresentationWithRef<PocketRepresentationType | PolymerRepresentationType>[], structure: StateObjectSelector) {
+/**
+ * Sets the transparency of a structure in the Mol* plugin.
+ * @param plugin Mol* plugin instance
+ * @param alpha Transparency value (0-1)
+ * @param representations Array of representations
+ * @param structure Structure object (Mol*)
+ */
+export const setStructureTransparency = async (plugin: PluginUIContext, alpha: number, representations: RepresentationWithRef<PocketRepresentationType | PolymerRepresentationType>[], structure: StateObjectSelector) => {
     type TransparencyParams = {
         bundle: Bundle;
         value: number;
@@ -412,4 +511,4 @@ export async function setStructureTransparency(plugin: PluginUIContext, alpha: n
         const r = await plugin.state.data.build().to(element.object.ref).apply(StateTransforms.Representation.TransparencyStructureRepresentation3DFromBundle, { layers: params }).commit();
         element.transparentObjectRef = r.ref;
     }
-}
+};
