@@ -1,0 +1,17 @@
+<svg version="1.2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+	<title>favicon</title>
+	<defs>
+		<linearGradient id="g1" x2="1" gradientUnits="userSpaceOnUse" gradientTransform="matrix(85.707,99.999,-99.887,85.611,57.293,50.001)">
+			<stop offset="0" stop-color="#00c3ff"/>
+			<stop offset="1" stop-color="#ffff1c"/>
+		</linearGradient>
+	</defs>
+	<style>
+		.s0 { fill: #000000 } 
+		.s1 { fill: none;stroke: url(#g1);stroke-linecap: round;stroke-linejoin: round;stroke-width: 16 } 
+	</style>
+	<path fill-rule="evenodd" class="s0" d="m30 0h140c16.6 0 30 13.4 30 30v140c0 16.6-13.4 30-30 30h-140c-16.6 0-30-13.4-30-30v-140c0-16.6 13.4-30 30-30z"/>
+	<g>
+		<path class="s1" d="m143 65c-14.2-14.5-35.8-19-54.6-11.3-18.8 7.7-31.1 26-31.1 46.3 0 20.3 12.3 38.6 31.1 46.3 18.8 7.7 40.4 3.2 54.6-11.3"/>
+	</g>
+</svg>
