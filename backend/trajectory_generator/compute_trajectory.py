@@ -37,14 +37,33 @@ protein_letters_3to1 = {
 
 
 def convert_cif_to_pdb(cif_path: str, pdb_path: str) -> None:
-    """Convert CIF files to PDB format."""
+    """
+    Convert CIF files to PDB format.
+
+    Args:
+        cif_path (str): Path to the CIF file.
+        pdb_path (str): Path to save the converted PDB file.
+
+    Returns:
+        None
+    """
     structure = gemmi.read_structure(cif_path)
     structure.remove_alternative_conformations()
     structure.write_pdb(pdb_path)
 
 
 def get_sequence_and_residues(universe: mda.Universe) -> Tuple[str, List[Residue]]:
-    """Extracts the sequence and valid residues from a protein universe."""
+    """
+    Extracts the sequence and valid residues from a protein universe.
+
+    Args:
+        universe (mda.Universe): The MDAnalysis Universe object representing the protein structure.
+
+    Returns:
+        Tuple[str, List[Residue]]: A tuple containing the protein sequence as a string
+        (using one-letter codes) and a list of corresponding MDAnalysis Residue objects.
+        Unknown residues are skipped.
+    """
     residues: AtomGroup = universe.select_atoms("protein").residues
     seq: str = ""
     valid_res: List[Residue] = []
@@ -60,7 +79,17 @@ def get_sequence_and_residues(universe: mda.Universe) -> Tuple[str, List[Residue
 
 
 def longest_common_substring(s1: str, s2: str) -> str:
-    """Finds the longest common substring of two strings."""
+    """
+    Finds the longest common substring of two strings.
+
+    Args:
+        s1 (str): The first string.
+        s2 (str): The second string.
+
+    Returns:
+        str: The longest common substring found between s1 and s2. If multiple
+        substrings have the same maximum length, the one encountered last is returned.
+    """
     m: List[List[int]] = [[0] * (1 + len(s2)) for i in range(1 + len(s1))]
     longest: int = 0
     x_longest: int = 0
@@ -78,7 +107,35 @@ def longest_common_substring(s1: str, s2: str) -> str:
 
 
 def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple[str, str]:
-    """Main function to compute the trajectory."""
+    """
+    Computes an interpolated trajectory between an original and an aligned structure.
+
+    This function takes an original protein structure and an aligned version,
+    finds the longest common substring (LCS) of their sequences, and generates
+    a trajectory interpolating the atomic positions of the LCS residues between
+    the two structures. Ligands from the aligned structure are included in the
+    output PDB and trajectory. Input files can be CIF or PDB; CIF files are
+    converted to PDB.
+
+    Args:
+        task_hash (str): The unique identifier for the task, used to locate input
+                         and output files within the JOBS_BASE_PATH.
+        aligned_structure_filename (str): The filename of the aligned structure
+                                          located within the task-specific directory.
+
+    Returns:
+        Tuple[str, str]: A tuple containing the absolute paths to the generated
+                         trimmed PDB file (containing LCS atoms and aligned ligands)
+                         and the XTC trajectory file.
+
+    Raises:
+        FileNotFoundError: If the results.json file or the input/aligned structure
+                           files cannot be found in the specified task directory.
+        ValueError: If the 'input_structure' key is missing in the results.json file.
+        AssertionError: If the number of residues or atoms in the LCS segments
+                        do not match between the original and aligned structures,
+                        or if no common atoms are found for interpolation.
+    """
 
     RESULT_FILE: str = os.path.join(JOBS_BASE_PATH, task_hash, "results.json")
 

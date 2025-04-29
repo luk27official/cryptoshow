@@ -38,7 +38,11 @@ logger.setLevel(logging.DEBUG)
 
 
 def generate_openapi_schema():
-    """Generate the OpenAPI schema for the FastAPI application."""
+    """Generate the OpenAPI schema for the FastAPI application.
+
+    Returns:
+        dict: The OpenAPI schema.
+    """
     return get_openapi(
         title="CryptoShow API",
         version="1.0.0",
@@ -75,7 +79,11 @@ async def health():
 
 @app.post("/calculate")
 async def calculate(request: dict):
-    """Calculates the prediction for a given PDB ID."""
+    """Calculates the prediction for a given PDB ID.
+
+    Args:
+        request (dict): The request body containing the PDB ID.
+    """
     if "pdb" not in request:
         return JSONResponse(status_code=400, content={"error": "Missing 'pdb' field in request."})
 
@@ -121,7 +129,12 @@ async def calculate(request: dict):
 
 @app.post("/calculate-custom")
 async def calculate_custom(file: UploadFile = File(...)):
-    """Upload a PDB/CIF file and calculate the prediction."""
+    """Upload a PDB/CIF file and calculate the prediction.
+
+    Args:
+        file (UploadFile): The uploaded PDB/CIF file.
+    """
+
     if not file or not file.filename:
         return JSONResponse(status_code=400, content={"error": "No file uploaded."})
 
@@ -157,6 +170,9 @@ def get_status(task_id: str):
     """
     Check the status of a processing task.
     If a hash of the structure is used, look for a folder with such a name in the /app/data/jobs directory.
+
+    Args:
+        task_id (str): The task ID to check the status for.
     """
 
     RESULTS_FILE = os.path.join(JOBS_BASE_PATH, task_id, "results.json")
@@ -186,7 +202,13 @@ def get_status(task_id: str):
 
 @app.get("/file/{task_hash}/{filename}")
 def get_file(task_hash: str, filename: str):
-    """Get the file at the given path for a given task id (in the /app/data directory)."""
+    """Get the file at the given path for a given task id (in the /app/data directory).
+
+    Args:
+        task_hash (str): The task hash to get the file for.
+        filename (str): The name of the file to get.
+    """
+
     if ".." in task_hash or ".." in filename:
         return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
 
@@ -200,7 +222,13 @@ def get_file(task_hash: str, filename: str):
 
 @app.get("/animate/{task_hash}/{aligned_structure_filename}")
 def get_animated_file(task_hash: str, aligned_structure_filename: str):
-    """Create an animated CIF file from the given task hash and filename."""
+    """Create an animated trajectory file for a given task hash and aligned structure filename.
+    This runs a Celery task to generate the trajectory.
+
+    Args:
+        task_hash (str): The task hash to get the file for.
+        aligned_structure_filename (str): The name of the aligned structure file from AHoJ.
+    """
     if ".." in task_hash or ".." in aligned_structure_filename:
         return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
 
@@ -214,7 +242,13 @@ def get_animated_file(task_hash: str, aligned_structure_filename: str):
 
 @app.websocket("/ws/task-status/{task_id}")
 async def websocket_endpoint(websocket: WebSocket, task_id: str):
-    """Websocket endpoint for getting the status of a processing task."""
+    """Websocket endpoint for getting the status of a processing task.
+
+    Args:
+        websocket (WebSocket): The WebSocket connection.
+        task_id (str): The task ID to check the status for.
+    """
+
     await websocket.accept()
 
     try:
@@ -242,7 +276,12 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
 
 @app.post("/proxy/ahoj/job")
 async def proxy_ahoj_calcluate(request: dict):
-    """Proxy POST request to apoholo.cz/api/job endpoint (for job posting)."""
+    """Proxy POST request to apoholo.cz/api/job endpoint (for job posting).
+
+    Args:
+        request (dict): The request body containing the job data.
+    """
+
     url = "https://apoholo.cz/api/job"
     try:
         async with httpx.AsyncClient(verify=False) as client:  # TODO: verify to True
@@ -255,7 +294,13 @@ async def proxy_ahoj_calcluate(request: dict):
 
 @app.get("/proxy/ahoj/{task_hash}/{path:path}")
 async def proxy_ahoj_get(task_hash: str, path: str):
-    """Proxy GET request to apoholo.cz/<path> endpoint."""
+    """Proxy GET request to apoholo.cz/<path> endpoint.
+
+    Args:
+        task_hash (str): The task hash to get the file for.
+        path (str): The path to the file on apoholo.cz.
+    """
+
     url = f"https://apoholo.cz/{path}"
 
     if ".." in task_hash or ".." in path:

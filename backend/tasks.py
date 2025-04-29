@@ -27,21 +27,35 @@ celery_app = Celery(
 
 @celery_app.task(name="celery_app.cuda_test", bind=True)
 def process_string_test(self):
-    """CUDA test."""
+    """CUDA availability test.
+
+    Returns:
+        dict: A dictionary indicating the device used ('cuda' or 'cpu').
+    """
     return {"device": "cuda" if torch.cuda.is_available() else "cpu"}
 
 
 @celery_app.task(name="celery_app.process_esm2_cryptobench", bind=True)
 def process_esm2_cryptobench(self, structure_path_original: str, structure_name: str):
-    """Run ESM2 and CryptoBench models on the uploaded 3D structure.
+    """Runs ESM2 and CryptoBench models on a 3D structure.
 
-    Parameters
-    ----------
-    structure_path_original : str
-        Path to the uploaded structure file (or downloaded by PDB ID).
-    structure_name : str
-        Name of the structure (PDB ID or "custom").
+    Processes an uploaded or downloaded protein structure file (PDB or CIF),
+    extracts its sequence and coordinates, computes ESM2 embeddings,
+    runs CryptoBench prediction, performs clustering, and saves the results.
+
+    Args:
+        structure_path_original (str): Path to the input structure file
+            (PDB or CIF format).
+        structure_name (str): Name of the structure (e.g., PDB ID or "custom").
+
+    Returns:
+        dict: A dictionary containing the processing results.
+
+    Raises:
+        FileNotFoundError: If the input structure file does not exist.
+        ValueError: If the input file format is unsupported.
     """
+
     if not os.path.exists(structure_path_original):
         raise FileNotFoundError(f"File {structure_path_original} not found")
 
@@ -188,14 +202,16 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
 
 @celery_app.task(name="celery_app.generate_trajectory", bind=True)
 def generate_trajectory(self, task_hash: str, aligned_structure_filename: str):
-    """Generate a trajectory for the given aligned structure.
+    """Generates a trajectory for a given aligned structure.
 
-    Parameters
-    ----------
-    task_hash : str
-        The hash of the task.
-    aligned_structure_filename : str
-        The filename of the aligned structure.
+    Args:
+        task_hash (str): The hash identifier of the associated task.
+        aligned_structure_filename (str): The filename of the aligned
+            protein structure.
+
+    Returns:
+        dict: A dictionary containing the status and the base filenames of
+            the generated trajectory and trimmed PDB files.
     """
     trimmed_pdb_path, trajectory_path = compute_trajectory(task_hash, aligned_structure_filename)
 

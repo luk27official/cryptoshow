@@ -4,6 +4,9 @@ from sklearn.cluster import DBSCAN
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import ListedColormap
 
+"""This script generates random 3D points with scores, filters high-score points,
+and applies DBSCAN clustering to visualize the clusters in 3D space."""
+
 np.random.seed(42)
 num_points = 200
 xyz = np.random.uniform(0, 20, size=(num_points, 3))  # Random coordinates in range [0, 20]

@@ -3,7 +3,17 @@ from sklearn.cluster import DBSCAN
 
 
 def compute_clusters(points: list[list[float]], prediction_scores: list[float]):
-    """Compute clusters based on the given points and prediction scores."""
+    """
+    Compute clusters based on the given points and prediction scores.
+
+    Args:
+        points (list[list[float]]): A list of points, where each point is a list of 3 coordinates [x, y, z].
+        prediction_scores (list[float]): A list of prediction scores corresponding to each point.
+
+    Returns:
+        np.ndarray: An array of cluster labels for each point. Points with no cluster are labeled as -1.
+    """
+
     points_array = np.array(points)
     scores_array = np.array(prediction_scores).reshape(-1, 1)
     stacked = np.hstack((points_array, scores_array))  # Combine coordinates with scores

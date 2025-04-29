@@ -19,7 +19,18 @@ class FileHash(TypedDict):
 
 
 def get_file_hash(file_path: str) -> FileHash:
-    """Calculate the MD5 and SHA1 hash of a file."""
+    """Calculate the MD5 and SHA1 hash of a file.
+
+    Args:
+        file_path: The path to the file.
+
+    Returns:
+        A dictionary containing the MD5 and SHA1 hex digests
+        of the file content.
+
+    Raises:
+        FileNotFoundError: If the specified file_path does not exist.
+    """
     BUF_SIZE = 65536  # 64 KB
 
     md5 = hashlib.md5()
@@ -39,29 +50,81 @@ def get_file_hash(file_path: str) -> FileHash:
     return {"md5": md5.hexdigest(), "sha1": sha1.hexdigest()}
 
 
-def generate_random_folder_name():
-    """Generate a random folder name."""
+def generate_random_folder_name() -> str:
+    """Generate a random folder name using UUID4.
+
+    Returns:
+        A string with a random UUID4.
+    """
     return str(uuid.uuid4())
 
 
 def get_existing_result(file_path: str):
-    """Check if the result for a given file already exists (caching)."""
-    FILE_HASH = get_file_hash(file_path)
+    """Check if the result for a given file already exists (caching).
+
+    It calculates the MD5 hash of the input file and looks for a
+    'results.json' file within a directory named after this hash
+    inside the JOBS_BASE_PATH.
+
+    Args:
+        file_path: The path to the input file for which to check
+                   existing results.
+
+    Returns:
+        The loaded JSON data as a dictionary if the results file exists,
+        otherwise None. Returns None if the input file doesn't exist.
+    """
+
+    try:
+        FILE_HASH = get_file_hash(file_path)
+    except FileNotFoundError:
+        # If the input file doesn't exist, no result can exist for it.
+        return None
+
     TASK_HASH = FILE_HASH["md5"]
     RESULTS_PATH = os.path.join(JOBS_BASE_PATH, TASK_HASH, "results.json")
 
     if os.path.exists(RESULTS_PATH):
-        with open(RESULTS_PATH, "r") as f:
-            return json.load(f)
+        try:
+            with open(RESULTS_PATH, "r") as f:
+                return json.load(f)
+        except (json.JSONDecodeError, OSError):
+            # handle errors in reading the JSON file
+            return None
 
     return None
 
 
 def download_cif_file(pdb_id: str, tmp_dir: str = "") -> str:
-    """Download a CIF file from the RCSB database."""
+    """Downloads a CIF file from RCSB PDB or AlphaFold database.
+
+    If the provided `pdb_id` is 4 characters long, it attempts to download
+    the corresponding structure from the RCSB PDB.
+    Otherwise, it assumes the `pdb_id` is a UniProt ID and attempts to
+    download the predicted structure from the AlphaFold database.
+
+    A temporary directory is created if `tmp_dir` is not specified.
+    The directory is removed if the download fails or the fetched file
+    indicates an error (e.g., 404 Not Found).
+
+    Args:
+        pdb_id: The identifier for the structure. Expected to be a 4-character
+            PDB ID or a UniProt ID.
+        tmp_dir: The directory path where the CIF file will be saved.
+            If empty or not provided, a temporary directory named with a
+            random UUID will be created. Defaults to "".
+
+    Returns:
+        The absolute file path to the downloaded CIF file if successful.
+        An empty string ("") if the download fails, the ID is not found,
+        the fetched file content indicates an error, or any other exception occurs.
+    """
+
     if not tmp_dir:
         tmp_dir = os.path.join(JOBS_BASE_PATH, generate_random_folder_name())
         os.makedirs(tmp_dir, exist_ok=True)
+
+    cif_file_path = ""
 
     try:
         if len(pdb_id) == 4:

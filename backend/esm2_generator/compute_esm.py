@@ -5,6 +5,17 @@ import os
 
 
 def compute_esm2(input_file: str, output_file: str):
+    """
+    Compute ESM2 embeddings for a given input file and save them to an output file.
+
+    Args:
+        input_file (str): Path to the input file containing protein sequences.
+        output_file (str): Path to the output file where embeddings will be saved.
+
+    Returns:
+        None
+    """
+
     # NOTE: t36 currently requires >16 GB of RAM, not using now
     models = [(esm.pretrained.esm2_t33_650M_UR50D, 33), (esm.pretrained.esm2_t36_3B_UR50D, 36)]
 
