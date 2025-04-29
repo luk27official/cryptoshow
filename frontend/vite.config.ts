@@ -13,7 +13,7 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/api": {
-        target: "http://localhost", // TODO: use env variable
+        target: "http://localhost", // this is used only for development, so it can be localhost
         changeOrigin: true,
       },
       "/ws": {

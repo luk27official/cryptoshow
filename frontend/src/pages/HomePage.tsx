@@ -61,8 +61,7 @@ function HomePage() {
     };
 
     const webSocketCheck = (taskId: string) => {
-        // TODO: add proper host here later
-        const ws = new WebSocket(`ws://localhost/ws/task-status/${taskId}`);
+        const ws = new WebSocket(`ws://${window.location.hostname}/ws/task-status/${taskId}`);
 
         ws.onmessage = (event) => {
             const data: TaskStatus = event.data ? JSON.parse(event.data) : { "status": "unknown" };

@@ -194,8 +194,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
             const animationTask = await res.json();
             const animationTaskId = animationTask.task_id;
 
-            // TODO: add proper host here later
-            const ws = new WebSocket(`ws://localhost/ws/task-status/${animationTaskId}`);
+            const ws = new WebSocket(`ws://${window.location.hostname}/ws/task-status/${animationTaskId}`);
 
             ws.onerror = (err) => {
                 console.error("WebSocket error:", err);
