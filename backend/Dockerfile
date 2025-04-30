@@ -21,19 +21,19 @@ USER cryptoshow
 
 WORKDIR /app
 
-COPY requirements.txt .
+COPY pyproject.toml .
 
 RUN wget --progress=dot:giga https://github.com/skrhakv/TinyCryptoBench/raw/3adde8c5489f5f52b3df6c5b1bbd80898ea3a2c2/data/model-650M.pt -O /app/cryptobench-small/model-650M.pt
 
-ENV PATH="/home/cryptoshow/.local/bin:$PATH"
+ENV PATH="/home/cryptoshow/.local/bin:/root/.cargo/bin:$PATH"
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install uv && uv venv && uv lock && uv sync
 
 COPY . .
 
 USER root
 
-RUN chown -R cryptoshow:cryptoshow /app
+RUN find /app -path "/app/.venv" -prune -o -exec chown cryptoshow:cryptoshow {} \;
 
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

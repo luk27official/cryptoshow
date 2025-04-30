@@ -5,3 +5,6 @@ venv/
 node_modules/
 cache/
 data/
+uv.lock
+.venv/**
+**/.venv
