@@ -134,23 +134,35 @@ def download_cif_file(pdb_id: str, tmp_dir: str = "") -> str:
                 if "400 Bad Request" in cif_file_content.read() or "404 Not Found" in cif_file_content.read():
                     shutil.rmtree(tmp_dir)
                     return ""
-        else:
-            # Assuming pdb_id is a UniProt ID if not 4 characters
-            uniprot_id = pdb_id
-            alphafold_url = f"https://alphafold.ebi.ac.uk/files/AF-{uniprot_id}-F1-model_v4.cif"
-            cif_file_path = os.path.join(tmp_dir, f"{uniprot_id}.cif")
 
-            response = requests.get(alphafold_url, stream=True)
-            if response.status_code == 200:
-                with open(cif_file_path, "wb") as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        f.write(chunk)
-            else:
-                shutil.rmtree(tmp_dir)
-                return ""
+            return cif_file_path
+
+        # Assuming pdb_id is a UniProt ID if not 4 characters, try the AlphaFill database
+        uniprot_id = pdb_id
+        alphafill_url = f"https://alphafill.eu/v1/aff/${uniprot_id}"
+        cif_file_path = os.path.join(tmp_dir, f"{uniprot_id}.cif")
+
+        response = requests.get(alphafill_url)
+        if response.status_code == 200:
+            with open(cif_file_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            return cif_file_path
+
+        # If AlphaFill doesn't have the file, try AlphaFold
+        alphafold_url = f"https://alphafold.ebi.ac.uk/files/AF-{uniprot_id}-F1-model_v4.cif"
+        cif_file_path = os.path.join(tmp_dir, f"{uniprot_id}.cif")
+
+        response = requests.get(alphafold_url, stream=True)
+        if response.status_code == 200:
+            with open(cif_file_path, "wb") as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    f.write(chunk)
+            return cif_file_path
+        else:
+            shutil.rmtree(tmp_dir)
+            return ""
 
     except Exception as e:
         shutil.rmtree(tmp_dir)
         return ""
-
-    return cif_file_path
