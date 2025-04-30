@@ -31,7 +31,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: common
-    command: celery -A tasks.celery_app worker --loglevel=info
+    command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
@@ -59,7 +59,7 @@ services:
     profiles:
       - gpu
     healthcheck:
-      test: ["CMD", "celery", "-A", "tasks.celery_app", "inspect", "ping", "-d", "celery@worker-gpu"]
+      test: ["CMD", "/app/.venv/bin/celery", "-A", "tasks.celery_app", "inspect", "ping", "-d", "celery@worker-gpu"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -70,7 +70,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: common
-    command: celery -A tasks.celery_app worker --loglevel=info
+    command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
@@ -87,7 +87,7 @@ services:
     profiles:
       - cpu
     healthcheck:
-      test: ["CMD", "celery", "-A", "tasks.celery_app", "inspect", "ping", "-d", "celery@worker-cpu"]
+      test: ["CMD", "/app/.venv/bin/celery", "-A", "tasks.celery_app", "inspect", "ping", "-d", "celery@worker-cpu"]
       interval: 30s
       timeout: 10s
       retries: 3

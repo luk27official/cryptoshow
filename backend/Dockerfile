@@ -27,7 +27,7 @@ RUN wget --progress=dot:giga https://github.com/skrhakv/TinyCryptoBench/raw/3add
 
 ENV PATH="/home/cryptoshow/.local/bin:/root/.cargo/bin:$PATH"
 
-RUN pip install uv && uv venv && uv lock && uv sync
+RUN pip install --no-cache-dir uv==0.7.1 && uv venv && uv lock && uv sync
 
 COPY . .
 
@@ -44,7 +44,7 @@ USER cryptoshow
 
 ENTRYPOINT ["/entrypoint.sh"]
 
-CMD ["fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
+CMD ["/app/.venv/bin/fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
 
 # === Full build (with ESM-2) ===
 FROM common AS full
