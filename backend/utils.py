@@ -139,7 +139,7 @@ def download_cif_file(pdb_id: str, tmp_dir: str = "") -> str:
 
         # Assuming pdb_id is a UniProt ID if not 4 characters, try the AlphaFill database
         uniprot_id = pdb_id
-        alphafill_url = f"https://alphafill.eu/v1/aff/${uniprot_id}"
+        alphafill_url = f"https://alphafill.eu/v1/aff/{uniprot_id}"
         cif_file_path = os.path.join(tmp_dir, f"{uniprot_id}.cif")
 
         response = requests.get(alphafill_url)
