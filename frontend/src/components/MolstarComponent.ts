@@ -183,7 +183,8 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
  * @param structure Structure object
  */
 const createLigandRepresentations = async (plugin: PluginUIContext, structure: StateObjectSelector) => {
-    const shownGroups = ["ion", "ligand", "nucleic", "lipid", "branched", "non-standard", "coarse"] as const;
+    // do not show "nucleic" (DNA) as ligands
+    const shownGroups = ["ion", "ligand", "lipid", "branched", "non-standard", "coarse"] as const;
 
     for (const group of shownGroups) {
         const component = await plugin.builders.structure.tryCreateComponentStatic(structure, group);
