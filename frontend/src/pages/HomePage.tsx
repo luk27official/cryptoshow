@@ -69,10 +69,12 @@ function HomePage() {
             if (data.status === "SUCCESS") {
                 setResultStatus("Success.");
                 const completedTasks = localStorage.getItem(COMPLETED_TASKS_KEY);
+                const { task_id, structure_name } = data.result as CryptoBenchResult;
+                const stringToSave = `${task_id} (${structure_name})`;
                 if (completedTasks) {
-                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...JSON.parse(completedTasks), (data.result as CryptoBenchResult).task_id]));
+                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...JSON.parse(completedTasks), stringToSave]));
                 } else {
-                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([(data.result as CryptoBenchResult).task_id]));
+                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([stringToSave]));
                 }
                 ws.close();
             } else if (data.status === "FAILURE") {
