@@ -21,27 +21,19 @@ const InputTable: React.FC<InputTableProps> = ({
         <table className="input-table">
             <tbody>
                 <tr>
-                    <td>PDB Code:</td>
+                    <td>PDB/AF ID:</td>
                     <td>
                         <input
                             type="text"
                             value={pdbCode}
                             onChange={(e) => setPdbCode(e.target.value)}
                             disabled={isLoading}
-                            placeholder="Enter PDB code"
+                            placeholder="Enter a PDB/AlphaFold ID"
                         />
-                    </td>
-                    <td rowSpan={2}>
-                        <button
-                            onClick={() => handleSubmit()}
-                            disabled={isLoading || (!pdbCode && !fileData)}
-                        >
-                            {isLoading ? "Processing..." : "Submit"}
-                        </button>
                     </td>
                 </tr>
                 <tr>
-                    <td>Or:</td>
+                    <td>or upload a file:</td>
                     <td>
                         <input
                             type="file"
@@ -55,6 +47,17 @@ const InputTable: React.FC<InputTableProps> = ({
                             disabled={isLoading}
                             accept=".pdb,.cif,.pdb1"
                         />
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td style={{ textAlign: "center", display: "flex" }}>
+                        <button
+                            onClick={handleSubmit}
+                            disabled={isLoading || (!pdbCode && !fileData)}
+                        >
+                            {isLoading ? "Processing..." : "Submit"}
+                        </button>
                     </td>
                 </tr>
             </tbody>

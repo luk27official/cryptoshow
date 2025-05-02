@@ -78,7 +78,9 @@ function HomePage() {
                 }
                 ws.close();
             } else if (data.status === "FAILURE") {
-                setResultStatus(data.error ?? data.result as string ?? "Unknown error.");
+                let error = data.error ?? data.result as string ?? "Unknown error.";
+                error += " An error occured. Please, consider reporting this issue via GitHub.";
+                setResultStatus(error);
                 ws.close();
             } else if (data.status === "PROGRESS" || data.status === "PENDING") {
                 setResultStatus(data.error ?? (data.result as CryptoBenchResult)?.status ?? data.result as string ?? "Processing structure...");
@@ -93,36 +95,34 @@ function HomePage() {
             <div>
                 <h2>CryptoShow {window.location.port === "3000" && "(Dev Mode)"}</h2>
             </div>
-            <div>
-                <InputTable
-                    pdbCode={pdbCode}
-                    fileData={fileData}
-                    isLoading={isLoading}
-                    setPdbCode={setPdbCode}
-                    setFileData={setFileData}
-                    handleSubmit={handleSubmit}
-                />
-            </div>
-            {taskId &&
-                <div>
-                    <h3>Task ID:</h3>
-                    <p>{taskId}</p>
+            <div className="card">
+                <div className="card-row">
+                    <InputTable
+                        pdbCode={pdbCode}
+                        fileData={fileData}
+                        isLoading={isLoading}
+                        setPdbCode={setPdbCode}
+                        setFileData={setFileData}
+                        handleSubmit={handleSubmit}
+                    />
                 </div>
-            }
-            {resultStatus &&
-                <div>
+            </div>
+            {taskId && resultStatus &&
+                <div className="card">
                     <h3>Result:</h3>
+                    <pre>Task: {taskId}</pre>
                     <p>{resultStatus}</p>
                     {resultStatus === "Success." && <a href={`./viewer?id=${taskId}`}>View 3D Structure</a>}
                 </div>
             }
-            <div>
-                <h3>Last 5 completed tasks:</h3>
+            <div className="card">
+                <h3>Last 5 Completed Tasks:</h3>
                 <ul>
                     {JSON.parse(localStorage.getItem(COMPLETED_TASKS_KEY) || "[]")
                         .slice(-5)
                         .map((task: string, index: number) => (
-                            <li key={index}><a href={`./viewer?id=${task}`}>{task}</a></li>
+                            // the .split() here considers the string to be ("<task-id> (<structure-name>)")
+                            <li key={index}><a href={`./viewer?id=${task.split(" ")[0]}`}>{task}</a></li>
                         ))}
                 </ul>
             </div>

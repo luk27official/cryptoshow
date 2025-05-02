@@ -1,4 +1,25 @@
 .input-table {
-    display: flex;
-    justify-content: center;
+    width: 100%;
+    border-spacing: 0.5rem;
+}
+
+.input-table td {
+    padding: 0.5rem;
+    vertical-align: middle;
+}
+
+.input-table input[type="text"],
+.input-table input[type="file"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 0.0625rem solid var(--border-color, #333);
+    border-radius: 0.25rem;
+    background-color: var(--bg-primary, #242424);
+    color: var(--text-primary, rgba(255, 255, 255, 0.87));
+}
+
+.input-table input[type="text"]:disabled,
+.input-table input[type="file"]:disabled {
+    background-color: var(--disabled-bg, #555);
+    cursor: not-allowed;
 }
