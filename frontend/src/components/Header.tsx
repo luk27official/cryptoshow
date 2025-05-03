@@ -7,6 +7,9 @@ const Header = () => {
                 <a href="/" className="project-name">CryptoShow</a>
             </div>
             <div className="header-right">
+                <a href="/api/docs" className="header-link">
+                    API Docs
+                </a>
                 <a href="https://github.com/luk27official/cryptoshow" target="_blank" rel="noopener noreferrer" className="header-link">
                     GitHub
                 </a>
