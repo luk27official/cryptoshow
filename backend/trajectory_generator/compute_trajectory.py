@@ -201,23 +201,22 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple
     assert len(atoms_aligned) == len(atoms_original), "Mismatch in number of atoms!"
     assert len(atoms_aligned) > 0, "No common atoms found!"
 
-    # Interpolation
+    # interpolation
     n_frames: int = 50
     atom_group_aligned: AtomGroup = atoms_aligned[0].universe.atoms[[atom.index for atom in atoms_aligned]]
     atom_group_original: AtomGroup = atoms_original[0].universe.atoms[[atom.index for atom in atoms_original]]
 
-    # Get ligands from the aligned universe
+    # get ligands from the aligned universe
     ligands_aligned: AtomGroup = universe_aligned.select_atoms("not protein and not resname HOH")
-    for atom in ligands_aligned.atoms:
-        atom.segment.segid = "LG"  # segid is used for chain identifiers in PDB files
+    # assign a new chainID to the ligands (to avoid clashes with the protein)
+    ligands_aligned.atoms.chainIDs = "Z"  # type: ignore
 
-    # Append the ligands to both atom groups
+    # append the ligands to both atom groups
     atom_group_aligned = atom_group_aligned + ligands_aligned
 
     u_new = mda.Merge(atom_group_original, ligands_aligned)
     atom_group_original = u_new.select_atoms("all")
 
-    # Save the trimmed structure
     TRIMMED_PDB_FILE: str = os.path.join(
         JOBS_BASE_PATH, task_hash, f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.pdb"
     )
