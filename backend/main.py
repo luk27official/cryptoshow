@@ -220,21 +220,22 @@ def get_file(task_hash: str, filename: str):
     return JSONResponse(status_code=404, content={"error": f"File not found: {path}"})
 
 
-@app.get("/animate/{task_hash}/{aligned_structure_filename}")
-def get_animated_file(task_hash: str, aligned_structure_filename: str):
+@app.get("/animate/{task_hash}/{aligned_structure_filename}/{target_chains}")
+def get_animated_file(task_hash: str, aligned_structure_filename: str, target_chains: str):
     """Create an animated trajectory file for a given task hash and aligned structure filename.
     This runs a Celery task to generate the trajectory.
 
     Args:
         task_hash (str): The task hash to get the file for.
         aligned_structure_filename (str): The name of the aligned structure file from AHoJ.
+        target_chains (str): The target chains to animate (in the format "A,B,C,...").
     """
     if ".." in task_hash or ".." in aligned_structure_filename:
         return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
 
     task: AsyncResult = celery_app.send_task(
         "celery_app.generate_trajectory",
-        args=(task_hash, aligned_structure_filename),
+        args=(task_hash, aligned_structure_filename, target_chains),
     )
 
     return {"task_id": task.id}

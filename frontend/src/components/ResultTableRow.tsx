@@ -189,7 +189,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
         try {
             await fetch(getApiUrl(`/proxy/ahoj/${cryptoBenchResult!.file_hash}/${structure.structure_file_url}`));
 
-            const res = await fetch(getApiUrl(`/animate/${cryptoBenchResult!.file_hash}/${structure.structure_file}`));
+            const res = await fetch(getApiUrl(`/animate/${cryptoBenchResult!.file_hash}/${structure.structure_file}/${structure.target_chains.join(",")}`));
             if (!res.ok) throw new Error(`Failed to start animation task: ${res.statusText}`);
             const animationTask = await res.json();
             const animationTaskId = animationTask.task_id;
@@ -258,6 +258,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                             <thead>
                                 <tr>
                                     <th>Structure</th>
+                                    <th>OG Chains</th>
                                     <th>Type</th>
                                     <th>RMSD (Å)</th>
                                     <th>SASA (Å²)</th>
@@ -268,7 +269,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                             </thead>
                             <tbody>
                                 {visibleStructures.map((s) => (
-                                    <tr key={`${s.pdb_id}_${s.structure_file}`}>
+                                    <tr key={`${s.pdb_id}_${s.structure_file}_${s.chains.join(",")}`}>
                                         <td>
                                             {s.pdb_id.length === 4 ? (
                                                 <a href={`https://www.rcsb.org/structure/${s.pdb_id}`} target="_blank" rel="noopener noreferrer">
@@ -289,6 +290,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                                 )
                                             )}
                                         </td>
+                                        <td>{s.target_chains.join(", ")}</td>
                                         <td>{s.type}</td>
                                         <td>{s.rmsd ? s.rmsd.toFixed(2) : "N/A"}</td>
                                         <td>{s.sasa ? s.sasa.toFixed(2) : "N/A"}</td>

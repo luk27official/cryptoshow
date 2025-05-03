@@ -52,12 +52,13 @@ def convert_cif_to_pdb(cif_path: str, pdb_path: str) -> None:
     structure.write_pdb(pdb_path)
 
 
-def get_sequence_and_residues(universe: mda.Universe) -> Tuple[str, List[Residue]]:
+def get_sequence_and_residues(universe: mda.Universe, target_chains: str | None) -> Tuple[str, List[Residue]]:
     """
     Extracts the sequence and valid residues from a protein universe.
 
     Args:
         universe (mda.Universe): The MDAnalysis Universe object representing the protein structure.
+        target_chains (str): A string representing the target chains (e.g., "A,B,C" for chains A, B, and C).
 
     Returns:
         Tuple[str, List[Residue]]: A tuple containing the protein sequence as a string
@@ -67,7 +68,10 @@ def get_sequence_and_residues(universe: mda.Universe) -> Tuple[str, List[Residue
     residues: AtomGroup = universe.select_atoms("protein").residues
     seq: str = ""
     valid_res: List[Residue] = []
+    target_chains_list = target_chains.split(",") if target_chains else []
     for res in residues:
+        if target_chains_list and not any(chain_id in target_chains_list for chain_id in res.atoms.chainIDs):
+            continue
         try:
             aa: str = protein_letters_3to1[res.resname.upper()]
             seq += aa
@@ -106,7 +110,7 @@ def longest_common_substring(s1: str, s2: str) -> str:
     return s1[start:x_longest]
 
 
-def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple[str, str]:
+def compute_trajectory(task_hash: str, aligned_structure_filename: str, target_chains: str) -> Tuple[str, str]:
     """
     Computes an interpolated trajectory between an original and an aligned structure.
 
@@ -122,6 +126,8 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple
                          and output files within the JOBS_BASE_PATH.
         aligned_structure_filename (str): The filename of the aligned structure
                                           located within the task-specific directory.
+        target_chains (str): The target chains for the trajectory (e.g., "A,B,C" for
+                             chains A, B, and C).
 
     Returns:
         Tuple[str, str]: A tuple containing the absolute paths to the generated
@@ -171,8 +177,8 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str) -> Tuple
     universe_aligned: mda.Universe = mda.Universe(aligned_pdb_file)
     universe_original: mda.Universe = mda.Universe(pdb_file)
 
-    seq_aligned, res_aligned = get_sequence_and_residues(universe_aligned)
-    seq_original, res_original = get_sequence_and_residues(universe_original)
+    seq_aligned, res_aligned = get_sequence_and_residues(universe_aligned, None)
+    seq_original, res_original = get_sequence_and_residues(universe_original, target_chains)
 
     # we do NOT need alignment here, because we only need to animate the LCS...
     # e.g. we could not align T-VALYDYESRT with TFVALYDYESRT because there is a gap

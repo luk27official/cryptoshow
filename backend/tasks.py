@@ -201,19 +201,21 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
 
 
 @celery_app.task(name="celery_app.generate_trajectory", bind=True)
-def generate_trajectory(self, task_hash: str, aligned_structure_filename: str):
+def generate_trajectory(self, task_hash: str, aligned_structure_filename: str, target_chains: str):
     """Generates a trajectory for a given aligned structure.
 
     Args:
         task_hash (str): The hash identifier of the associated task.
         aligned_structure_filename (str): The filename of the aligned
             protein structure.
+        target_chains (str): The target chains for the trajectory.
+            (e.g., "A,B,C" for chains A, B, and C).
 
     Returns:
         dict: A dictionary containing the status and the base filenames of
             the generated trajectory and trimmed PDB files.
     """
-    trimmed_pdb_path, trajectory_path = compute_trajectory(task_hash, aligned_structure_filename)
+    trimmed_pdb_path, trajectory_path = compute_trajectory(task_hash, aligned_structure_filename, target_chains)
 
     # keep just the base name of the file
     trimmed_pdb_path_base = os.path.basename(trimmed_pdb_path)
