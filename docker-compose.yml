@@ -31,7 +31,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: common
-    command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info
+    command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info -E
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
@@ -70,7 +70,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: common
-    command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info
+    command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info -E
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
@@ -117,3 +117,56 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  flower:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: common
+    command: /app/.venv/bin/celery -A tasks.celery_app flower
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER=redis://redis:6379/0
+      - CELERY_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./data:/app/data
+      - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
+      - ./cache/cryptobench:/app/cryptobench
+      - ./cache/cryptobench-small:/app/cryptobench-small
+    working_dir: /app
+    depends_on:
+      - redis
+      - backend
+
+  celery-exporter:
+    image: ghcr.io/danihodovic/celery-exporter:latest
+    environment:
+      - CE_BROKER_URL=redis://redis:6379/0
+    ports:
+      - "9808:9808"
+    depends_on:
+      - flower
+
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  # grafana:
+  #   image: grafana/grafana:latest
+  #   ports:
+  #     - "3001:3001"
+  #   volumes:
+  #     - ./data/grafana:/var/lib/grafana
+  #     - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+  #     - ./monitoring/grafana/dashboards:/etc/grafana/dashboards
+  #   environment:
+  #     - GF_SERVER_HTTP_PORT=3001
+  #     - GF_SECURITY_ADMIN_USER=admin
+  #     - GF_SECURITY_ADMIN_PASSWORD=admin
+  #   user: "${UID:-1000}:${GID:-1000}"
+  #   depends_on:
+  #     - prometheus

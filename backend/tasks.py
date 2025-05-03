@@ -22,6 +22,8 @@ celery_app = Celery(
     backend="redis://redis:6379/0",
     broker_connection_retry_on_startup=True,
     result_expires=0,
+    worker_send_task_events=True,
+    task_send_sent_event=True,
 )
 
 

@@ -9,6 +9,8 @@ dependencies = [
     # FastAPI
     "fastapi[standard]",
     "requests",
+    "prometheus-fastapi-instrumentator",
+    "flower",
 
     # CryptoBench (Tiny), ESM-2
     "biopython==1.85",
