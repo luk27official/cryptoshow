@@ -1,9 +1,17 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile, Path, Body
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.logger import logger
 from fastapi.responses import FileResponse, JSONResponse
 from prometheus_fastapi_instrumentator import Instrumentator
+from models import (
+    CalculateRequest,
+    CalculateResponse,
+    TaskStatusResponse,
+    FileResponseModel,
+    ProxyRequest,
+    HealthResponse,
+)
 
 import httpx
 import json
@@ -54,19 +62,19 @@ def generate_openapi_schema():
     )
 
 
-@app.get("/")
+@app.get("/", response_model=dict)
 async def read_root():
     """Root endpoint."""
     return {"Hello": "World"}
 
 
-@app.get("/openapi")
+@app.get("/openapi", response_model=dict)
 def get_openapi_endpoint():
     """Retrieve the generated OpenAPI schema."""
     return JSONResponse(content=generate_openapi_schema())
 
 
-@app.get("/gpu-status")
+@app.get("/gpu-status", response_model=CalculateResponse)
 async def gpu_status():
     """Check if CUDA is available."""
     task: AsyncResult = celery_app.send_task("celery_app.cuda_test")
@@ -74,23 +82,27 @@ async def gpu_status():
     return {"task_id": task.id}
 
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 async def health():
     """Check if the server is healthy."""
     return {"status": "healthy"}
 
 
-@app.post("/calculate")
-async def calculate(request: dict):
+@app.post("/calculate", response_model=CalculateResponse)
+async def calculate(
+    request: CalculateRequest = Body(
+        ..., example={"pdb": "2src"}, description="Request object containing the PDB/AF ID"
+    )
+):
     """Calculates the prediction for a given PDB ID.
 
     Args:
-        request (dict): The request body containing the PDB ID.
+        request (CalculateRequest): The request body containing the PDB ID.
     """
-    if "pdb" not in request:
+    if "pdb" not in request.model_dump():
         return JSONResponse(status_code=400, content={"error": "Missing 'pdb' field in request."})
 
-    pdb_id = request["pdb"]
+    pdb_id = request.pdb
 
     tmp_dir = os.path.join(JOBS_BASE_PATH, generate_random_folder_name())
     os.makedirs(tmp_dir, exist_ok=True)
@@ -130,8 +142,8 @@ async def calculate(request: dict):
     return {"task_id": task.id}
 
 
-@app.post("/calculate-custom")
-async def calculate_custom(file: UploadFile = File(...)):
+@app.post("/calculate-custom", response_model=CalculateResponse)
+async def calculate_custom(file: UploadFile = File(..., description="PDB/CIF file to be processed")):
     """Upload a PDB/CIF file and calculate the prediction.
 
     Args:
@@ -168,8 +180,10 @@ async def calculate_custom(file: UploadFile = File(...)):
     return {"task_id": task.id}
 
 
-@app.get("/task-status/{task_id}")
-def get_status(task_id: str):
+@app.get("/task-status/{task_id}", response_model=TaskStatusResponse)
+def get_status(
+    task_id: str = Path(..., example="123e4567-e89b-12d3-a456-123123123000", description="The ID of the task to check")
+):
     """
     Check the status of a processing task.
     If a hash of the structure is used, look for a folder with such a name in the /app/data/jobs directory.
@@ -200,11 +214,16 @@ def get_status(task_id: str):
     if isinstance(result_value, Exception):
         result_value = str(result_value)
 
-    return {"status": task_result.state, "result": result_value}
+    return {"status": task_result.state, "result": result_value, "error": None}
 
 
-@app.get("/file/{task_hash}/{filename}")
-def get_file(task_hash: str, filename: str):
+@app.get("/file/{task_hash}/{filename}", response_model=FileResponseModel)
+def get_file(
+    task_hash: str = Path(
+        ..., example="123e4567-e89b-12d3-a456-123123123000", description="The task hash to get the file for"
+    ),
+    filename: str = Path(..., example="results.json", description="The name of the file to get"),
+):
     """Get the file at the given path for a given task id (in the /app/data directory).
 
     Args:
@@ -223,8 +242,18 @@ def get_file(task_hash: str, filename: str):
     return JSONResponse(status_code=404, content={"error": f"File not found: {path}"})
 
 
-@app.get("/animate/{task_hash}/{aligned_structure_filename}/{target_chains}")
-def get_animated_file(task_hash: str, aligned_structure_filename: str, target_chains: str):
+@app.get("/animate/{task_hash}/{aligned_structure_filename}/{target_chains}", response_model=CalculateResponse)
+def get_animated_file(
+    task_hash: str = Path(
+        ..., example="123e4567-e89b-12d3-a456-123123123000", description="The task hash to get the file for"
+    ),
+    aligned_structure_filename: str = Path(
+        ..., example="aligned_structure.pdb", description="The name of the aligned structure file from AHoJ"
+    ),
+    target_chains: str = Path(
+        ..., example="A,B,C", description="The target chains to animate (in the format 'A,B,C,...')"
+    ),
+):
     """Create an animated trajectory file for a given task hash and aligned structure filename.
     This runs a Celery task to generate the trajectory.
 
@@ -245,7 +274,10 @@ def get_animated_file(task_hash: str, aligned_structure_filename: str, target_ch
 
 
 @app.websocket("/ws/task-status/{task_id}")
-async def websocket_endpoint(websocket: WebSocket, task_id: str):
+async def websocket_endpoint(
+    websocket: WebSocket,
+    task_id: str = Path(..., example="123e4567-e89b-12d3-a456-123123123000", description="The ID of the task to check"),
+):
     """Websocket endpoint for getting the status of a processing task.
 
     Args:
@@ -278,26 +310,37 @@ async def websocket_endpoint(websocket: WebSocket, task_id: str):
         logger.error(f"Error in websocket connection for task_id {task_id}: {str(e)}")
 
 
-@app.post("/proxy/ahoj/job")
-async def proxy_ahoj_calcluate(request: dict):
+@app.post("/proxy/ahoj/job", response_model=dict)
+async def proxy_ahoj_calcluate(
+    request: ProxyRequest = Body(
+        ...,
+        example={"job_name": "CryptoShow 2SRC A LYS 123", "queries": "2SRC A LYS 123", "options": {}},
+        description="The request data to be sent to apoholo.cz/api/job",
+    )
+):
     """Proxy POST request to apoholo.cz/api/job endpoint (for job posting).
 
     Args:
-        request (dict): The request body containing the job data.
+        request (ProxyRequest): The request body containing the job data.
     """
 
     url = "https://apoholo.cz/api/job"
     try:
         async with httpx.AsyncClient(verify=False) as client:  # TODO: verify to True
-            response = await client.post(url, json=request)
+            response = await client.post(url, json=request.model_dump())
             return response.json()
     except Exception as e:
         logger.error(f"Error proxying request to apoholo.cz: {str(e)}")
         return JSONResponse(status_code=500, content={"error": f"Failed to proxy request: {str(e)}"})
 
 
-@app.get("/proxy/ahoj/{task_hash}/{path:path}")
-async def proxy_ahoj_get(task_hash: str, path: str):
+@app.get("/proxy/ahoj/{task_hash}/{path:path}", response_model=FileResponseModel)
+async def proxy_ahoj_get(
+    task_hash: str = Path(
+        ..., example="123e4567-e89b-12d3-a456-123123123000", description="The task hash to get the file for"
+    ),
+    path: str = Path(..., example="api/results/structure.pdb", description="The path to the file on apoholo.cz"),
+):
     """Proxy GET request to apoholo.cz/<path> endpoint.
 
     Args:
