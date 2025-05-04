@@ -129,6 +129,8 @@ services:
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
+    profiles:
+      - monitoring
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
@@ -143,6 +145,8 @@ services:
     image: ghcr.io/danihodovic/celery-exporter:latest
     environment:
       - CE_BROKER_URL=redis://redis:6379/0
+    profiles:
+      - monitoring
     ports:
       - "9808:9808"
     depends_on:
@@ -150,6 +154,8 @@ services:
 
   prometheus:
     image: prom/prometheus
+    profiles:
+      - monitoring
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
@@ -159,6 +165,8 @@ services:
   #   image: grafana/grafana:latest
   #   ports:
   #     - "3001:3001"
+  #   profiles:
+  #     - monitoring
   #   volumes:
   #     - ./data/grafana:/var/lib/grafana
   #     - ./monitoring/grafana/provisioning:/etc/grafana/provisioning

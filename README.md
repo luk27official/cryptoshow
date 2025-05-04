@@ -4,6 +4,8 @@ build: `docker compose --profile <cpu/gpu> build` or `docker buildx bake <cpu/gp
 
 if you want the build to be faster, create an `.env` file and set `BUILD_TARGET=fast` to skip the download of the ESM-2 model
 
+for monitoring, include `--profile monitoring`
+
 run: `docker compose --profile <cpu/gpu> up`
 
 available at `localhost:80`
