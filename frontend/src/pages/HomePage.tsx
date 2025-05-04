@@ -95,6 +95,9 @@ function HomePage() {
             <div>
                 <h2>CryptoShow {window.location.port === "3000" && "(Dev Mode)"}</h2>
             </div>
+            <div>
+                <p>CryptoShow is an application for detection of protein binding sites utilizing the CryptoBench model and ESM-2 embeddings.</p>
+            </div>
             <div className="card">
                 <div className="card-row">
                     <InputTable
@@ -107,10 +110,16 @@ function HomePage() {
                     />
                 </div>
             </div>
+            {!taskId && resultStatus &&
+                <div className="card">
+                    <h3>Task Status:</h3>
+                    <pre>{resultStatus}</pre>
+                </div>
+            }
             {taskId && resultStatus &&
                 <div className="card">
-                    <h3>Result:</h3>
-                    <pre>Task: {taskId}</pre>
+                    <h3>Task Status:</h3>
+                    <pre>Task ID: {taskId}</pre>
                     <p>{resultStatus}</p>
                     {resultStatus === "Success." && <a href={`./viewer?id=${taskId}`}>View 3D Structure</a>}
                 </div>
