@@ -26,7 +26,7 @@ const InputTable: React.FC<InputTableProps> = ({
                         <input
                             type="text"
                             value={pdbCode}
-                            onChange={(e) => setPdbCode(e.target.value)}
+                            onChange={(e) => setPdbCode(e.target.value.trim())}
                             disabled={isLoading}
                             placeholder="Enter a PDB/AlphaFold ID"
                         />
