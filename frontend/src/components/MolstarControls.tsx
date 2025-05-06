@@ -52,6 +52,8 @@ function MolstarControls() {
         setLoadedStructures(filteredStructures);
     };
 
+    const multipleStructuresLoaded = loadedStructures.length > 1;
+
     return (
         <div className="molstar-controls-container">
             <div className="molstar-controls-row">
@@ -88,16 +90,20 @@ function MolstarControls() {
                     <button className="molstar-control-button" onClick={handleResetCamera}>Reset camera</button>
                 </div>
 
-                {loadedStructures.length >= 2 && (
+                {multipleStructuresLoaded && (
                     <div className="molstar-control-button-container">
                         <button className="molstar-control-button" onClick={removeSuperposition}>Remove superposition</button>
                     </div>
                 )}
             </div>
-            {loadedStructures.length >= 2 && (
+            {multipleStructuresLoaded && (
                 <div className="molstar-controls-row">
                     <p>
                         To control the animation, use the button next to the "Model" label in the 3D viewer.
+                    </p>
+                    <p>
+                        The animation shows the transformation of the AHoJ structure (shown in white) to the query structure (shown with transparency).
+                        Both the pockets and the ligands are kept for clarity.
                     </p>
                 </div>
             )}
