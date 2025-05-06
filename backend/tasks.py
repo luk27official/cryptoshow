@@ -184,6 +184,9 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     with open(RESULTS_FILE, "w") as f:
         json.dump(task_data, f)
 
+    # remove the embedding file (it takes a lot of space and is not needed anymore)
+    os.remove(EMBEDDING_FILE)
+
     # zip the files to enable download
     RESULTS_ZIP_FILE = os.path.join(JOB_PATH, "results")
     temp_dir = os.path.join(JOB_PATH, "temp_for_zip")
