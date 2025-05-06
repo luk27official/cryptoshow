@@ -11,7 +11,7 @@ function AboutPage() {
             </p>
             <p>
                 It utilizes CryptoBench with ESM-2 embeddings for a residue-level prediction. This prediction is then
-                clustered into pockets.
+                clustered into pockets. The computation takes a few minutes, depending on the size of the protein and the number of residues.
             </p>
             <p>
                 For more details, check out the <a href="https://github.com/luk27official/cryptoshow" target="_blank" rel="noopener noreferrer">GitHub repository</a>.
