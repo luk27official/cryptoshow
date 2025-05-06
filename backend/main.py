@@ -20,11 +20,13 @@ import logging
 import os
 import shutil
 
-# TODO: this is here for debugging when behind a proxy !!!
-import ssl
+ENABLE_HTTPS = os.getenv("ENABLE_HTTPS", "true").lower() == "true"
+# for edge cases when the server is behind a proxy and we want to disable SSL verification
+# this should always be set to True in production!
+if not ENABLE_HTTPS:
+    import ssl
 
-ssl._create_default_https_context = ssl._create_unverified_context
-# TODO remove
+    ssl._create_default_https_context = ssl._create_unverified_context
 
 from .tasks import celery_app
 from .utils import get_existing_result, generate_random_folder_name, download_cif_file
@@ -326,7 +328,7 @@ async def proxy_ahoj_calcluate(
 
     url = "https://apoholo.cz/api/job"
     try:
-        async with httpx.AsyncClient(verify=False) as client:  # TODO: verify to True
+        async with httpx.AsyncClient(verify=ENABLE_HTTPS) as client:
             response = await client.post(url, json=request.model_dump())
             return response.json()
     except Exception as e:
@@ -354,7 +356,7 @@ async def proxy_ahoj_get(
         return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
 
     try:
-        async with httpx.AsyncClient(verify=False) as client:  # TODO: verify to True
+        async with httpx.AsyncClient(verify=ENABLE_HTTPS) as client:
             response = await client.get(url)
 
             if response.headers.get("Content-Type") == "application/json":
