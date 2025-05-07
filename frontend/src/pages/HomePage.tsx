@@ -91,7 +91,7 @@ function HomePage() {
     };
 
     return (
-        <>
+        <div className="homepage-container">
             <div>
                 <h2>CryptoShow {window.location.port === "3000" && "(Dev Mode)"}</h2>
             </div>
@@ -135,7 +135,7 @@ function HomePage() {
                         ))}
                 </ul>
             </div>
-        </>
+        </div>
     );
 }
 
