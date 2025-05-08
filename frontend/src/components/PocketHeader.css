@@ -1,0 +1,41 @@
+.pocket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.result-row.collapsed .pocket-header {
+    margin-bottom: 0;
+}
+
+.pocket-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.toggle-icon {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    color: var(--text-secondary);
+    font-size: 0.75rem;
+    width: 1rem;
+    text-align: center;
+}
+
+.pocket-id {
+    font-size: 1.125rem;
+    font-weight: bold;
+    /* color is set inline with getColorString function */
+}
+
+.prediction-score {
+    font-weight: bold;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--accent-bg-light);
+    border-radius: 0.25rem;
+    color: var(--text-secondary);
+}

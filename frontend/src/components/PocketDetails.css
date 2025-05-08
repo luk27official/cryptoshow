@@ -1,0 +1,44 @@
+.pocket-details {
+    margin-bottom: 0.75rem;
+    margin-top: 0.75rem;
+    padding-left: 1.5rem;
+}
+
+.pocket-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.prediction-values,
+.residue-ids,
+.pymol-export {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: baseline;
+}
+
+.info-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+}
+
+.info-value {
+    word-break: break-word;
+    overflow-wrap: break-word;
+    max-width: 100%;
+    color: var(--text-primary);
+}
+
+.code-block {
+    display: inline;
+    font-family: monospace;
+    background-color: var(--accent-bg-light);
+    padding: 0.1em 0.4em;
+    border-radius: 0.25rem;
+    font-size: 0.85em;
+    color: var(--text-secondary);
+    word-break: break-all;
+}
