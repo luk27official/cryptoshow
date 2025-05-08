@@ -77,7 +77,6 @@ button:hover:not(:disabled) {
 
 .homepage-container {
     width: 100%;
-    position: relative;
     z-index: 1;
 }
 
@@ -89,15 +88,20 @@ button:hover:not(:disabled) {
     right: 0;
     bottom: 0;
     z-index: -1;
-    opacity: 0.3;
+    opacity: 0.2;
     background-position: center;
     background-repeat: no-repeat;
-    background-size: cover;
-    background-attachment: fixed;
+    background-size: contain;
 }
 
 @media (prefers-color-scheme: light) {
     .homepage-container::before {
         background-image: url("/bg-light.png");
+    }
+}
+
+@media (prefers-color-scheme: dark) {
+    .homepage-container::before {
+        background-image: url("/bg-dark.png");
     }
 }
