@@ -61,7 +61,9 @@ function HomePage() {
     };
 
     const webSocketCheck = (taskId: string) => {
-        const ws = new WebSocket(`ws://${window.location.hostname}/ws/task-status/${taskId}`);
+        const ws = new WebSocket(
+            `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/task-status/${taskId}`
+        );
 
         ws.onmessage = (event) => {
             const data: TaskStatus = event.data ? JSON.parse(event.data) : { "status": "unknown" };

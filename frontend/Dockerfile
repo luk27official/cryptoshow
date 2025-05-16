@@ -17,8 +17,14 @@ FROM nginx:alpine AS production
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY public/maintenance.html /usr/share/nginx/html/maintenance.html
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY nginx/nginx.conf /etc/nginx/nginx.conf.template
+COPY nginx/nginx_ssl_block.conf /etc/nginx/nginx_ssl_block.conf
+COPY nginx/nginx_ssl_redirect.conf /etc/nginx/nginx_ssl_redirect.conf
 
-EXPOSE 80
+COPY nginx/nginx_entrypoint.sh /app/nginx_entrypoint.sh
 
-CMD ["nginx", "-g", "daemon off;"]
+RUN chmod +x /app/nginx_entrypoint.sh
+
+ENTRYPOINT ["/app/nginx_entrypoint.sh"]
+
+EXPOSE 80 443

@@ -1,3 +1,6 @@
+# SSL keys and certificates
+ssl/
+
 # Logs
 logs
 *.log
