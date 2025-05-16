@@ -7,6 +7,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
+      - ./cache/torch:/root/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
       - ./cache/cryptobench-small:/app/cryptobench-small
     ports:
@@ -36,6 +37,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
+      - ./cache/torch:/root/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
       - ./cache/cryptobench-small:/app/cryptobench-small
     depends_on:
@@ -76,6 +78,7 @@ services:
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
+      - ./cache/torch:/root/.cache/torch/hub/checkpoints
       - ./cache/cryptobench:/app/cryptobench
       - ./cache/cryptobench-small:/app/cryptobench-small
     depends_on:
@@ -115,10 +118,10 @@ services:
       - "80:80"
       - "443:443"
     volumes:
-      - ${SSL_CERT_PATH:-./frontend/ssl/dev.crt}:/etc/nginx/ssl/cert:ro
-      - ${SSL_KEY_PATH:-./frontend/ssl/dev.key}:/etc/nginx/ssl/key:ro
+      - ${SSL_PATH:-./frontend/ssl/}:/etc/nginx/ssl/
     environment:
       - ENABLE_SSL=${ENABLE_SSL:-true}
+      - DOMAIN=${DOMAIN:-localhost}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]
@@ -185,6 +188,6 @@ services:
   #     - GF_SERVER_HTTP_PORT=3001
   #     - GF_SECURITY_ADMIN_USER=admin
   #     - GF_SECURITY_ADMIN_PASSWORD=admin
-  #   user: "${UID:-1000}:${GID:-1000}"
+  #   user: "${UID:-2727}:${GID:-2727}"
   #   depends_on:
   #     - prometheus

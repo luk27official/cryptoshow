@@ -1,7 +1,7 @@
 FROM python:3.12 AS base
 
-RUN groupadd -g 1000 cryptoshow && \
-    useradd -r -u 1000 -g cryptoshow cryptoshow
+RUN groupadd -g 2727 cryptoshow && \
+    useradd -r -u 2727 -g cryptoshow cryptoshow
 
 RUN mkdir -p /home/cryptoshow/.cache/torch/hub/checkpoints && \
     chown -R cryptoshow:cryptoshow /home/cryptoshow/ && \
@@ -23,8 +23,6 @@ WORKDIR /app
 
 COPY pyproject.toml .
 
-RUN wget --progress=dot:giga https://github.com/skrhakv/TinyCryptoBench/raw/3adde8c5489f5f52b3df6c5b1bbd80898ea3a2c2/data/model-650M.pt -O /app/cryptobench-small/model-650M.pt
-
 ENV PATH="/home/cryptoshow/.local/bin:/root/.cargo/bin:$PATH"
 
 RUN pip install --no-cache-dir uv==0.7.1 && uv venv && uv lock && uv sync
@@ -35,10 +33,15 @@ USER root
 
 RUN find /app -path "/app/.venv" -prune -o -exec chown cryptoshow:cryptoshow {} \;
 
+EXPOSE 5000
+
+# === Full build (with ESM-2 at first startup) ===
+FROM common AS full
+
+USER root
+
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
-
-EXPOSE 5000
 
 USER cryptoshow
 
@@ -46,13 +49,18 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["/app/.venv/bin/fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
 
-# === Full build (with ESM-2) ===
-FROM common AS full
-
-RUN wget --progress=dot:giga https://dl.fbaipublicfiles.com/fair-esm/models/esm2_t33_650M_UR50D.pt \
-    -O /home/cryptoshow/.cache/torch/hub/checkpoints/esm2_t33_650M_UR50D.pt
-
-# === Fast build (no ESM-2) ===
+# === Fast build (no ESM-2 at first startup) ===
 FROM common AS fast
+
+USER root
+
+COPY entrypoint.sh /entrypoint_fast.sh
+RUN chmod +x /entrypoint_fast.sh
+
+USER cryptoshow
+
+ENTRYPOINT ["/entrypoint_fast.sh"]
+
+CMD ["/app/.venv/bin/fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
 
 # skips the ESM-2 download

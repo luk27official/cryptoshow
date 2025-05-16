@@ -28,6 +28,16 @@ See `frontend/README.md`.
 
 See `backend/README.md`.
 
+## Deployment
+
+1. Install Docker
+2. Get SSL certificates (`sudo certbot certonly --standalone -d <domain>`)
+3. Copy the certificates manually into `./frontend/ssl` (or run `sudo renew_certs.sh` in `./frontend/nginx`), optionally set up a cronjob to auto-renew the certificates
+4. Create `.env` and set up the vars
+5. Enable ports in firewall (`sudo ufw allow 443`, `sudo ufw allow 80`)
+6. Set up the permissions for the user `2727`, i.e. `sudo chown -R 2727:2727 ./data`
+7. Run Docker
+
 ## TLDR
 
 `docker-compose --profile <gpu/cpu> up --build`, `localhost:80/443`
