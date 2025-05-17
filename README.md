@@ -37,6 +37,7 @@ See `backend/README.md`.
 5. Enable ports in firewall (`sudo ufw allow 443`, `sudo ufw allow 80`)
 6. Set up the permissions for the user `2727`, i.e. `sudo chown -R 2727:2727 ./data`
 7. Run Docker
+8. Optionally, set up the continuous deployment (see `.github/workflows/production-deploy.yml`)
 
 ## Maintenance mode
 

@@ -1,0 +1,37 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add remote host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Create maintenance.flag
+        run: |
+          ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
+          "touch ~/cryptoshow/frontend/maintenance/maintenance.flag && echo 'maintenance.flag created'"
+
+      - name: Run docker-compose
+        run: |
+          ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
+          "cd ~/cryptoshow && docker-compose down && docker-compose --profile ${{ secrets.PROFILE }} up -d --build"
+
+      - name: Remove maintenance.flag
+        run: |
+          ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
+          "rm -f ~/maintenance.flag && echo 'maintenance.flag removed'"
