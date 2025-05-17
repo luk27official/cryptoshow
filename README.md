@@ -38,6 +38,10 @@ See `backend/README.md`.
 6. Set up the permissions for the user `2727`, i.e. `sudo chown -R 2727:2727 ./data`
 7. Run Docker
 
+## Maintenance mode
+
+To toggle the maintenance mode, create/delete the `./frontend/maintenance/maintenance.flag` file (the file can be empty).
+
 ## TLDR
 
 `docker-compose --profile <gpu/cpu> up --build`, `localhost:80/443`

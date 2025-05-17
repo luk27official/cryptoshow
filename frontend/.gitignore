@@ -1,6 +1,9 @@
 # SSL keys and certificates
 ssl/
 
+# Maintenance
+maintenance/
+
 # Logs
 logs
 *.log
