@@ -34,4 +34,4 @@ jobs:
       - name: Remove maintenance.flag
         run: |
           ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
-          "rm -f ~/maintenance.flag && echo 'maintenance.flag removed'"
+          "rm -f ~/cryptoshow/frontend/maintenance/maintenance.flag && echo 'maintenance.flag removed'"
