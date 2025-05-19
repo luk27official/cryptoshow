@@ -63,7 +63,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                     ws.close();
                     const result: TrajectoryTaskResult = data.result;
 
-                    const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trajectory}`));
+                    const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trajectory}`), structure);
                     showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
 
                     const updatedStructures = await Promise.all(
@@ -99,8 +99,8 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
         }
     };
 
-    const checkNameInLoadedStructures = (s: AHoJStructure) => {
-        return loadedStructures.some((ld) => ld.structureName.split(".")[0] === "anim_" + s.structure_file.split(".")[0]);
+    const checkStructureInLoadedStructures = (s: AHoJStructure) => {
+        return loadedStructures.some((ld) => ld.ahojStructure === s);
     };
 
     return (
@@ -152,13 +152,13 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                         <td>{s.ligands.filter((e) => e !== "").length > 0 ? s.ligands.filter((e) => e !== "").join(", ") : "N/A"}</td>
                                         <td>
                                             <button
-                                                className={`load-structure-button ${checkNameInLoadedStructures(s) ? "loaded" : ""
+                                                className={`load-structure-button ${checkStructureInLoadedStructures(s) ? "loaded" : ""
                                                     }`}
                                                 onClick={() => handlePlayAnimation(s)}
                                                 disabled={loadingStructure === s.structure_file}
                                             >
                                                 {loadingStructure === s.structure_file
-                                                    ? "Loading..." : checkNameInLoadedStructures(s)
+                                                    ? "Loading..." : checkStructureInLoadedStructures(s)
                                                         ? "Loaded" : "Play"}
                                             </button>
                                         </td>

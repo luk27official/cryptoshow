@@ -113,6 +113,7 @@ export type LoadedStructure = {
     pocketRepresentations: RepresentationWithRef<PocketRepresentationType>[];
     structureUrl: string;
     structureName: string;
+    ahojStructure?: AHoJStructure;
 };
 
 export type TrajectoryTaskResult = {

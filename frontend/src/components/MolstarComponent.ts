@@ -19,7 +19,7 @@ import { Bundle } from "molstar/lib/mol-model/structure/structure/element/bundle
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 
 
-import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType } from "../types";
+import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType, AHoJStructure } from "../types";
 import { getColor, getWindowWidth } from "../utils";
 
 /**
@@ -68,9 +68,10 @@ export const initializePlugin = async () => {
  * @param plugin Mol* plugin instance
  * @param structureUrl Structure URL
  * @param trajectoryUrl Trajectory URL (optional)
+ * @param ahojStructure AHoJ structure object (optional)
  * @returns Loaded structure object containing the structure, data, and representations
  */
-export const loadStructure = async (plugin: PluginUIContext, structureUrl: string, trajectoryUrl: string | null): Promise<LoadedStructure> => {
+export const loadStructure = async (plugin: PluginUIContext, structureUrl: string, trajectoryUrl: string | undefined, ahojStructure: AHoJStructure | undefined): Promise<LoadedStructure> => {
     let structureNameShort;
 
     // for aligned structures, we want to prettify the name if possible
@@ -171,7 +172,8 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
         polymerRepresentations: representations,
         pocketRepresentations: [],
         structureUrl: structureUrl,
-        structureName: structureUrl.split("/").pop()!
+        structureName: structureUrl.split("/").pop()!,
+        ahojStructure: ahojStructure
     };
 
     return loadedStucture;
