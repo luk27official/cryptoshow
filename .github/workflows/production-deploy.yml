@@ -26,6 +26,11 @@ jobs:
           ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
           "touch ~/cryptoshow/frontend/maintenance/maintenance.flag && echo 'maintenance.flag created'"
 
+      - name: Pull latest changes
+        run: |
+          ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
+          "cd ~/cryptoshow && git pull origin main"
+
       - name: Run docker-compose
         run: |
           ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
