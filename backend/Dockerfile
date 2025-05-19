@@ -1,7 +1,12 @@
 FROM python:3.12 AS base
 
-RUN groupadd -g 2727 cryptoshow && \
-    useradd -r -u 2727 -g cryptoshow cryptoshow
+ARG UID=2727
+ARG GID=2727
+ENV UID=${UID}
+ENV GID=${GID}
+
+RUN groupadd -g ${GID} cryptoshow && \
+    useradd -r -u ${UID} -g cryptoshow cryptoshow
 
 RUN mkdir -p /home/cryptoshow/.cache/torch/hub/checkpoints && \
     chown -R cryptoshow:cryptoshow /home/cryptoshow/ && \

@@ -35,7 +35,7 @@ See `backend/README.md`.
 3. Copy the certificates manually into `./frontend/ssl` (or run `sudo renew_certs.sh` in `./frontend/nginx`), optionally set up a cronjob to auto-renew the certificates
 4. Create `.env` and set up the vars
 5. Enable ports in firewall (`sudo ufw allow 443`, `sudo ufw allow 80`)
-6. Set up the permissions for the user `2727`, i.e. `sudo chown -R 2727:2727 ./data`
+6. Set up the permissions for the user `2727`, i.e. `sudo chown -R 2727:2727 ./data`. Optionally, customize the `UID` and `GID` env vars.
 7. Run Docker
 8. Optionally, set up the continuous deployment (see `.github/workflows/production-deploy.yml`, make sure that the user is in the `docker` group and that `sudo chown root:docker /var/run/docker.sock && sudo chmod 660 /var/run/docker.sock`)
 
