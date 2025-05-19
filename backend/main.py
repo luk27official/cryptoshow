@@ -37,7 +37,14 @@ app = FastAPI(openapi_url="/api/openapi")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost", "https://apoholo.cz"],  # TODO: what should this be when the app is deployed?
+    allow_origins=[
+        "http://localhost",
+        "https://localhost",
+        "https://apoholo.cz",
+        "http://cryptoshow.ksi.projekty.ms.mff.cuni.cz",
+        "https://cryptoshow.ksi.projekty.ms.mff.cuni.cz",
+    ],
+    # TODO: what should this be when the app is deployed?
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
