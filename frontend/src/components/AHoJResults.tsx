@@ -19,7 +19,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
         selectedPolymerRepresentation,
         cryptoBenchResult
     } = useAppContext();
-    const [loadingStructure, setLoadingStructure] = useState<AHoJStructure | null>(null);
+    const [loadingStructure, setLoadingStructure] = useState<AHoJStructure | undefined>(undefined);
     const [visibleCount, setVisibleCount] = useState(10);
 
     const apoStructures = ahoJJobResult.queries[0]?.found_apo.map(s => ({ ...s, type: "APO" })) || [];
@@ -52,7 +52,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
 
             ws.onerror = (err) => {
                 console.error("WebSocket error:", err);
-                setLoadingStructure(null);
+                setLoadingStructure(undefined);
                 ws.close();
             };
 
@@ -84,23 +84,32 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
 
                     playAnimation(plugin, 10);
                     resetCamera(plugin);
-                    setLoadingStructure(null);
+                    setLoadingStructure(undefined);
 
                 } else if (data.status === "FAILURE") {
                     console.error("Animation task failed:", data.error || "Unknown error");
                     ws.close();
-                    setLoadingStructure(null);
+                    setLoadingStructure(undefined);
                 }
             };
 
         } catch (error) {
             console.error("Error during animation process:", error);
-            setLoadingStructure(null);
+            setLoadingStructure(undefined);
         }
     };
 
     const checkStructureInLoadedStructures = (s: AHoJStructure) => {
-        return loadedStructures.some((ld) => ld.ahojStructure === s);
+        return loadedStructures.some((ld) => checkStructureEquivalence(ld.ahojStructure, s));
+    };
+
+    const checkStructureEquivalence = (s1: AHoJStructure | undefined, s2: AHoJStructure | undefined) => {
+        return s1 && s2 &&
+            s1.pdb_id === s2.pdb_id &&
+            s1.structure_file === s2.structure_file &&
+            s1.sasa === s2.sasa &&
+            s1.rmsd === s2.rmsd &&
+            s1.pocket_rmsd === s2.pocket_rmsd;
     };
 
     return (
@@ -151,16 +160,23 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                         <td>{s.chains.join(", ")}</td>
                                         <td>{s.ligands.filter((e) => e !== "").length > 0 ? s.ligands.filter((e) => e !== "").join(", ") : "N/A"}</td>
                                         <td>
-                                            <button
-                                                className={`load-structure-button ${checkStructureInLoadedStructures(s) ? "loaded" : ""
-                                                    }`}
-                                                onClick={() => handlePlayAnimation(s)}
-                                                disabled={loadingStructure === s}
-                                            >
-                                                {loadingStructure === s
-                                                    ? "Loading..." : checkStructureInLoadedStructures(s)
-                                                        ? "Loaded" : "Play"}
-                                            </button>
+                                            {(() => {
+
+
+                                                return (
+                                                    <button
+                                                        className={`load-structure-button ${checkStructureInLoadedStructures(s) ? "loaded" : ""}`}
+                                                        onClick={() => handlePlayAnimation(s)}
+                                                        disabled={checkStructureEquivalence(loadingStructure, s) || checkStructureInLoadedStructures(s)}
+                                                    >
+                                                        {loadingStructure && checkStructureEquivalence(loadingStructure, s)
+                                                            ? "Loading..."
+                                                            : checkStructureInLoadedStructures(s)
+                                                                ? "Loaded"
+                                                                : "Play"}
+                                                    </button>
+                                                );
+                                            })()}
                                         </td>
                                     </tr>
                                 ))}

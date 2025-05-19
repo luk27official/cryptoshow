@@ -61,6 +61,7 @@ export type AHoJStructure = {
     chains: string[];
     ligands: string[];
     rmsd: number;
+    pocket_rmsd: number;
     sasa: number;
     structure_file: string;
     structure_file_url: string;
