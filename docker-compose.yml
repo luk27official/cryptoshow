@@ -4,6 +4,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: ${BUILD_TARGET:-full}
+    user: "${UID:-2727}:${GID:-2727}"
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
@@ -33,6 +34,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: common
+    user: "${UID:-2727}:${GID:-2727}"
     command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info -E
     volumes:
       - ./data:/app/data
@@ -74,6 +76,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: common
+    user: "${UID:-2727}:${GID:-2727}"
     command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info -E
     volumes:
       - ./data:/app/data
@@ -136,6 +139,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: common
+    user: "${UID:-2727}:${GID:-2727}"
     command: /app/.venv/bin/celery -A tasks.celery_app flower
     ports:
       - "5555:5555"
