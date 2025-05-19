@@ -19,7 +19,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
         selectedPolymerRepresentation,
         cryptoBenchResult
     } = useAppContext();
-    const [loadingStructure, setLoadingStructure] = useState<string | null>(null);
+    const [loadingStructure, setLoadingStructure] = useState<AHoJStructure | null>(null);
     const [visibleCount, setVisibleCount] = useState(10);
 
     const apoStructures = ahoJJobResult.queries[0]?.found_apo.map(s => ({ ...s, type: "APO" })) || [];
@@ -36,7 +36,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
 
     const handlePlayAnimation = async (structure: AHoJStructure & { type: string; }) => {
         if (loadingStructure) return;
-        setLoadingStructure(structure.structure_file);
+        setLoadingStructure(structure);
 
         try {
             await fetch(getApiUrl(`/proxy/ahoj/${cryptoBenchResult!.file_hash}/${structure.structure_file_url}`));
@@ -155,9 +155,9 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                                 className={`load-structure-button ${checkStructureInLoadedStructures(s) ? "loaded" : ""
                                                     }`}
                                                 onClick={() => handlePlayAnimation(s)}
-                                                disabled={loadingStructure === s.structure_file}
+                                                disabled={loadingStructure === s}
                                             >
-                                                {loadingStructure === s.structure_file
+                                                {loadingStructure === s
                                                     ? "Loading..." : checkStructureInLoadedStructures(s)
                                                         ? "Loaded" : "Play"}
                                             </button>
