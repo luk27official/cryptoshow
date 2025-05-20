@@ -34,7 +34,7 @@ jobs:
       - name: Run docker-compose
         run: |
           ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
-          "cd ~/cryptoshow && docker compose --profile ${{ secrets.PROFILE || 'cpu' }} down --remove-orphans && docker compose --profile ${{ secrets.PROFILE || 'cpu' }} up -d --build"
+          "cd ~/cryptoshow && docker compose --profile ${{ secrets.PROFILE || 'cpu' }} up -d --build"
 
       - name: Remove maintenance.flag
         run: |
