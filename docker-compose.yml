@@ -139,7 +139,7 @@ services:
       - ${SSL_PATH:-./frontend/ssl/}:/etc/nginx/ssl/
       - ./frontend/maintenance:/app/maintenance
     environment:
-      - ENABLE_SSL=${ENABLE_SSL:-true}
+      - ENABLE_SSL=${ENABLE_SSL:-false}
       - DOMAIN=${DOMAIN:-localhost}
     restart: unless-stopped
     healthcheck:
