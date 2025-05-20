@@ -7,8 +7,14 @@ import requests
 
 from typing import TypedDict
 import biotite.database.rcsb as rcsb
+from Bio.PDB import Select
 
 from commons import JOBS_BASE_PATH
+
+
+class FirstModelSelect(Select):
+    def accept_model(self, model):
+        return model.id == 0  # BioPython uses 0-based model indices
 
 
 class FileHash(TypedDict):

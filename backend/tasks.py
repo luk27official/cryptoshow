@@ -9,11 +9,16 @@ import biotite.structure.io.pdb as pdb
 from biotite.structure import AtomArray
 from biotite.sequence import ProteinSequence
 
+from Bio.PDB.MMCIFParser import MMCIFParser
+from Bio.PDB.mmcifio import MMCIFIO
+from Bio.PDB.PDBParser import PDBParser
+from Bio.PDB.PDBIO import PDBIO
+
 from esm2_generator import compute_esm2
 from cb_small import compute_prediction
 from clustering import compute_clusters
 from trajectory_generator import compute_trajectory
-from utils import get_file_hash
+from utils import get_file_hash, FirstModelSelect
 from commons import JOBS_BASE_PATH
 
 celery_app = Celery(
@@ -73,13 +78,60 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
 
     if structure_path_original.lower().endswith(".cif"):
         structure_file_path = os.path.join(JOB_PATH, "structure.cif")
-        shutil.move(structure_path_original, structure_file_path)
+
+        # Keep just the first model in the file
+        parser = MMCIFParser(QUIET=True)
+        structure = parser.get_structure("protein", structure_path_original)
+
+        io = MMCIFIO()
+        io.set_structure(structure)
+        io.save(structure_file_path, select=FirstModelSelect())
+
+        # Extract header information from the original file
+        header_lines = []
+        with open(structure_path_original, "r") as f:
+            for line in f:
+                if line.startswith(("_entry.id")):
+                    header_lines.append(line)
+
+        with open(structure_file_path, "r") as f:
+            content = f.readlines()
+
+        with open(structure_file_path, "w") as f:
+            f.write("data_protein\n")
+            for line in header_lines:
+                f.write(line)
+            # Skip the first line of content (data_protein)
+            f.writelines(content[1:])
+
         structure_file = pdbx.CIFFile.read(structure_file_path)
         protein = pdbx.get_structure(structure_file, model=1)  # type: ignore
 
     elif structure_path_original.lower().endswith((".pdb", ".pdb1")):
         structure_file_path = os.path.join(JOB_PATH, "structure.pdb")
-        shutil.move(structure_path_original, structure_file_path)
+        # Keep just the first model in the file
+        parser = PDBParser(QUIET=True)
+        structure = parser.get_structure("protein", structure_path_original)
+
+        io = PDBIO()
+        io.set_structure(structure)
+        io.save(structure_file_path, select=FirstModelSelect())
+
+        # Extract header information from the original file
+        header_lines = []
+        with open(structure_path_original, "r") as f:
+            for line in f:
+                if line.startswith(("HEADER", "TITLE", "COMPND", "SOURCE")):
+                    header_lines.append(line)
+
+        with open(structure_file_path, "r") as f:
+            content = f.read()
+
+        with open(structure_file_path, "w") as f:
+            for line in header_lines:
+                f.write(line)
+            f.write(content)
+
         structure_file = pdb.PDBFile.read(structure_file_path)
         protein = pdb.get_structure(structure_file, model=1)  # type: ignore
 

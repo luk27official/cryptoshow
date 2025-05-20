@@ -98,7 +98,7 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
 
     if (structureUrl.endsWith("cif")) trajectory = await plugin.builders.structure.parseTrajectory(pdbData, "mmcif");
     else trajectory = await plugin.builders.structure.parseTrajectory(pdbData, "pdb");
-    const model = await plugin.builders.structure.createModel(trajectory);
+    const model = await plugin.builders.structure.createModel(trajectory, { modelIndex: 0 });
 
     // we are loading the xtc file as well here
     if (trajectoryUrl) {
