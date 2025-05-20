@@ -165,6 +165,32 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
             pocket_groups[pocket]["prediction"]
         )
 
+    # region Reassign
+    # after computing the average prediction, sort the pocket groups by the average prediction
+    # and reassign the numbers starting by 1... this is the logic
+    sorted_pockets = sorted(pocket_groups.values(), key=lambda x: x["average_prediction"], reverse=True)
+
+    # create a new pocket_groups dictionary with reassigned IDs
+    pocket_groups = {}
+    for new_id, pocket in enumerate(sorted_pockets, 1):
+        pocket["pocket_id"] = new_id
+        pocket_groups[new_id] = pocket
+
+    # update cluster IDs to match the new pocket numbering
+    id_mapping = {-1: -1}  # keep -1 as is (non-clustered residues)
+    for new_id, pocket in pocket_groups.items():
+        for res_id in pocket["residue_ids"]:
+            # find the residue index in the protein array
+            for i, residue in enumerate(protein):
+                if f"{residue.chain_id}_{residue.res_id}" == res_id:
+                    # map the old cluster ID to the new one
+                    if clusters[i] not in id_mapping:
+                        id_mapping[clusters[i]] = new_id
+                    break
+
+    clusters = [id_mapping.get(c, c) for c in clusters]
+    # endregion
+
     task_data = {
         "status": "SUCCESS",
         "prediction": cryptobench_prediction,
