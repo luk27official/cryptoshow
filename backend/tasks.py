@@ -70,6 +70,7 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     USED_HASH_TYPE = "md5"
 
     FILE_HASH = get_file_hash(structure_path_original)
+    TASK_FALLBACK_PATH = os.path.join(JOBS_BASE_PATH, TASK_ID)
     JOB_PATH = os.path.join(JOBS_BASE_PATH, FILE_HASH[USED_HASH_TYPE])
 
     os.makedirs(JOB_PATH, exist_ok=True)
@@ -260,6 +261,13 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     RESULTS_FILE = os.path.join(JOB_PATH, "results.json")
 
     with open(RESULTS_FILE, "w") as f:
+        json.dump(task_data, f)
+
+    # save the results to a fallback file as well - if Celery losts the task name...
+    os.makedirs(TASK_FALLBACK_PATH, exist_ok=True)
+    RESULTS_FALLBACK_FILE = os.path.join(TASK_FALLBACK_PATH, "results.json")
+
+    with open(RESULTS_FALLBACK_FILE, "w") as f:
         json.dump(task_data, f)
 
     # remove the embedding file (it takes a lot of space and is not needed anymore)
