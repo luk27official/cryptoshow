@@ -1,0 +1,11 @@
+apiVersion: 1
+
+providers:
+    - name: "Celery Dashboards"
+      orgId: 1
+      folder: "Celery"
+      type: file
+      disableDeletion: false
+      editable: true
+      options:
+          path: /etc/grafana/provisioning/dashboards
