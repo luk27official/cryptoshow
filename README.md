@@ -44,6 +44,10 @@ See `backend/README.md`.
 
 To toggle the maintenance mode, create/delete the `./frontend/maintenance/maintenance.flag` file (the file can be empty).
 
+## Monitoring
+
+After setting up the monitoring credentials (see Deployment), you can access the monitoring services via `localhost/grafana` and `localhost/flower`.
+
 ## TLDR
 
 `docker-compose --profile <gpu/cpu> up --build`, `localhost:80/443`
