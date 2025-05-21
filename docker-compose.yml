@@ -137,6 +137,7 @@ services:
       - "443:443"
     volumes:
       - ${SSL_PATH:-./frontend/ssl/}:/etc/nginx/ssl/
+      - ${HTPASSWD_PATH:-./frontend/monitoring.htpasswd}:/etc/nginx/monitoring.htpasswd
       - ./frontend/maintenance:/app/maintenance
     environment:
       - ENABLE_SSL=${ENABLE_SSL:-false}
@@ -155,7 +156,7 @@ services:
       dockerfile: Dockerfile
       target: common
     user: "${UID:-2727}:${GID:-2727}"
-    command: /app/.venv/bin/celery -A tasks.celery_app flower
+    command: /app/.venv/bin/celery -A tasks.celery_app flower --url_prefix=/flower
     ports:
       - "5555:5555"
     environment:

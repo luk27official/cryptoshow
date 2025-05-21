@@ -38,6 +38,7 @@ See `backend/README.md`.
 6. Set up the permissions for the user `2727`, i.e. `sudo chown -R 2727:2727 ./data`. Optionally, customize the `UID` and `GID` env vars.
 7. Run Docker
 8. Optionally, set up the continuous deployment (see `.github/workflows/production-deploy.yml`, make sure that the user is in the `docker` group and that `sudo chown root:docker /var/run/docker.sock && sudo chmod 660 /var/run/docker.sock`)
+9. Optionally, set up monitoring credentials by creating the `.htpasswd` file (`sudo apt install apache2-utils`, `htpasswd -c ./frontend/monitoring.htpasswd admin`)
 
 ## Maintenance mode
 

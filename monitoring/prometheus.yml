@@ -7,10 +7,6 @@ scrape_configs:
       static_configs:
           - targets: ["backend:5000"]
 
-    - job_name: "flower"
-      static_configs:
-          - targets: ["flower:5555"]
-
     - job_name: "celery"
       static_configs:
           - targets: ["celery-exporter:9808"]

@@ -3,6 +3,7 @@ ssl/
 
 # Maintenance
 maintenance/
+monitoring.htpasswd
 
 # Logs
 logs
