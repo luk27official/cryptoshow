@@ -3,6 +3,7 @@ import torch
 import os
 import json
 import shutil
+from collections import defaultdict
 
 import biotite.structure.io.pdbx as pdbx
 import biotite.structure.io.pdb as pdb
@@ -149,48 +150,64 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
 
     protein: AtomArray = protein[(protein.atom_name == "CA") & (protein.element == "C")]  # type: ignore
 
-    seq = "".join(
-        [
-            (
-                ProteinSequence.convert_letter_3to1(residue.res_name)
-                if residue.res_name in ProteinSequence._dict_3to1
-                else "X"
-            )
-            for residue in protein
-        ]
-    )
+    sequences_by_chain = defaultdict(list)
 
-    SEQUENCE_FILE = os.path.join(JOB_PATH, "seq.fasta")
+    for residue in protein:
+        chain_id = residue.chain_id
+        one_letter = (
+            ProteinSequence.convert_letter_3to1(residue.res_name)
+            if residue.res_name in ProteinSequence._dict_3to1
+            else "X"
+        )
+        sequences_by_chain[chain_id].append(one_letter)
 
-    with open(SEQUENCE_FILE, "w") as f:
-        f.write(seq)
-
-    print(f"Saved sequence file to {SEQUENCE_FILE}")
-
-    self.update_state(state="PROGRESS", meta={"status": "Extracting 3D coordinates from PDB file"})
+    sequences_by_chain = {chain: "".join(seq) for chain, seq in sequences_by_chain.items()}
 
     coordinates = []
-    for residue in protein:
-        coordinates.append(residue.coord)
+    cryptobench_prediction = []
+    seq = []
+    embedding_files = []
+    sequence_files = []
+
+    for chain, sequence in sequences_by_chain.items():
+        SEQUENCE_FILE = os.path.join(JOB_PATH, f"seq_{chain}.fasta")
+
+        with open(SEQUENCE_FILE, "w") as f:
+            f.write(f"{sequence}")
+
+        sequence_files.append(SEQUENCE_FILE)
+
+        print(f"Saved sequence file for chain {chain} to {SEQUENCE_FILE}")
+
+        # run the ml model for this chain
+        EMBEDDING_FILE = os.path.join(JOB_PATH, f"embedding_{chain}.npy")
+        embedding_files.append(EMBEDDING_FILE)
+
+    self.update_state(state="PROGRESS", meta={"status": f"Running ESM2 embedding computations"})
+
+    compute_esm2(sequence_files, embedding_files)
+
+    print(f"Saved ESM2 embeddings to {embedding_files}")
+
+    for chain, sequence in sequences_by_chain.items():
+        EMBEDDING_FILE = os.path.join(JOB_PATH, f"embedding_{chain}.npy")
+
+        self.update_state(state="PROGRESS", meta={"status": f"Running CryptoBench prediction for chain {chain}"})
+
+        # run the cryptobench model for this chain
+        chain_pred = compute_prediction(EMBEDDING_FILE)
+        print(f"Got prediction for chain {chain} from CryptoBench")
+
+        chain_residues = [r for r in protein if r.chain_id == chain]
+        seq.extend(list(sequence))
+
+        for residue in chain_residues:
+            coordinates.append(residue.coord)
+
+        cryptobench_prediction.extend([float(p) for p in chain_pred])
 
     coordinates = [[float(c) for c in coord] for coord in coordinates]
-    print(f"Extracted 3D coordinates")
-
-    self.update_state(state="PROGRESS", meta={"status": "Running ESM2 embedding computation"})
-
-    # run the ml model
-    EMBEDDING_FILE = os.path.join(JOB_PATH, "embedding.npy")
-    compute_esm2(SEQUENCE_FILE, EMBEDDING_FILE)
-
-    print(f"Saved ESM2 embeddings to {EMBEDDING_FILE}")
-
-    self.update_state(state="PROGRESS", meta={"status": "Running CryptoBench prediction"})
-
-    # run the cryptobench model
-    pred = compute_prediction(EMBEDDING_FILE)
-
-    print(f"Got prediction for {structure_file_path} from CryptoBench")
-    cryptobench_prediction = [float(p) for p in pred]
+    print(f"Extracted 3D coordinates for all chains")
 
     # run clustering
     clusters = compute_clusters(coordinates, cryptobench_prediction)

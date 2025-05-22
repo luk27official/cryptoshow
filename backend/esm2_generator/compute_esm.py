@@ -4,17 +4,21 @@ import numpy as np
 import os
 
 
-def compute_esm2(input_file: str, output_file: str):
+def compute_esm2(input_files: list[str], output_files: list[str]):
     """
     Compute ESM2 embeddings for a given input file and save them to an output file.
 
     Args:
-        input_file (str): Path to the input file containing protein sequences.
-        output_file (str): Path to the output file where embeddings will be saved.
+        input_files (list[str]): Paths to the input files containing protein sequences (one file per sequence/chain).
+        output_files (list[str]): Paths to the output files where embeddings will be saved (one file per sequence/chain).
 
     Returns:
         None
     """
+
+    assert len(input_files) == len(
+        output_files
+    ), f"The lengths of input_files and output_files must be equal, got {len(input_files)} and {len(output_files)} instead"
 
     # NOTE: t36 currently requires >16 GB of RAM, not using now
     models = [(esm.pretrained.esm2_t33_650M_UR50D, 33), (esm.pretrained.esm2_t36_3B_UR50D, 36)]
@@ -28,26 +32,27 @@ def compute_esm2(input_file: str, output_file: str):
     device = torch.device(f"cuda:0" if (torch.cuda.is_available()) else "cpu")
     model.to(device)
 
-    name, ext = os.path.splitext(input_file)
+    for input_file, output_file in zip(input_files, output_files):
+        name, ext = os.path.splitext(input_file)
 
-    with open(input_file, "r") as f:
-        sequence = f.read()
-        threshold = 1022
-        vectors = []
-        while len(sequence) > 0:
-            sequence1 = sequence[:threshold]
-            sequence = sequence[threshold:]
-            data = [(name, sequence1)]
-            _, _, batch_tokens = batch_converter(data)
-            batch_tokens = batch_tokens.to(device)
-            with torch.no_grad():
-                results = model(batch_tokens, repr_layers=[layers], return_contacts=True)
-            token_representations = results["representations"][layers]
-            vectors1 = token_representations.detach().cpu().numpy()[0][1:-1]
-            if len(vectors) > 0:
-                vectors = np.concatenate((vectors, vectors1))
-            else:
-                vectors = vectors1
+        with open(input_file, "r") as f:
+            sequence = f.read()
+            threshold = 1022
+            vectors = []
+            while len(sequence) > 0:
+                sequence1 = sequence[:threshold]
+                sequence = sequence[threshold:]
+                data = [(name, sequence1)]
+                _, _, batch_tokens = batch_converter(data)
+                batch_tokens = batch_tokens.to(device)
+                with torch.no_grad():
+                    results = model(batch_tokens, repr_layers=[layers], return_contacts=True)
+                token_representations = results["representations"][layers]
+                vectors1 = token_representations.detach().cpu().numpy()[0][1:-1]
+                if len(vectors) > 0:
+                    vectors = np.concatenate((vectors, vectors1))
+                else:
+                    vectors = vectors1
 
-        os.makedirs(os.path.dirname(output_file), exist_ok=True)
-        np.save(output_file, vectors)
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+            np.save(output_file, vectors)
