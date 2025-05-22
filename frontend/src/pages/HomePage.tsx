@@ -74,7 +74,12 @@ function HomePage() {
                 const { task_id, structure_name } = data.result as CryptoBenchResult;
                 const stringToSave = `${task_id} (${structure_name})`;
                 if (completedTasks) {
-                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...JSON.parse(completedTasks), stringToSave]));
+                    const tasksArray = JSON.parse(completedTasks);
+                    const lastFiveTasks = tasksArray.slice(-5);
+                    // only add if it's not already in the last 5 tasks
+                    if (!lastFiveTasks.includes(stringToSave)) {
+                        localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...tasksArray, stringToSave]));
+                    }
                 } else {
                     localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([stringToSave]));
                 }
