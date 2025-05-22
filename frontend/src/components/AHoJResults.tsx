@@ -124,7 +124,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                     setLoadingStructure(undefined);
 
                 } else if (data.status === "FAILURE") {
-                    console.error("Animation task failed:", data.error || "Unknown error");
+                    console.error("Animation task failed:", data.result || "Unknown error");
                     ws.close();
                     setLoadingStructure(undefined);
                 }

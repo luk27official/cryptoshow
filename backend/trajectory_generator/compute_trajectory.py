@@ -218,10 +218,10 @@ def compute_trajectory(task_hash: str, aligned_structure_filename: str, target_c
     ligands_aligned.atoms.chainIDs = "Z"  # type: ignore
 
     # append the ligands to both atom groups
-    atom_group_aligned = atom_group_aligned + ligands_aligned
-
-    u_new = mda.Merge(atom_group_original, ligands_aligned)
-    atom_group_original = u_new.select_atoms("all")
+    if len(ligands_aligned) > 0:
+        atom_group_aligned = atom_group_aligned + ligands_aligned
+        u_new = mda.Merge(atom_group_original, ligands_aligned)
+        atom_group_original = u_new.select_atoms("all")
 
     TRIMMED_PDB_FILE: str = os.path.join(
         JOBS_BASE_PATH, task_hash, f"anim_{os.path.splitext(os.path.basename(aligned_structure_filename))[0]}.pdb"
