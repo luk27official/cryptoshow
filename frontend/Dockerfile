@@ -20,6 +20,7 @@ COPY public/maintenance.html /usr/share/nginx/html/maintenance.html
 COPY nginx/nginx.conf /etc/nginx/nginx.conf.template
 COPY nginx/nginx_ssl_block.conf /etc/nginx/nginx_ssl_block.conf
 COPY nginx/nginx_ssl_redirect.conf /etc/nginx/nginx_ssl_redirect.conf
+COPY nginx/nginx_monitoring.conf /etc/nginx/nginx_monitoring.conf
 
 COPY nginx/nginx_entrypoint.sh /app/nginx_entrypoint.sh
 

@@ -132,10 +132,12 @@ services:
     build: ./frontend
     depends_on:
       - backend
+      - remove-monitoring-flag
     ports:
       - "80:80"
       - "443:443"
     volumes:
+      - ./data:/app/data
       - ${SSL_PATH:-./frontend/ssl/}:/etc/nginx/ssl/
       - ${HTPASSWD_PATH:-./frontend/monitoring.htpasswd}:/etc/nginx/monitoring.htpasswd
       - ./frontend/maintenance:/app/maintenance
@@ -149,6 +151,24 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+
+  remove-monitoring-flag:
+    image: busybox:glibc
+    command: sh -c "rm -f /app/data/monitoring.flag"
+    user: "${UID:-2727}:${GID:-2727}"
+    volumes:
+      - ./data:/app/data
+
+  monitoring-flag:
+    image: busybox:glibc
+    command: sh -c "touch /app/data/monitoring.flag && chmod 777 /app/data/monitoring.flag && echo 'Monitoring flag created successfully'"
+    user: "${UID:-2727}:${GID:-2727}"
+    volumes:
+      - ./data:/app/data
+    profiles:
+      - monitoring
+    depends_on:
+      - remove-monitoring-flag
 
   flower:
     build:
@@ -192,7 +212,6 @@ services:
       - monitoring
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
-    command: ["/bin/sh", "-c", "touch /etc/prometheus/monitoring.flag && chmod 777 /etc/prometheus/monitoring.flag"]
     ports:
       - "9090:9090"
 
@@ -206,6 +225,7 @@ services:
       - ./data/grafana:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     user: "${UID:-2727}:${GID:-2727}"
+    restart: unless-stopped
     environment:
       - GF_SERVER_HTTP_PORT=3001
       - GF_SECURITY_ADMIN_USER=admin

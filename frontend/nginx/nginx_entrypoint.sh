@@ -9,7 +9,7 @@ if [ "$ENABLE_SSL" = "true" ]; then
   REDIRECT_BLOCK_CONTENT=$(cat /etc/nginx/nginx_ssl_redirect.conf)
 fi
 
-if [ -f /etc/prometheus/monitoring.flag ]; then
+if [ -f /app/data/monitoring.flag ]; then
   MONITORING_BLOCK_CONTENT=$(cat /etc/nginx/nginx_monitoring.conf)
 fi
 
