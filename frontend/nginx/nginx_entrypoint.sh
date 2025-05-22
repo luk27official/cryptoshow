@@ -15,7 +15,7 @@ fi
 
 # first resolve monitoring in the SSL template
 if [ "$ENABLE_SSL" = "true" ] && [ -n "$MONITORING_BLOCK_CONTENT" ]; then
-  SSL_BLOCK_CONTENT=$(echo "$SSL_BLOCK_CONTENT" | sed "s|{{MONITORING}}|$MONITORING_BLOCK_CONTENT|g")
+  SSL_BLOCK_CONTENT=$(echo "$SSL_BLOCK_CONTENT" | awk -v monitoring="$MONITORING_BLOCK_CONTENT" '{gsub(/\{\{MONITORING\}\}/, monitoring); print}')
 fi
 
 # replace all placeholders in the main template
