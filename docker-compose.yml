@@ -192,6 +192,7 @@ services:
       - monitoring
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+    entrypoint: ["/bin/sh", "-c", "touch /etc/prometheus/monitoring.flag"]
     ports:
       - "9090:9090"
 
