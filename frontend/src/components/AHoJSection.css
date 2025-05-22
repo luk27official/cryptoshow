@@ -43,3 +43,9 @@
 .job-id:hover {
     text-decoration: underline;
 }
+
+.info {
+    font-size: 0.75rem;
+    font-family: monospace;
+    color: var(--text-muted);
+}

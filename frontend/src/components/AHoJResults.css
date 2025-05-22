@@ -4,8 +4,10 @@
 
 .ahoj-results-table-container {
     overflow-x: auto;
+    overflow-y: auto;
     width: 100%;
     margin-top: 0.5rem;
+    max-height: 20.5rem;
 }
 
 .ahoj-results-table {

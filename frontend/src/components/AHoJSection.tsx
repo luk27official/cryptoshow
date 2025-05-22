@@ -28,6 +28,7 @@ const AHoJSection = ({
             </button>
 
             {ahoJJobId && <a href={`https://apoholo.cz/job/${ahoJJobId}`} target="_blank" rel="noopener noreferrer" className="job-id">AHoJ Job ID: {ahoJJobId}</a>}
+            {ahoJJobId && <span className="info">(note that the results table is scrollable)</span>}
         </div>
 
         {ahoJJobResult && <AHoJResults pocket={pocket} ahoJJobResult={ahoJJobResult} />}
