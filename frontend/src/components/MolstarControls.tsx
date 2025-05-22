@@ -83,6 +83,7 @@ function MolstarControls() {
                         <option value={PocketRepresentationValues.Cartoon}>Cartoon</option>
                         <option value={PocketRepresentationValues.BallAndStick}>Ball and Stick</option>
                         <option value={PocketRepresentationValues.MolecularSurface}>Surface</option>
+                        <option value={PocketRepresentationValues.None}>None</option>
                     </select>
                 </div>
 
