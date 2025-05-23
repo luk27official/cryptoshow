@@ -1,4 +1,6 @@
 import { StateObjectSelector } from "molstar/lib/mol-state";
+import { Color } from "molstar/lib/mol-util/color";
+import { Bundle } from "molstar/lib/mol-model/structure/structure/element/bundle";
 
 export type CryptoBenchResult = {
     status: string;
@@ -105,6 +107,7 @@ export type RepresentationWithRef<T extends PolymerRepresentationType | PocketRe
     type: T;
     object: StateObjectSelector;
     transparentObjectRef?: string;
+    overPaintRef?: string;
     id?: number;
 };
 
@@ -122,4 +125,16 @@ export type TrajectoryTaskResult = {
     status: string;
     trajectory: string;
     trimmed_pdb: string;
+};
+
+export type OverPaintParams = {
+    bundle: Bundle,
+    color: Color,
+    clear: boolean;
+};
+
+export type ChainData = {
+    threshold: number;
+    chainId: string;
+    residueNums: number[];
 };

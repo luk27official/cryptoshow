@@ -100,7 +100,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                     ws.close();
                     const result: TrajectoryTaskResult = data.result;
 
-                    const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trajectory}`), structure);
+                    const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trajectory}`), structure, undefined);
                     showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
 
                     const updatedStructures = await Promise.all(

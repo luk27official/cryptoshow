@@ -52,7 +52,7 @@ function VisualizationContent() {
             const initPlugin = async () => {
                 const pluginInstance = await initializePlugin();
                 setPlugin(pluginInstance);
-                const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${cryptoBenchResult!.input_structure}`), undefined, undefined);
+                const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${cryptoBenchResult!.input_structure}`), undefined, undefined, cryptoBenchResult);
                 setLoadedStructures(prevStructures => [...prevStructures, loaded]);
                 showOnePolymerRepresentation(pluginInstance, loaded, selectedPolymerRepresentation);
                 const pocketReprs = await loadPockets(pluginInstance, loaded.structure, cryptoBenchResult!, null);

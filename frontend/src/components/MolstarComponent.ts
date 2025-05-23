@@ -19,7 +19,7 @@ import { Bundle } from "molstar/lib/mol-model/structure/structure/element/bundle
 import "molstar/lib/mol-plugin-ui/skin/light.scss";
 
 
-import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType, AHoJStructure } from "../types";
+import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType, AHoJStructure, OverPaintParams, ChainData } from "../types";
 import { getColor, getWindowWidth } from "../utils";
 
 /**
@@ -69,9 +69,10 @@ export const initializePlugin = async () => {
  * @param structureUrl Structure URL
  * @param trajectoryUrl Trajectory URL (optional)
  * @param ahojStructure AHoJ structure object (optional)
+ * @param prediction CryptoBench result object (optional)
  * @returns Loaded structure object containing the structure, data, and representations
  */
-export const loadStructure = async (plugin: PluginUIContext, structureUrl: string, trajectoryUrl: string | undefined, ahojStructure: AHoJStructure | undefined): Promise<LoadedStructure> => {
+export const loadStructure = async (plugin: PluginUIContext, structureUrl: string, trajectoryUrl: string | undefined, ahojStructure: AHoJStructure | undefined, prediction: CryptoBenchResult | undefined): Promise<LoadedStructure> => {
     let structureNameShort;
 
     // for aligned structures, we want to prettify the name if possible
@@ -162,6 +163,10 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
         await plugin.build().commit();
 
         representations.push({ type: "backbone", object: backbone });
+    }
+
+    if (prediction) {
+        await overPaintStructureWithPrediction(plugin, representations, prediction);
     }
 
     await createLigandRepresentations(plugin, structure);
@@ -515,3 +520,67 @@ export const setStructureTransparency = async (plugin: PluginUIContext, alpha: n
         element.transparentObjectRef = r.ref;
     }
 };
+
+/**
+ * Overpaints the structure with grayscale colors based on the predicted scores.
+ * @param plugin Mol* plugin instance
+ * @param representations Array of representations
+ * @param prediction CryptoBench result object containing the predicted scores
+ * @returns void
+ */
+async function overPaintStructureWithPrediction(plugin: PluginUIContext, representations: RepresentationWithRef<PocketRepresentationType | PolymerRepresentationType>[], prediction: CryptoBenchResult) {
+    const params: OverPaintParams[] = [];
+    const thresholds = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0];
+    const colors: Color[] = [];
+
+    //create shades of gray
+    for (let i = 0; i < thresholds.length; i++) {
+        const colorShade = i * 15 + 120;
+        colors.push(Color.fromRgb(colorShade, colorShade, colorShade));
+    }
+
+    const selections: ChainData[] = [];
+
+    for (let i = 0; i < prediction.residue_ids.length; i++) {
+        const residue = prediction.residue_ids[i];
+        const splitResidue = residue.split("_");
+        const chain = splitResidue[0];
+        const id = Number(splitResidue[1]);
+        const score = prediction.prediction[i];
+
+        for (let y = 0; y < thresholds.length; y++) {
+            if (score > thresholds[y]) {
+                const element = selections.find(e => e.threshold === thresholds[y] && e.chainId == chain);
+                if (element) {
+                    element.residueNums.push(id);
+                }
+                else {
+                    selections.push({ chainId: chain, residueNums: [id], threshold: thresholds[y] });
+                }
+                break;
+            }
+        }
+    }
+
+    for (let i = 0; i < selections.length; i++) {
+        const sel = getSelectionFromChainAuthId(plugin, selections[i].chainId, selections[i].residueNums);
+        const bundle = Bundle.fromSelection(sel);
+
+        params.push({
+            bundle: bundle,
+            color: colors[thresholds.findIndex(e => e === selections[i].threshold)],
+            clear: false
+        });
+    }
+
+    for (const element of representations) {
+        const builder = plugin.state.data.build();
+        if (element.overPaintRef) {
+            builder.to(element.object.ref).delete(element.overPaintRef);
+        }
+        await builder.commit();
+
+        const r = await plugin.build().to(element.object).apply(StateTransforms.Representation.OverpaintStructureRepresentation3DFromBundle, { layers: params }).commit();
+        element.overPaintRef = r.ref;
+    }
+}
