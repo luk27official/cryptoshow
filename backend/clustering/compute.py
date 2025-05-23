@@ -18,7 +18,7 @@ def compute_clusters(points: list[list[float]], prediction_scores: list[float]):
     scores_array = np.array(prediction_scores).reshape(-1, 1)
     stacked = np.hstack((points_array, scores_array))  # Combine coordinates with scores
 
-    high_score_mask = stacked[:, 3] > 0.65
+    high_score_mask = stacked[:, 3] > 0.7
     high_score_points = stacked[high_score_mask][:, :3]  # Extract only (x, y, z) coordinates
 
     eps = 5.0  # Max distance for neighbors
