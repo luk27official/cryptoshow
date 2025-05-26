@@ -7,7 +7,7 @@ import requests
 
 from typing import TypedDict
 import biotite.database.rcsb as rcsb
-from Bio.PDB import Select
+from Bio.PDB.PDBIO import Select
 
 from commons import JOBS_BASE_PATH
 

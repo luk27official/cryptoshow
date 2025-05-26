@@ -40,7 +40,7 @@ RUN find /app -path "/app/.venv" -prune -o -exec chown cryptoshow:cryptoshow {} 
 
 EXPOSE 5000
 
-# === Full build (with ESM-2 at first startup) ===
+# === Full build (with the models at first startup) ===
 FROM common AS full
 
 USER root
@@ -53,19 +53,3 @@ USER cryptoshow
 ENTRYPOINT ["/entrypoint.sh"]
 
 CMD ["/app/.venv/bin/fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
-
-# === Fast build (no ESM-2 at first startup) ===
-FROM common AS fast
-
-USER root
-
-COPY entrypoint.sh /entrypoint_fast.sh
-RUN chmod +x /entrypoint_fast.sh
-
-USER cryptoshow
-
-ENTRYPOINT ["/entrypoint_fast.sh"]
-
-CMD ["/app/.venv/bin/fastapi", "run", "main.py", "--proxy-headers", "--port", "5000"]
-
-# skips the ESM-2 download

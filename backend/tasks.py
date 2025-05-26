@@ -15,8 +15,7 @@ from Bio.PDB.mmcifio import MMCIFIO
 from Bio.PDB.PDBParser import PDBParser
 from Bio.PDB.PDBIO import PDBIO
 
-from esm2_generator import compute_esm2
-from cb_small import compute_prediction
+from prediction import compute_prediction
 from clustering import compute_clusters
 from trajectory_generator import compute_trajectory
 from utils import get_file_hash, FirstModelSelect
@@ -45,11 +44,11 @@ def process_string_test(self):
 
 @celery_app.task(name="celery_app.process_esm2_cryptobench", bind=True)
 def process_esm2_cryptobench(self, structure_path_original: str, structure_name: str):
-    """Runs ESM2 and CryptoBench models on a 3D structure.
+    """Runs the CryptoBench model on a 3D structure.
 
     Processes an uploaded or downloaded protein structure file (PDB or CIF),
-    extracts its sequence and coordinates, computes ESM2 embeddings,
-    runs CryptoBench prediction, performs clustering, and saves the results.
+    extracts its sequence and coordinates, runs CryptoBench prediction,
+    performs clustering, and saves the results.
 
     Args:
         structure_path_original (str): Path to the input structure file
@@ -166,7 +165,6 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     coordinates = []
     cryptobench_prediction = []
     seq = []
-    embedding_files = []
     sequence_files = []
 
     for chain, sequence in sequences_by_chain.items():
@@ -179,23 +177,19 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
 
         print(f"Saved sequence file for chain {chain} to {SEQUENCE_FILE}")
 
-        # run the ml model for this chain
-        EMBEDDING_FILE = os.path.join(JOB_PATH, f"embedding_{chain}.npy")
-        embedding_files.append(EMBEDDING_FILE)
-
-    self.update_state(state="PROGRESS", meta={"status": f"Running ESM2 embedding computations"})
-
-    compute_esm2(sequence_files, embedding_files)
-
-    print(f"Saved ESM2 embeddings to {embedding_files}")
-
     for chain, sequence in sequences_by_chain.items():
-        EMBEDDING_FILE = os.path.join(JOB_PATH, f"embedding_{chain}.npy")
+        SEQUENCE_FILE = os.path.join(JOB_PATH, f"seq_{chain}.fasta")
 
         self.update_state(state="PROGRESS", meta={"status": f"Running CryptoBench prediction for chain {chain}"})
 
         # run the cryptobench model for this chain
-        chain_pred = compute_prediction(EMBEDDING_FILE)
+        with open(SEQUENCE_FILE, "r") as f:
+            sequence_content = f.read().strip()
+
+        if not sequence_content:
+            raise ValueError(f"Empty sequence for chain {chain} in file {SEQUENCE_FILE}")
+
+        chain_pred = compute_prediction(sequence_content)
         print(f"Got prediction for chain {chain} from CryptoBench")
 
         chain_residues = [r for r in protein if r.chain_id == chain]
@@ -286,10 +280,6 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
 
     with open(RESULTS_FALLBACK_FILE, "w") as f:
         json.dump(task_data, f)
-
-    # remove the embedding file (it takes a lot of space and is not needed anymore)
-    for EMBEDDING_FILE in embedding_files:
-        os.remove(EMBEDDING_FILE)
 
     # zip the files to enable download
     RESULTS_ZIP_FILE = os.path.join(JOB_PATH, "results")

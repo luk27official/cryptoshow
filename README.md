@@ -6,8 +6,6 @@ CryptoShow is an application for detection of protein binding sites utilizing th
 
 Build using Docker: `docker compose --profile <cpu/gpu> build` or `docker buildx bake <cpu/gpu>` (experimental). Make sure to specify `--profile gpu` to run with CUDA or `--profile cpu` to run on CPU.
 
-If you want the build to be faster, create an `.env` file and set `BUILD_TARGET=fast` to skip the download of the ESM-2 model. This is useful for faster builds after the first full build when developing the app.
-
 For monitoring, also include `--profile monitoring`.
 
 ## Run 
