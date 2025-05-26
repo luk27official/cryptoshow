@@ -297,18 +297,27 @@ async def websocket_endpoint(
     await websocket.accept()
 
     try:
+        RESULTS_FILE = os.path.join(JOBS_BASE_PATH, task_id, "results.json")
+
         while True:
-            result = celery_app.AsyncResult(task_id)
+            if os.path.exists(RESULTS_FILE):
+                with open(RESULTS_FILE, "r") as f:
+                    await websocket.send_text(
+                        json.dumps({"task_id": task_id, "status": "SUCCESS", "result": json.load(f)})
+                    )
 
-            # Serialize exceptions to string
-            result_value = result.result
-            if isinstance(result_value, Exception):
-                result_value = str(result_value)
+            else:
+                result = celery_app.AsyncResult(task_id)
 
-            status_info = {"task_id": task_id, "status": result.status, "result": result_value}
+                # Serialize exceptions to string
+                result_value = result.result
+                if isinstance(result_value, Exception):
+                    result_value = str(result_value)
 
-            # Send task status to frontend
-            await websocket.send_text(json.dumps(status_info))
+                status_info = {"task_id": task_id, "status": result.status, "result": result_value}
+
+                # Send task status to frontend
+                await websocket.send_text(json.dumps(status_info))
 
             # We expect the frontend to disconnect when the task is done...
             await asyncio.sleep(1)
