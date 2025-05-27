@@ -43,8 +43,9 @@ app.add_middleware(
         "https://apoholo.cz",
         "http://cryptoshow.ksi.projekty.ms.mff.cuni.cz",
         "https://cryptoshow.ksi.projekty.ms.mff.cuni.cz",
+        "http://cryptoshow.cz",
+        "https://cryptoshow.cz",
     ],
-    # TODO: what should this be when the app is deployed?
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
