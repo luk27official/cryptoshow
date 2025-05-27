@@ -3,7 +3,7 @@ from transformers import AutoTokenizer, EsmModel
 import numpy as np
 import torch.nn as nn
 
-MODEL_NAME = "facebook/esm2_t33_650M_UR50D"
+ESM_MODEL_NAME = "facebook/esm2_t33_650M_UR50D"
 MAX_LENGTH = 1024
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 OUTPUT_SIZE = 1
@@ -42,10 +42,10 @@ def compute_prediction(sequence: str) -> np.ndarray:
     Returns:
         np.ndarray: The predicted scores for each residue.
     """
-    model = FinetuneESM(MODEL_NAME).to(DEVICE)
+    model = FinetuneESM(ESM_MODEL_NAME).to(DEVICE)
     model.load_state_dict(torch.load(MODEL_PATH, map_location=DEVICE), strict=True)
 
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
+    tokenizer = AutoTokenizer.from_pretrained(ESM_MODEL_NAME)
     model.eval()
 
     KRAS_sequence = str(sequence)  # copy the sequence to avoid modifying the original input
