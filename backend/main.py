@@ -20,14 +20,6 @@ import logging
 import os
 import shutil
 
-ENABLE_EXTERNAL_SSL_REQUESTS = os.getenv("ENABLE_EXTERNAL_SSL_REQUESTS", "true").lower() == "true"
-# for edge cases when the server is behind a proxy and we want to disable SSL verification
-# this should always be set to True in production!
-if not ENABLE_EXTERNAL_SSL_REQUESTS:
-    import ssl
-
-    ssl._create_default_https_context = ssl._create_unverified_context
-
 from .tasks import celery_app
 from .utils import get_existing_result, generate_random_folder_name, download_cif_file
 from .commons import JOBS_BASE_PATH
@@ -345,7 +337,7 @@ async def proxy_ahoj_calcluate(
 
     url = "https://apoholo.cz/api/job"
     try:
-        async with httpx.AsyncClient(verify=ENABLE_EXTERNAL_SSL_REQUESTS) as client:
+        async with httpx.AsyncClient(verify=True) as client:
             response = await client.post(url, json=request.model_dump())
             return response.json()
     except Exception as e:
@@ -373,7 +365,7 @@ async def proxy_ahoj_get(
         return JSONResponse(status_code=403, content={"error": "Nice try, but no."})
 
     try:
-        async with httpx.AsyncClient(verify=ENABLE_EXTERNAL_SSL_REQUESTS) as client:
+        async with httpx.AsyncClient(verify=True) as client:
             response = await client.get(url)
 
             if response.headers.get("Content-Type") == "application/json":
