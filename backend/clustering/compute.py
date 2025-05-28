@@ -23,6 +23,11 @@ def compute_clusters(points: list[list[float]], prediction_scores: list[float]):
 
     eps = 5.0  # Max distance for neighbors
     min_samples = 3  # Min points to form a cluster
+
+    # No pockets can be formed if there are not enough high score points.
+    if len(high_score_points) < min_samples:
+        return -1 * np.ones(len(points), dtype=int)
+
     dbscan = DBSCAN(eps=eps, min_samples=min_samples)
     labels = dbscan.fit_predict(high_score_points)
 
