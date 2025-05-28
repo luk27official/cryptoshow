@@ -6,8 +6,8 @@ services:
       args:
         UID: ${UID:-2727}
         GID: ${GID:-2727}
-        HTTP_PROXY: ${HTTP_PROXY}
-        HTTPS_PROXY: ${HTTPS_PROXY}
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
     user: "${UID:-2727}:${GID:-2727}"
     volumes:
       - ./data:/app/data
@@ -25,8 +25,8 @@ services:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
       - PYTHONPATH=/app
-      - HTTP_PROXY
-      - HTTPS_PROXY
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
     working_dir: /app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/api/health"]
@@ -42,8 +42,8 @@ services:
       args:
         UID: ${UID:-2727}
         GID: ${GID:-2727}
-        HTTP_PROXY: ${HTTP_PROXY}
-        HTTPS_PROXY: ${HTTPS_PROXY}
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
     user: "${UID:-2727}:${GID:-2727}"
     command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info -E
     volumes:
@@ -68,8 +68,8 @@ services:
       - CELERY_BACKEND=redis://redis:6379/0
       - PYTHONPATH=/app
       - NVIDIA_DISABLE_REQUIRE=true
-      - HTTP_PROXY
-      - HTTPS_PROXY
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
       # - TF_GPU_ALLOCATOR=cuda_malloc_async
       # - TF_FORCE_GPU_ALLOW_GROWTH=true
       # - TF_USE_LEGACY_KERAS=1
@@ -90,8 +90,8 @@ services:
       args:
         UID: ${UID:-2727}
         GID: ${GID:-2727}
-        HTTP_PROXY: ${HTTP_PROXY}
-        HTTPS_PROXY: ${HTTPS_PROXY}
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
     user: "${UID:-2727}:${GID:-2727}"
     command: /app/.venv/bin/celery -A tasks.celery_app worker --loglevel=info -E
     volumes:
@@ -108,8 +108,8 @@ services:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
       - PYTHONPATH=/app
-      - HTTP_PROXY
-      - HTTPS_PROXY
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
     working_dir: /app
     profiles:
       - cpu
@@ -181,8 +181,8 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       args:
-        - HTTP_PROXY
-        - HTTPS_PROXY
+        HTTP_PROXY: ${HTTP_PROXY:-}
+        HTTPS_PROXY: ${HTTPS_PROXY:-}
     user: "${UID:-2727}:${GID:-2727}"
     command: /app/.venv/bin/celery -A tasks.celery_app flower --url_prefix=/flower
     ports:
@@ -190,8 +190,8 @@ services:
     environment:
       - CELERY_BROKER=redis://redis:6379/0
       - CELERY_BACKEND=redis://redis:6379/0
-      - HTTP_PROXY
-      - HTTPS_PROXY
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
     profiles:
       - monitoring
     volumes:
@@ -241,7 +241,7 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_SERVER_ROOT_URL=/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
-      - HTTP_PROXY
-      - HTTPS_PROXY
+      - HTTP_PROXY=${HTTP_PROXY:-}
+      - HTTPS_PROXY=${HTTPS_PROXY:-}
     depends_on:
       - prometheus
