@@ -54,6 +54,7 @@ services:
     depends_on:
       - redis
       - backend
+    restart: unless-stopped
     deploy:
       resources:
         reservations:
@@ -102,6 +103,7 @@ services:
     depends_on:
       - redis
       - backend
+    restart: unless-stopped
     environment:
       - UID=${UID:-2727}
       - GID=${GID:-2727}
@@ -194,6 +196,7 @@ services:
       - HTTPS_PROXY=${HTTPS_PROXY:-}
     profiles:
       - monitoring
+    restart: unless-stopped
     volumes:
       - ./data:/app/data
       - ./cache/torch:/home/cryptoshow/.cache/torch/hub/checkpoints
@@ -210,6 +213,7 @@ services:
       - CE_BROKER_URL=redis://redis:6379/0
     profiles:
       - monitoring
+    restart: unless-stopped
     ports:
       - "9808:9808"
     depends_on:
@@ -219,6 +223,7 @@ services:
     image: prom/prometheus
     profiles:
       - monitoring
+    restart: unless-stopped
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
     ports:
