@@ -3,6 +3,7 @@
 mkdir -p /app/data/jobs
 
 MODEL_FILE=/app/cryptobench-small/model-650M-finetuned.pt
+SMOOTHENING_MODEL_FILE=/app/cryptobench-small/smoothening_model-650M-finetuned.pt
 
 if [ ! -f "$MODEL_FILE" ]; then
     wget --no-check-certificate --progress=dot:giga https://owncloud.cesnet.cz/index.php/s/mPo9NCWMBouwVAo/download -O "$MODEL_FILE"
@@ -27,6 +28,11 @@ if [ ! -f "$MODEL_FILE" ]; then
     else
         echo "⚠️  Skipping hash check: no expected hash provided."
     fi
+fi
+
+if [ ! -f "$SMOOTHENING_MODEL_FILE" ]; then
+    # This is hosted by me on GitHub, so it should be safe to download.
+    wget --no-check-certificate --progress=dot:giga https://github.com/luk27official/cryptoshow-benchmark/raw/refs/heads/main/smoothening/pretrained_models/cryptobench_classifier.pt -O "$SMOOTHENING_MODEL_FILE"
 fi
 
 exec "$@"

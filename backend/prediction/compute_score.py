@@ -2,6 +2,7 @@ import torch
 from transformers import AutoTokenizer, EsmModel
 import numpy as np
 import torch.nn as nn
+import os
 
 ESM_MODEL_NAME = "facebook/esm2_t33_650M_UR50D"
 MAX_LENGTH = 1024
@@ -32,12 +33,15 @@ class FinetuneESM(nn.Module):
         )
 
 
-def compute_prediction(sequence: str) -> np.ndarray:
+def compute_prediction(sequence: str, job_path: str, chain: str) -> np.ndarray:
     """
     Compute the residue-level prediction using the CryptoBench model.
+    Also saves the embeddings for the sequence in the specified job path - this is needed for cluster refinement.
 
     Args:
         sequence (str): Sequence of amino acids to be predicted.
+        job_path (str): Path to the job directory where results will be saved.
+        chain (str): Chain identifier for the sequence.
 
     Returns:
         np.ndarray: The predicted scores for each residue.
@@ -48,24 +52,43 @@ def compute_prediction(sequence: str) -> np.ndarray:
     tokenizer = AutoTokenizer.from_pretrained(ESM_MODEL_NAME)
     model.eval()
 
-    KRAS_sequence = str(sequence)  # copy the sequence to avoid modifying the original input
+    KRAS_sequence = str(sequence)
+    all_embeddings = []
     final_output = []
 
     # Process sequence in chunks of SEQUENCE_MAX_LENGTH
     for i in range(0, len(KRAS_sequence), SEQUENCE_MAX_LENGTH):
         processed_sequence = KRAS_sequence[i : i + SEQUENCE_MAX_LENGTH]
 
-        tokenized_sequences = tokenizer(
-            processed_sequence, max_length=MAX_LENGTH, padding="max_length", truncation=True
+        tokenized = tokenizer(
+            processed_sequence, max_length=MAX_LENGTH, padding="max_length", truncation=True, return_tensors="pt"
         )
-        tokenized_sequences = {k: torch.tensor([v]).to(DEVICE) for k, v in tokenized_sequences.items()}
+        tokenized = {k: v.to(DEVICE) for k, v in tokenized.items()}
 
-        output, _, _ = model(tokenized_sequences)
-        output = output.flatten()
+        # embeddings
+        with torch.no_grad():
+            llm_output = model.llm(input_ids=tokenized["input_ids"], attention_mask=tokenized["attention_mask"])
+            embeddings = llm_output.last_hidden_state  # shape: (1, seq_len, hidden_dim)
 
-        mask = (tokenized_sequences["attention_mask"] == 1).flatten()
+        embeddings_np = embeddings.squeeze(0).detach().cpu().numpy()
+        embeddings_np = embeddings_np[1:-1]  # exclude [CLS], [SEP]
+        all_embeddings.append(embeddings_np)
 
-        output = torch.sigmoid(output[mask][1:-1]).detach().cpu().numpy()
-        final_output.extend(output)
+        # prediction
+        with torch.no_grad():
+            output, _, _ = model(tokenized)
+
+        output = output.squeeze(0)
+        mask = tokenized["attention_mask"].squeeze(0).bool()
+        output = output[mask][1:-1]  # exclude [CLS], [SEP]
+
+        probabilities = torch.sigmoid(output).detach().cpu().numpy()
+        final_output.extend(probabilities)
+
+    # save the concatenated embeddings for the entire sequence
+    final_embeddings = np.concatenate(all_embeddings, axis=0)
+    save_path = os.path.join(job_path, f"embedding_{chain}.npy")
+    print(f"Saving embeddings for chain {chain} in {save_path}")
+    np.save(save_path, final_embeddings)
 
     return np.array(final_output).flatten()

@@ -16,7 +16,7 @@ from Bio.PDB.PDBParser import PDBParser
 from Bio.PDB.PDBIO import PDBIO
 
 from prediction import compute_prediction
-from clustering import compute_clusters
+from clustering import compute_clusters, refine_clusters
 from trajectory_generator import compute_trajectory
 from utils import get_file_hash, FirstModelSelect
 from commons import JOBS_BASE_PATH
@@ -189,7 +189,7 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
         if not sequence_content:
             raise ValueError(f"Empty sequence for chain {chain} in file {SEQUENCE_FILE}")
 
-        chain_pred = compute_prediction(sequence_content)
+        chain_pred = compute_prediction(sequence_content, JOB_PATH, chain)
         print(f"Got prediction for chain {chain} from CryptoBench")
 
         chain_residues = [r for r in protein if r.chain_id == chain]
@@ -206,6 +206,10 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     # run clustering
     clusters = compute_clusters(coordinates, cryptobench_prediction)
     clusters = [int(p) for p in clusters]
+
+    # refine clusters by using smoothening model
+    self.update_state(state="PROGRESS", meta={"status": "Refining clusters"})
+    clusters = refine_clusters(clusters, coordinates, JOB_PATH, structure_file_path, sequences_by_chain)
 
     # group residues into pockets
     pocket_groups = {}
@@ -280,6 +284,11 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
 
     with open(RESULTS_FALLBACK_FILE, "w") as f:
         json.dump(task_data, f)
+
+    # remove all *.npy files from the job path (embeddings)
+    for file in os.listdir(JOB_PATH):
+        if file.endswith(".npy"):
+            os.remove(os.path.join(JOB_PATH, file))
 
     # zip the files to enable download
     RESULTS_ZIP_FILE = os.path.join(JOB_PATH, "results")
