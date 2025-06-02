@@ -86,7 +86,7 @@ function HomePage() {
                 ws.close();
             } else if (data.status === "FAILURE") {
                 let error = data.error ?? data.result as string ?? "Unknown error.";
-                error += " An error occured. Please, consider reporting this issue via GitHub.";
+                error += "\nAn error occured. Please, consider reporting this issue via GitHub.";
                 setResultStatus(error);
                 ws.close();
             } else if (data.status === "PROGRESS" || data.status === "PENDING") {
