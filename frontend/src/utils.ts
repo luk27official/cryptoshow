@@ -1,3 +1,5 @@
+export const STORAGE_VERSION = "v0.0.1";
+
 export const getApiUrl = (path: string) => {
     return `./api${path}`;
 };
@@ -43,7 +45,7 @@ const defaultColors = [
     0x00ffff,
 ];
 
-export const COMPLETED_TASKS_KEY = "completedTasks";
+export const COMPLETED_TASKS_KEY = `completedTasks_${STORAGE_VERSION}`;
 
 export const getWindowWidth = () => {
     return window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
