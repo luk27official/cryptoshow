@@ -207,7 +207,7 @@ def process_esm2_cryptobench(self, structure_path_original: str, structure_name:
     clusters = compute_clusters(coordinates, cryptobench_prediction)
     clusters = [int(p) for p in clusters]
 
-    # refine clusters by using smoothening model
+    # refine clusters by using smoothing model
     self.update_state(state="PROGRESS", meta={"status": "Refining clusters"})
     clusters = refine_clusters(clusters, coordinates, JOB_PATH, structure_file_path, sequences_by_chain)
 

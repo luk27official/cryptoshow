@@ -7,7 +7,7 @@ from sklearn.cluster import DBSCAN
 from .smoothen_prediction import process_single_sequence, predict_single_sequence, CryptoBenchClassifier
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-MODEL_STATE_DICT_PATH = "/app/cryptobench-small/smoothening_model-650M-finetuned.pt"
+MODEL_STATE_DICT_PATH = "/app/cryptobench-small/smoothing_model-650M-finetuned.pt"
 
 
 def compute_clusters(
