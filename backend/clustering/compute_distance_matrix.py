@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 
-def compute_distance_matrix_from_structure(structure_file_path: str):
+def compute_distance_matrix_from_structure(structure_file_path: str, chain: str):
     # for every two residues in the structure, compute the distance between them
     if not os.path.exists(structure_file_path):
         raise FileNotFoundError(f"Structure file {structure_file_path} does not exist.")
@@ -17,7 +17,7 @@ def compute_distance_matrix_from_structure(structure_file_path: str):
         sf = pdb.PDBFile.read(structure_file_path)
         protein = pdb.get_structure(sf, model=1)  # type: ignore
 
-    protein: AtomArray = protein[(protein.atom_name == "CA") & (protein.element == "C")]  # type: ignore
+    protein: AtomArray = protein[(protein.atom_name == "CA") & (protein.element == "C") & (protein.chain_id == chain)]  # type: ignore
 
     coordinates = []
 

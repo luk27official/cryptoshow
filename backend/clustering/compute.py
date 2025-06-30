@@ -89,6 +89,11 @@ def refine_clusters(
                 continue
 
             cluster_points = points_chain[clusters_chain == cluster_label]
+
+            # Skip empty clusters (for some reason, some clusters might be empty)
+            if len(cluster_points) == 0:
+                continue
+
             print(f"Processing cluster {cluster_label} with {len(cluster_points)} points.")
 
             model = CryptoBenchClassifier().to(DEVICE)
@@ -101,10 +106,7 @@ def refine_clusters(
             embedding_file_path = os.path.join(embedding_path_directory, f"embedding_{chain}.npy")
 
             single_for_prediction = process_single_sequence(
-                binding_residues,
-                sequence,
-                embedding_file_path,
-                structure_file_path,
+                binding_residues, sequence, embedding_file_path, structure_file_path, chain
             )
 
             smoothened_prediction = predict_single_sequence(*single_for_prediction, model=model)

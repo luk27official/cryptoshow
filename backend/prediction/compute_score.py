@@ -71,7 +71,8 @@ def compute_prediction(sequence: str, job_path: str, chain: str) -> np.ndarray:
             embeddings = llm_output.last_hidden_state  # shape: (1, seq_len, hidden_dim)
 
         embeddings_np = embeddings.squeeze(0).detach().cpu().numpy()
-        embeddings_np = embeddings_np[1:-1]  # exclude [CLS], [SEP]
+        mask = tokenized["attention_mask"].squeeze(0).detach().cpu().numpy().astype(bool)
+        embeddings_np = embeddings_np[mask][1:-1]  # exclude [CLS], [SEP]
         all_embeddings.append(embeddings_np)
 
         # prediction

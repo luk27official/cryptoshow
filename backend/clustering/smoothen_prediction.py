@@ -16,10 +16,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def process_single_sequence(
-    binding_residues: list[str],
-    sequence: str,
-    embedding_path: str,
-    structure_file_path: str,
+    binding_residues: list[str], sequence: str, embedding_path: str, structure_file_path: str, chain: str
 ):
     """
     Process a single sequence to extract features and labels for inference.
@@ -29,6 +26,7 @@ def process_single_sequence(
         sequence (str): Amino acid sequence of the protein.
         embedding_path (str): Path to the precomputed embedding for the given chain.
         structure_file_path (str): Path to the structure file.
+        chain (str): Chain identifier for the sequence.
 
     Returns:
         tuple: A tuple containing:
@@ -40,7 +38,7 @@ def process_single_sequence(
         raise FileNotFoundError(f"Embedding file for not found in {embedding_path}")
 
     embedding = np.load(embedding_path)
-    distance_matrix = compute_distance_matrix_from_structure(structure_file_path)
+    distance_matrix = compute_distance_matrix_from_structure(structure_file_path, chain)
 
     Xs = []
     Ys = []
