@@ -18,11 +18,11 @@ To enable SSL (e.g. for production, use the `ENABLE_SSL` environment variable), 
 
 Also, when developing behind a proxy, change the `HTTP_PROXY` and `HTTPS_PROXY` env variables.
 
-## Local frontend development
+## Local Frontend Development
 
 See `frontend/README.md`.
 
-## Local backend development
+## Local Backend Development
 
 See `backend/README.md`.
 
@@ -38,7 +38,14 @@ See `backend/README.md`.
 8. Optionally, set up the continuous deployment (see `.github/workflows/production-deploy.yml`, make sure that the user is in the `docker` group and that `sudo chown root:docker /var/run/docker.sock && sudo chmod 660 /var/run/docker.sock`)
 9. Optionally, set up monitoring credentials by creating the `.htpasswd` file (`sudo apt install apache2-utils`, `htpasswd -c ./frontend/monitoring.htpasswd admin`)
 
-## Maintenance mode
+## Technical Requirements
+
+- RAM: minimum 32 GB, preferred 64 GB
+- CPU: minimum 8 cores, preferred 8+ cores
+- OS: anything running Docker (preferrably Linux)
+- disk: depends on number of processed structures
+
+## Maintenance Mode
 
 To toggle the maintenance mode, create/delete the `./frontend/maintenance/maintenance.flag` file (the file can be empty).
 
