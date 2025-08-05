@@ -21,10 +21,14 @@ from trajectory_generator import compute_trajectory
 from utils import get_file_hash, FirstModelSelect
 from commons import JOBS_BASE_PATH
 
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD", "defaultRedis")
+
+redis_url = f"redis://:{REDIS_PASSWORD}@redis:6379/0"
+
 celery_app = Celery(
     "celery_app",
-    broker="redis://redis:6379/0",
-    backend="redis://redis:6379/0",
+    broker=redis_url,
+    backend=redis_url,
     broker_connection_retry_on_startup=True,
     result_expires=0,
     worker_send_task_events=True,
