@@ -1,5 +1,5 @@
 import { Pocket } from "../types";
-import { useAppContext } from "../hooks/useApp";
+import { useAppContext } from "../hooks";
 import "./PocketDetails.css";
 
 interface PocketDetailsProps {

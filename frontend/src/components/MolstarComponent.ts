@@ -16,8 +16,15 @@ import { TrajectoryFromModelAndCoordinates } from "molstar/lib/mol-plugin-state/
 import { Download } from "molstar/lib/mol-plugin-state/transforms/data";
 import { AnimateModelIndex } from "molstar/lib/mol-plugin-state/animation/built-in/model-index";
 import { Bundle } from "molstar/lib/mol-model/structure/structure/element/bundle";
-import "molstar/lib/mol-plugin-ui/skin/light.scss";
+import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 
+// Import Mol* style based on the preffered color scheme
+const mode = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+if (mode === "dark") {
+    import("molstar/lib/mol-plugin-ui/skin/dark.scss");
+} else {
+    import("molstar/lib/mol-plugin-ui/skin/light.scss");
+}
 
 import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType, AHoJStructure, OverPaintParams, ChainData } from "../types";
 import { getColor, getWindowWidth } from "../utils";
@@ -53,6 +60,12 @@ export const initializePlugin = async () => {
                 }
             }
         });
+
+    // Change the background color if dark mode is enabled
+    if (mode === "dark") {
+        const renderer = MolstarPlugin.canvas3d!.props.renderer;
+        PluginCommands.Canvas3D.SetSettings(MolstarPlugin, { settings: { renderer: { ...renderer, backgroundColor: Color(0x1e1e1e) } } });
+    }
 
     // Handle fullscreen mode
     MolstarPlugin.layout.events.updated.subscribe(() => {

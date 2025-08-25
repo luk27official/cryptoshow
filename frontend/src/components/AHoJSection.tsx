@@ -31,7 +31,7 @@ const AHoJSection = ({
             {ahoJJobId && <span className="info">(note that the results table is scrollable)</span>}
         </div>
 
-        {ahoJJobResult && <AHoJResults pocket={pocket} ahoJJobResult={ahoJJobResult} />}
+        {ahoJJobResult && <AHoJResults ahoJJobResult={ahoJJobResult} />}
     </div>
 );
 

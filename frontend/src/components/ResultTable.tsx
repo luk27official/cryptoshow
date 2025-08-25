@@ -1,32 +1,36 @@
-import { getAHoJJobConfiguration, submitAHoJJob, pollAHoJJobStatus } from "../services/AHoJservice";
+import { useAHoJService, useAHoJConfiguration, usePlugin, useAppContext } from "../hooks";
 import { AHoJResponse, Pocket } from "../types";
 import { useState } from "react";
 import ResultTableRow from "./ResultTableRow";
-import { usePlugin } from "../hooks/usePlugin";
-import { useAppContext } from "../hooks/useApp";
 
 import "./ResultTable.css";
 
 function ResultTable() {
-    const {
-        cryptoBenchResult,
-    } = useAppContext();
+    const { cryptoBenchResult } = useAppContext();
     const plugin = usePlugin();
-    const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(new Array(cryptoBenchResult!.pockets.length).fill(null));
-    const [ahojJobResults, setAHoJJobResults] = useState<(AHoJResponse | null)[]>(new Array(cryptoBenchResult!.pockets.length).fill(null));
+    const { submitJob, pollJobStatus } = useAHoJService();
+    const { getAHoJJobConfiguration } = useAHoJConfiguration();
+
+    const [ahoJJobIds, setAHoJJobIds] = useState<(string | null)[]>(
+        new Array(cryptoBenchResult!.pockets.length).fill(null)
+    );
+    const [ahojJobResults, setAHoJJobResults] = useState<(AHoJResponse | null)[]>(
+        new Array(cryptoBenchResult!.pockets.length).fill(null)
+    );
 
     const handleClick = async (pocket: Pocket, idx: number) => {
         const config = getAHoJJobConfiguration(pocket, plugin, cryptoBenchResult!.structure_name);
-
-        const postData = await submitAHoJJob(config);
+        const postData = await submitJob(config);
 
         if (postData) {
-            ahoJJobIds[idx] = postData["job_id"];
-            setAHoJJobIds([...ahoJJobIds]);
+            const newJobIds = [...ahoJJobIds];
+            newJobIds[idx] = postData.job_id;
+            setAHoJJobIds(newJobIds);
 
-            const jobResult = await pollAHoJJobStatus(cryptoBenchResult!.file_hash, postData["job_id"]);
-            ahojJobResults[idx] = jobResult;
-            setAHoJJobResults([...ahojJobResults]);
+            const jobResult = await pollJobStatus(cryptoBenchResult!.file_hash, postData.job_id);
+            const newJobResults = [...ahojJobResults];
+            newJobResults[idx] = jobResult;
+            setAHoJJobResults(newJobResults);
         }
     };
 
