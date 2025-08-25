@@ -4,7 +4,7 @@ import { loadPockets, initializePlugin, loadStructure, showOnePolymerRepresentat
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { PluginProvider } from "../providers/PluginProvider";
 import { AppProvider } from "../providers/AppProvider";
-import { useAppContext } from "../hooks/useApp";
+import { useAppContext } from "../hooks";
 
 import "./Visualization.css";
 import ResultTable from "../components/ResultTable";

@@ -1,88 +1,28 @@
 import { useState } from "react";
-import { COMPLETED_TASKS_KEY, getApiUrl } from "../utils";
+import { useTaskSubmission, useWebSocketTask, useLocalStorage } from "../hooks";
+import { TaskStatus, CryptoBenchResult } from "../types";
 
 import "./HomePage.css";
 import InputTable from "../components/InputTable";
-import { CryptoBenchResult, TaskStatus } from "../types";
 
 function HomePage() {
     const [pdbCode, setPdbCode] = useState("");
-    const [taskId, setTaskId] = useState("");
-    const [resultStatus, setResultStatus] = useState<string>("");
-    const [isLoading, setIsLoading] = useState(false);
     const [fileData, setFileData] = useState<File | null>(null);
 
-    const handleSubmit = async () => {
-        setIsLoading(true);
-        try {
-            setResultStatus("Submitted. Validating the structure...");
+    const { isLoading, resultStatus, taskId, submitTask, setResultStatus } = useTaskSubmission();
+    const { createWebSocket } = useWebSocketTask();
+    const { addCompletedTask, getLastFiveCompletedTasks } = useLocalStorage();
 
-            let data: TaskStatus;
-            if (fileData) {
-                const formData = new FormData();
-                formData.append("file", fileData);
+    const handleWebSocketMessages = (taskId: string) => {
+        const ws = createWebSocket(taskId);
 
-                data = await fetch(getApiUrl("/calculate-custom"), {
-                    method: "POST",
-                    body: formData,
-                }).then(response => {
-                    if (response.status === 400 || response.status === 404 || response.status === 500 || response.ok) {
-                        return response.json();
-                    }
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                });
-            } else if (pdbCode) {
-                data = await fetch(getApiUrl("/calculate"), {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ pdb: pdbCode }),
-                }).then(response => {
-                    if (response.status === 400 || response.status === 404 || response.status === 500 || response.ok) {
-                        return response.json();
-                    }
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                });
-            } else return;
-
-            if (data.error) {
-                setResultStatus(data.error);
-                return;
-            }
-
-            setTaskId(data.task_id!);
-            webSocketCheck(data.task_id!);
-        } catch (error) {
-            setResultStatus("Error submitting request, " + error);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const webSocketCheck = (taskId: string) => {
-        const ws = new WebSocket(
-            `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/ws/task-status/${taskId}`
-        );
-
-        ws.onmessage = (event) => {
+        ws.onmessage = (event: MessageEvent) => {
             const data: TaskStatus = event.data ? JSON.parse(event.data) : { "status": "unknown" };
 
             if (data.status === "SUCCESS") {
                 setResultStatus("Success.");
-                const completedTasks = localStorage.getItem(COMPLETED_TASKS_KEY);
                 const { task_id, structure_name } = data.result as CryptoBenchResult;
-                const stringToSave = `${task_id} (${structure_name})`;
-                if (completedTasks) {
-                    const tasksArray = JSON.parse(completedTasks);
-                    const lastFiveTasks = tasksArray.slice(-5);
-                    // only add if it's not already in the last 5 tasks
-                    if (!lastFiveTasks.includes(stringToSave)) {
-                        localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([...tasksArray, stringToSave]));
-                    }
-                } else {
-                    localStorage.setItem(COMPLETED_TASKS_KEY, JSON.stringify([stringToSave]));
-                }
+                addCompletedTask(task_id, structure_name);
                 ws.close();
             } else if (data.status === "FAILURE") {
                 let error = data.error ?? data.result as string ?? "Unknown error.";
@@ -97,7 +37,14 @@ function HomePage() {
         };
     };
 
-    const lastCompletedTasks = JSON.parse(localStorage.getItem(COMPLETED_TASKS_KEY) || "[]").slice(-5);
+    const handleSubmit = async () => {
+        const submittedTaskId = await submitTask(pdbCode, fileData);
+        if (submittedTaskId) {
+            handleWebSocketMessages(submittedTaskId);
+        }
+    };
+
+    const lastCompletedTasks = getLastFiveCompletedTasks();
 
     return (
         <div className="homepage-container">
