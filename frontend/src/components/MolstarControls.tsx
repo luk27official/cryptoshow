@@ -1,8 +1,6 @@
 import "./MolstarControls.css";
-import { PolymerRepresentationValues, PocketRepresentationValues, PolymerRepresentationType, PocketRepresentationType, LoadedStructure } from "../types";
-import { usePlugin } from "../hooks/usePlugin";
-import { resetCamera, showOnePocketRepresentation, showOnePolymerRepresentation, removeFromStateTree, setStructureTransparency } from "./MolstarComponent";
-import { useAppContext } from "../hooks/useApp";
+import { PolymerRepresentationValues, PocketRepresentationValues, PolymerRepresentationType, PocketRepresentationType } from "../types";
+import { usePlugin, useAppContext, useMolstarControls } from "../hooks";
 
 function MolstarControls() {
     const plugin = usePlugin();
@@ -15,41 +13,31 @@ function MolstarControls() {
         setSelectedPocketRepresentation
     } = useAppContext();
 
+    const {
+        updatePolymerRepresentation,
+        updatePocketRepresentation,
+        resetCameraView,
+        removeSuperposition
+    } = useMolstarControls();
+
     const handlePolymerRepresentationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newRepresentation = e.target.value as PolymerRepresentationType;
         setSelectedPolymerRepresentation(newRepresentation);
-        loadedStructures.forEach(loadedStructure => {
-            showOnePolymerRepresentation(plugin, loadedStructure, newRepresentation);
-        });
+        updatePolymerRepresentation(plugin, loadedStructures, newRepresentation);
     };
 
     const handlePocketRepresentationChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const newRepresentation = e.target.value as PocketRepresentationType;
         setSelectedPocketRepresentation(newRepresentation);
-        loadedStructures.forEach(loadedStructure => {
-            showOnePocketRepresentation(plugin, loadedStructure, newRepresentation);
-        });
+        updatePocketRepresentation(plugin, loadedStructures, newRepresentation);
     };
 
     const handleResetCamera = () => {
-        resetCamera(plugin);
+        resetCameraView(plugin);
     };
 
-    const removeSuperposition = async () => {
-        const structurePromises = loadedStructures.map(async (s) => {
-            if (s.structureName.includes("structure")) {
-                await setStructureTransparency(plugin, 1, s.polymerRepresentations, s.structure);
-                await setStructureTransparency(plugin, 1, s.pocketRepresentations, s.structure);
-                return s;
-            } else {
-                removeFromStateTree(plugin, s.data.ref);
-                return null;
-            }
-        });
-
-        const resolvedStructures = await Promise.all(structurePromises);
-        const filteredStructures = resolvedStructures.filter((s): s is LoadedStructure => s !== null);
-        setLoadedStructures(filteredStructures);
+    const handleRemoveSuperposition = () => {
+        removeSuperposition(plugin, loadedStructures, setLoadedStructures);
     };
 
     const multipleStructuresLoaded = loadedStructures.length > 1;
@@ -93,7 +81,7 @@ function MolstarControls() {
 
                 {multipleStructuresLoaded && (
                     <div className="molstar-control-button-container">
-                        <button className="molstar-control-button" onClick={removeSuperposition}>Remove superposition</button>
+                        <button className="molstar-control-button" onClick={handleRemoveSuperposition}>Remove superposition</button>
                     </div>
                 )}
             </div>

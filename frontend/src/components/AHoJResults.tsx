@@ -1,13 +1,9 @@
 import React, { useState } from "react";
-import { Pocket, AHoJResponse, AHoJStructure, TrajectoryTaskResult, LoadedStructure } from "../types";
-import { getApiUrl } from "../utils";
-import { usePlugin } from "../hooks/usePlugin";
-import { useAppContext } from "../hooks/useApp";
-import { loadStructure, playAnimation, removeFromStateTree, resetCamera, setStructureTransparency, showOnePolymerRepresentation } from "./MolstarComponent";
+import { AHoJResponse, AHoJStructure } from "../types";
+import { usePlugin, useAppContext, useAHoJAnimation } from "../hooks";
 import "./AHoJResults.css";
 
 interface AHoJResultsProps {
-    pocket: Pocket;
     ahoJJobResult: AHoJResponse;
 }
 
@@ -22,7 +18,14 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
         selectedPolymerRepresentation,
         cryptoBenchResult
     } = useAppContext();
-    const [loadingStructure, setLoadingStructure] = useState<AHoJStructure | undefined>(undefined);
+
+    const {
+        loadingStructure,
+        handlePlayAnimation,
+        checkStructureEquivalence,
+        checkStructureInLoadedStructures
+    } = useAHoJAnimation();
+
     const [sortField, setSortField] = useState<SortField>("rmsd");
     const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
@@ -71,82 +74,16 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
         }
     };
 
-    const handlePlayAnimation = async (structure: AHoJStructure & { type: string; }) => {
-        if (loadingStructure) return;
-        setLoadingStructure(structure);
-
-        try {
-            await fetch(getApiUrl(`/proxy/ahoj/${cryptoBenchResult!.file_hash}/${structure.structure_file_url}`));
-
-            const res = await fetch(getApiUrl(`/animate/${cryptoBenchResult!.file_hash}/${structure.structure_file}/${structure.target_chains.join(",")}`));
-            if (!res.ok) throw new Error(`Failed to start animation task: ${res.statusText}`);
-            const animationTask = await res.json();
-            const animationTaskId = animationTask.task_id;
-
-            const ws = new WebSocket(
-                `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}/ws/task-status/${animationTaskId}`
-            );
-
-            ws.onerror = (err) => {
-                console.error("WebSocket error:", err);
-                setLoadingStructure(undefined);
-                ws.close();
-            };
-
-            ws.onmessage = async (event) => {
-                const data = event.data ? JSON.parse(event.data) : { status: "unknown" };
-
-                if (data.status === "SUCCESS") {
-                    ws.close();
-                    const result: TrajectoryTaskResult = data.result;
-
-                    const ld = await loadStructure(plugin, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trimmed_pdb}`), getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${result.trajectory}`), structure, undefined);
-                    showOnePolymerRepresentation(plugin, ld, selectedPolymerRepresentation);
-
-                    const updatedStructures = await Promise.all(
-                        loadedStructures.map(async (s) => {
-                            if (s.structureName.includes("structure")) {
-                                await setStructureTransparency(plugin, 0.25, s.polymerRepresentations, s.structure);
-                                await setStructureTransparency(plugin, 0.4, s.pocketRepresentations, s.structure);
-                                return s;
-                            } else {
-                                removeFromStateTree(plugin, s.data.ref);
-                                return null;
-                            }
-                        })
-                    );
-
-                    const filtered: LoadedStructure[] = updatedStructures.filter((s): s is LoadedStructure => s !== null);
-                    setLoadedStructures([...filtered, ld]);
-
-                    playAnimation(plugin, 10);
-                    resetCamera(plugin);
-                    setLoadingStructure(undefined);
-
-                } else if (data.status === "FAILURE") {
-                    console.error("Animation task failed:", data.result || "Unknown error");
-                    ws.close();
-                    setLoadingStructure(undefined);
-                }
-            };
-
-        } catch (error) {
-            console.error("Error during animation process:", error);
-            setLoadingStructure(undefined);
-        }
-    };
-
-    const checkStructureInLoadedStructures = (s: AHoJStructure) => {
-        return loadedStructures.some((ld) => checkStructureEquivalence(ld.ahojStructure, s));
-    };
-
-    const checkStructureEquivalence = (s1: AHoJStructure | undefined, s2: AHoJStructure | undefined) => {
-        return s1 && s2 &&
-            s1.pdb_id === s2.pdb_id &&
-            s1.structure_file === s2.structure_file &&
-            s1.sasa === s2.sasa &&
-            s1.rmsd === s2.rmsd &&
-            s1.pocket_rmsd === s2.pocket_rmsd;
+    const onPlayAnimation = (structure: AHoJStructure & { type: string; }) => {
+        if (!cryptoBenchResult) return;
+        handlePlayAnimation(
+            structure,
+            plugin,
+            cryptoBenchResult,
+            selectedPolymerRepresentation,
+            loadedStructures,
+            setLoadedStructures
+        );
     };
 
     const renderSortIndicator = (field: SortField) => {
@@ -214,13 +151,13 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                     <td>{s.ligands.filter((e) => e !== "").length > 0 ? s.ligands.filter((e) => e !== "").join(", ") : "N/A"}</td>
                                     <td>
                                         <button
-                                            className={`load-structure-button ${checkStructureInLoadedStructures(s) ? "loaded" : ""}`}
-                                            onClick={() => handlePlayAnimation(s)}
-                                            disabled={checkStructureEquivalence(loadingStructure, s) || checkStructureInLoadedStructures(s)}
+                                            className={`load-structure-button ${checkStructureInLoadedStructures(s, loadedStructures) ? "loaded" : ""}`}
+                                            onClick={() => onPlayAnimation(s)}
+                                            disabled={checkStructureEquivalence(loadingStructure, s) || checkStructureInLoadedStructures(s, loadedStructures)}
                                         >
                                             {loadingStructure && checkStructureEquivalence(loadingStructure, s)
                                                 ? "Loading..."
-                                                : checkStructureInLoadedStructures(s)
+                                                : checkStructureInLoadedStructures(s, loadedStructures)
                                                     ? "Loaded"
                                                     : "Play"}
                                         </button>

@@ -1,6 +1,6 @@
 import { Pocket, AHoJResponse } from "../types";
 import { useState } from "react";
-import { useAppContext } from "../hooks/useApp";
+import { useAppContext } from "../hooks";
 import PocketHeader from "./PocketHeader";
 import PocketDetails from "./PocketDetails";
 import AHoJSection from "./AHoJSection";
