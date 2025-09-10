@@ -25,7 +25,8 @@ dependencies = [
 
     # Trajectory generation
     "numpy",
-    "MDAnalysis",
+    # Pinned to 2.7.0 due to build issues
+    "MDAnalysis==2.7.0",
     "gemmi",
     "scipy",
 
