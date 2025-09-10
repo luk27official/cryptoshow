@@ -20,11 +20,14 @@ import { PluginCommands } from "molstar/lib/mol-plugin/commands";
 
 // Import Mol* style based on the preffered color scheme
 const mode = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-if (mode === "dark") {
-    import("molstar/lib/mol-plugin-ui/skin/dark.scss");
-} else {
-    import("molstar/lib/mol-plugin-ui/skin/light.scss");
-}
+const loadTheme = async () => {
+    if (mode === "dark") {
+        await import("molstar/lib/mol-plugin-ui/skin/dark.scss");
+    } else {
+        await import("molstar/lib/mol-plugin-ui/skin/light.scss");
+    }
+};
+loadTheme();
 
 import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType, AHoJStructure, OverPaintParams, ChainData } from "../types";
 import { getColor, getWindowWidth } from "../utils";
