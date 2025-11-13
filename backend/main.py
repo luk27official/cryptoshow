@@ -25,7 +25,7 @@ from .utils import get_existing_result, generate_random_folder_name, download_ci
 from .commons import JOBS_BASE_PATH
 from celery.result import AsyncResult
 
-app = FastAPI(openapi_url="/api/openapi")
+app = FastAPI(openapi_url="/api/openapi", root_path="/api", servers=[{"url": "/api"}])
 
 app.add_middleware(
     CORSMiddleware,
@@ -56,12 +56,14 @@ def generate_openapi_schema():
     Returns:
         dict: The OpenAPI schema.
     """
-    return get_openapi(
+    schema = get_openapi(
         title="CryptoShow API",
         version="1.0.0",
         description="CryptoShow API",
         routes=app.routes,
     )
+    schema["servers"] = [{"url": "/api"}]
+    return schema
 
 
 @app.get("/", response_model=dict)
