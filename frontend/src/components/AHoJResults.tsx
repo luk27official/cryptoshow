@@ -122,7 +122,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                         </thead>
                         <tbody>
                             {sortedStructures.map((s, index) => (
-                                <tr key={`${s.pdb_id}_${s.structure_file}_${s.chains.join(",")}_${s.type}_${index}`}>
+                                <tr key={`${s.pdb_id}_${s.structure_file}_${s.target_chains.join(",")}_${s.chains.join(",")}_${s.type}_${index}`}>
                                     <td>
                                         {s.pdb_id.length === 4 ? (
                                             <a href={`https://www.rcsb.org/structure/${s.pdb_id}`} target="_blank" rel="noopener noreferrer">

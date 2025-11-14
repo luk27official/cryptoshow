@@ -26,15 +26,19 @@ export const useAHoJAnimation = () => {
         if (!struct1) return false;
         return struct1.pdb_id === struct2.pdb_id &&
             struct1.structure_file === struct2.structure_file &&
-            JSON.stringify(struct1.chains) === JSON.stringify(struct2.chains);
+            JSON.stringify(struct1.chains) === JSON.stringify(struct2.chains) &&
+            JSON.stringify(struct1.target_chains) === JSON.stringify(struct2.target_chains);
     }, []);
 
     const checkStructureInLoadedStructures = useCallback((
         structure: AHoJStructure,
         loadedStructures: LoadedStructure[]
     ): boolean => {
-        return loadedStructures.some(loaded => loaded.structureName.includes(structure.pdb_id));
-    }, []);
+        return loadedStructures.some(loaded =>
+            loaded.ahojStructure &&
+            checkStructureEquivalence(loaded.ahojStructure, structure)
+        );
+    }, [checkStructureEquivalence]);
 
     const startAnimationTask = useCallback(async (
         structure: AHoJStructure,
