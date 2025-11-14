@@ -1,12 +1,23 @@
+import { useTheme } from "../hooks/useTheme";
 import "./Header.css";
 
 const Header = () => {
+    const { theme, toggleTheme } = useTheme();
+
     return (
         <header className="header" id="header">
             <div className="header-left">
                 <a href="/" className="project-name">CryptoShow</a>
             </div>
             <div className="header-right">
+                <button
+                    onClick={toggleTheme}
+                    className="theme-toggle"
+                    aria-label={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+                    title={`Switch to ${theme === "light" ? "dark" : "light"} mode`}
+                >
+                    {theme === "light" ? "🌙" : "☀️"}
+                </button>
                 <a href="/api/docs" className="header-link">
                     API Docs
                 </a>

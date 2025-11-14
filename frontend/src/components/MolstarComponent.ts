@@ -17,26 +17,26 @@ import { Download } from "molstar/lib/mol-plugin-state/transforms/data";
 import { AnimateModelIndex } from "molstar/lib/mol-plugin-state/animation/built-in/model-index";
 import { Bundle } from "molstar/lib/mol-model/structure/structure/element/bundle";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
+import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType, AHoJStructure, OverPaintParams, ChainData } from "../types";
+import { getColor, getWindowWidth } from "../utils";
+import { getCurrentTheme } from "../hooks/useTheme";
 
-// Import Mol* style based on the preffered color scheme
-const mode = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-const loadTheme = async () => {
-    if (mode === "dark") {
+const loadMolstarTheme = async () => {
+    const theme = getCurrentTheme();
+    if (theme === "dark") {
         await import("molstar/lib/mol-plugin-ui/skin/dark.scss");
     } else {
         await import("molstar/lib/mol-plugin-ui/skin/light.scss");
     }
 };
-loadTheme();
-
-import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType, AHoJStructure, OverPaintParams, ChainData } from "../types";
-import { getColor, getWindowWidth } from "../utils";
 
 /**
  * Initializes the Mol* plugin and sets up the layout.
  * @returns Mol* plugin instance
  */
 export const initializePlugin = async () => {
+    await loadMolstarTheme();
+
     const wrapper = document.getElementById("molstar-component")!;
     const windowWidth = getWindowWidth();
     const MolstarPlugin = await createPluginUI(
@@ -64,8 +64,8 @@ export const initializePlugin = async () => {
             }
         });
 
-    // Change the background color if dark mode is enabled
-    if (mode === "dark") {
+    const currentTheme = getCurrentTheme();
+    if (currentTheme === "dark") {
         const renderer = MolstarPlugin.canvas3d!.props.renderer;
         PluginCommands.Canvas3D.SetSettings(MolstarPlugin, { settings: { renderer: { ...renderer, backgroundColor: Color(0x1e1e1e) } } });
     }

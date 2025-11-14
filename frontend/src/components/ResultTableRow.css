@@ -1,35 +1,3 @@
-:root {
-    --bg-primary: #f8f9fa;
-    --bg-secondary: #ffffff;
-    --text-primary: #212529;
-    --text-secondary: #495057;
-    --text-muted: #6c757d;
-    --border-color: rgba(0, 0, 0, 0.1);
-    --shadow-color: rgba(0, 0, 0, 0.08);
-    --hover-shadow: rgba(0, 0, 0, 0.15);
-    --accent-color: #007bff;
-    --accent-hover: #0069d9;
-    --accent-bg-light: #e9ecef;
-    --disabled-bg: #6c757d;
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-primary: #212529;
-        --bg-secondary: #343a40;
-        --text-primary: #f8f9fa;
-        --text-secondary: #e9ecef;
-        --text-muted: #adb5bd;
-        --border-color: rgba(255, 255, 255, 0.1);
-        --shadow-color: rgba(0, 0, 0, 0.3);
-        --hover-shadow: rgba(0, 0, 0, 0.5);
-        --accent-color: #0d6efd;
-        --accent-hover: #0a58ca;
-        --accent-bg-light: #495057;
-        --disabled-bg: #6c757d;
-    }
-}
-
 .result-row {
     padding: 1rem;
     margin-bottom: 1rem;

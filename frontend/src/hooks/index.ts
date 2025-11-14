@@ -6,3 +6,4 @@ export { useMolstarControls } from "./useMolstarControls";
 export { useAHoJAnimation } from "./useAHoJAnimation";
 export { useAppContext } from "./useApp";
 export { usePlugin } from "./usePlugin";
+export { useTheme } from "./useTheme";

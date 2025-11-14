@@ -94,14 +94,16 @@ button:hover:not(:disabled) {
     background-size: contain;
 }
 
-@media (prefers-color-scheme: light) {
-    .homepage-container::before {
-        background-image: url("/bg-light.png");
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .homepage-container::before {
+        background-image: url("/bg-dark.png");
     }
 }
 
-@media (prefers-color-scheme: dark) {
-    .homepage-container::before {
-        background-image: url("/bg-dark.png");
-    }
+.homepage-container::before {
+    background-image: url("/bg-light.png");
+}
+
+:root[data-theme="dark"] .homepage-container::before {
+    background-image: url("/bg-dark.png");
 }
