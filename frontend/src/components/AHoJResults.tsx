@@ -132,7 +132,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
                                             s.uniprot_ids && s.uniprot_ids.length > 0 ? (
                                                 s.uniprot_ids.map((uniprotId, index) => (
                                                     <React.Fragment key={uniprotId}>
-                                                        <a href={`https://alphafold.ebi.ac.uk/entry/${uniprotId}`} target="_blank" rel="noopener noreferrer">
+                                                        <a href={`https://alphafold.ebi.ac.uk/entry/AF-${uniprotId}-F1`} target="_blank" rel="noopener noreferrer">
                                                             {uniprotId}
                                                         </a>
                                                         {index < s.uniprot_ids.length - 1 && ", "}

@@ -157,7 +157,7 @@ def download_cif_file(pdb_id: str, tmp_dir: str = "") -> str:
         #     return cif_file_path
 
         # If AlphaFill doesn't have the file, try AlphaFold
-        alphafold_url = f"https://alphafold.ebi.ac.uk/files/AF-{uniprot_id}-F1-model_v4.cif"
+        alphafold_url = f"https://alphafold.ebi.ac.uk/files/AF-{uniprot_id}-F1-model_v6.cif"
         cif_file_path = os.path.join(tmp_dir, f"{uniprot_id}.cif")
 
         response = requests.get(alphafold_url, stream=True)
