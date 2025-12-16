@@ -30,7 +30,7 @@ services:
       - HTTPS_PROXY=${HTTPS_PROXY:-}
     working_dir: /app
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -80,7 +80,7 @@ services:
     profiles:
       - gpu
     healthcheck:
-      test: ["CMD", "/app/.venv/bin/celery", "-A", "tasks.celery_app", "inspect", "ping", "-d", "celery@worker-gpu"]
+      test: ["CMD", "/app/.venv/bin/celery", "-A", "tasks.celery_app", "inspect", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -119,7 +119,7 @@ services:
     profiles:
       - cpu
     healthcheck:
-      test: ["CMD", "/app/.venv/bin/celery", "-A", "tasks.celery_app", "inspect", "ping", "-d", "celery@worker-cpu"]
+      test: ["CMD", "/app/.venv/bin/celery", "-A", "tasks.celery_app", "inspect", "ping"]
       interval: 30s
       timeout: 10s
       retries: 3
