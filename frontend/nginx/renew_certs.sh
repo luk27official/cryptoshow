@@ -4,7 +4,10 @@
 # Make sure to modify before using (e.g. docker-compose profiles!)
 set -e
 
-PROJECT_ROOT="$(dirname "$0")/../.."
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$SCRIPT_DIR/../.."
+
+source "$PROJECT_ROOT/.env"
 
 echo "Stopping docker-compose services..."
 cd "$PROJECT_ROOT" && docker-compose down
@@ -13,8 +16,10 @@ echo "Renewing SSL certificates..."
 sudo certbot renew --quiet
 
 SRC="/etc/letsencrypt/live/$DOMAIN"
-DST="$(dirname "$0")/../ssl"
-MAINTENANCE="$(dirname "$0")/../maintenance"
+DST="$SCRIPT_DIR/../ssl"
+MAINTENANCE="$SCRIPT_DIR/../maintenance"
+
+mkdir -p "$MAINTENANCE"
 
 if [ ! -f "$MAINTENANCE/maintenance.flag" ]; then
     touch "$MAINTENANCE/maintenance.flag"
@@ -36,7 +41,8 @@ cd "$PROJECT_ROOT" && docker-compose --profile cpu --profile monitoring up -d
 echo "Removing maintenance flag file at $MAINTENANCE/maintenance.flag"
 
 if [ -f "$MAINTENANCE/maintenance.flag" ]; then
-    echo "Maintenance flag file exists, removing it."
+    rm "$MAINTENANCE/maintenance.flag"
+    echo "Maintenance flag file removed."
 else
     echo "Maintenance flag file does not exist, nothing to remove."
 fi
