@@ -155,9 +155,12 @@ services:
       - ${SSL_PATH:-./frontend/ssl/}:/etc/nginx/ssl/
       - ${HTPASSWD_PATH:-./frontend/monitoring.htpasswd}:/etc/nginx/monitoring.htpasswd
       - ./frontend/maintenance:/app/maintenance
+      - ./cache/certbot:/var/www/certbot
+      - ./cache/letsencrypt:/etc/letsencrypt
     environment:
       - ENABLE_SSL=${ENABLE_SSL:-false}
       - DOMAIN=${DOMAIN:-localhost}
+      - CERTBOT_ENABLED=${CERTBOT_ENABLED:-false}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]
@@ -256,3 +259,19 @@ services:
       - HTTPS_PROXY=${HTTPS_PROXY:-}
     depends_on:
       - prometheus
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - ./cache/certbot:/var/www/certbot
+      - ./cache/letsencrypt:/etc/letsencrypt
+      - ./frontend/nginx/certbot_entrypoint.sh:/opt/certbot_entrypoint.sh:ro
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - CERTBOT_EMAIL=${CERTBOT_EMAIL:-}
+    entrypoint: /bin/sh
+    command: /opt/certbot_entrypoint.sh
+    depends_on:
+      - frontend
+    restart: unless-stopped
+    profiles:
+      - certbot

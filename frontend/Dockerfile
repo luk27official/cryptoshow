@@ -14,6 +14,9 @@ RUN bun run build
 # Use NginX to serve the built frontend and serve as a reverse proxy to the backend
 FROM nginx:alpine AS production
 
+RUN apk add --no-cache openssl \
+ && mkdir -p /var/www/certbot
+
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY public/maintenance.html /usr/share/nginx/html/maintenance.html
 
