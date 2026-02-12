@@ -61,12 +61,20 @@ awk -v ssl_block="$SSL_BLOCK_CONTENT" -v redirect_block="$REDIRECT_BLOCK_CONTENT
 ' /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf
 
 if [ "$CERTBOT_ENABLED" = "true" ] && [ "$ENABLE_SSL" = "true" ]; then
-  echo "[certbot] Starting background certificate reload (every 6 hours)..."
+  echo "[certbot] Starting background certificate reload watcher..."
   (
+    INTERVAL=30
     while true; do
-      sleep 6h
-      echo "[certbot] Reloading nginx to pick up renewed certificates..."
+      sleep $INTERVAL
       nginx -s reload 2>/dev/null || true
+
+      if [ -f "/etc/letsencrypt/live/${DOMAIN}/fullchain.pem" ] && \
+         [ ! -f "/etc/letsencrypt/live/${DOMAIN}/.selfsigned" ]; then
+        if [ "$INTERVAL" -eq 30 ]; then
+          echo "[certbot] Real certificate detected, switching to 6h reload interval."
+          INTERVAL=21600
+        fi
+      fi
     done
   ) &
 fi
