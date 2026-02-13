@@ -29,7 +29,7 @@ See `backend/README.md`.
 ## Deployment
 
 1. Install Docker
-2. Create `.env` and set up the vars (set `CERTBOT_ENABLED=true` for SSL)
+2. Create `.env` and set up the vars (for SSL, see the instructions above)
 3. Enable ports in firewall (`sudo ufw allow 443`, `sudo ufw allow 80`)
 4. Set up the permissions for the user `2727`, i.e. `sudo chown -R 2727:2727 ./data`. Optionally, customize the `UID` and `GID` env vars.
 5. Run Docker
