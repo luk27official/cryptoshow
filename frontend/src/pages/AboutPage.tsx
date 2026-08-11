@@ -1,3 +1,4 @@
+import packageJson from "../../package.json";
 import "./AboutPage.css";
 
 function AboutPage() {
@@ -5,7 +6,7 @@ function AboutPage() {
 
     return (
         <div className="about-container">
-            <h2>About CryptoShow</h2>
+            <h2>About CryptoShow (v{packageJson.version})</h2>
             <p>
                 CryptoShow is a web application designed to visualize cryptic pockets in protein structures.
             </p>
