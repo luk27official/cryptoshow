@@ -13,9 +13,9 @@ dependencies = [
     "flower",
 
     # CryptoBench (Tiny), ESM-2
-    "biopython==1.85",
-    "transformers==4.48.1",
-    "torch==2.6.0",
+    "biopython==1.88",
+    "transformers==4.57.6",
+    "torch==2.13.0",
 
     # Clustering
     "scikit-learn",
@@ -25,8 +25,8 @@ dependencies = [
 
     # Trajectory generation
     "numpy",
-    # Pinned to 2.7.0 due to build issues
-    "MDAnalysis==2.7.0",
+    # Pinned to the currently validated release for the trajectory pipeline
+    "MDAnalysis==2.10.0",
     "gemmi",
     "scipy",
 
