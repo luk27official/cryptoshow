@@ -235,6 +235,10 @@ services:
     restart: unless-stopped
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./data/monitoring/prometheus:/prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
     ports:
       - "9090:9090"
 
@@ -245,9 +249,8 @@ services:
     profiles:
       - monitoring
     volumes:
-      - ./data/grafana:/var/lib/grafana
+      - ./data/monitoring/grafana:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
-    user: "${UID:-2727}:${GID:-2727}"
     restart: unless-stopped
     environment:
       - GF_SERVER_HTTP_PORT=3001

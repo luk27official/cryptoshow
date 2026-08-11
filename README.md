@@ -35,6 +35,7 @@ See `backend/README.md`.
 5. Run Docker
 6. Optionally, set up the continuous deployment (see `.github/workflows/production-deploy.yml`, make sure that the user is in the `docker` group and that `sudo chown root:docker /var/run/docker.sock && sudo chmod 660 /var/run/docker.sock`)
 7. Optionally, set up monitoring credentials by creating the `.htpasswd` file (`sudo apt install apache2-utils`, `htpasswd -c ./frontend/monitoring.htpasswd admin`)
+8. If you run on Linux, make sure `./data/monitoring/grafana` and `./data/monitoring/prometheus` are writable by Docker.
 
 ## Technical Requirements
 
@@ -50,6 +51,7 @@ To toggle the maintenance mode, create/delete the `./frontend/maintenance/mainte
 ## Monitoring
 
 After setting up the monitoring credentials (see Deployment), you can access the monitoring services via `localhost/grafana` and `localhost/flower`.
+Grafana dashboards, users, and Prometheus metrics are stored under `./data/monitoring`, so they persist across normal redeploys.
 
 ## TLDR
 
