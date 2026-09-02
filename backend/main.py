@@ -311,6 +311,8 @@ def get_animated_file(
         args=(task_hash, aligned_structure_filename, target_chains),
     )
 
+    register_task_submission(task.id)
+
     return {"task_id": task.id}
 
 
@@ -339,12 +341,6 @@ async def websocket_endpoint(
                         json.dumps({"task_id": task_id, "status": "SUCCESS", "result": json.load(f)})
                     )
 
-            elif not os.path.exists(TASK_DIR):
-                await websocket.send_text(
-                    json.dumps({"task_id": task_id, "status": "FAILURE", "result": None, "error": f"Task not found: {task_id}"})
-                )
-                break
-
             else:
                 result = celery_app.AsyncResult(task_id)
 
@@ -356,6 +352,18 @@ async def websocket_endpoint(
                 if result.status == "FAILURE":
                     await websocket.send_text(
                         json.dumps({"task_id": task_id, "status": "FAILURE", "result": result_value, "error": result_value})
+                    )
+                    break
+
+                if result.status == "SUCCESS":
+                    await websocket.send_text(
+                        json.dumps({"task_id": task_id, "status": "SUCCESS", "result": result_value})
+                    )
+                    break
+
+                if result.status == "PENDING" and not os.path.exists(TASK_DIR):
+                    await websocket.send_text(
+                        json.dumps({"task_id": task_id, "status": "FAILURE", "result": None, "error": f"Task not found: {task_id}"})
                     )
                     break
 
