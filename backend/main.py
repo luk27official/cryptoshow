@@ -50,6 +50,17 @@ logger.handlers = uvicorn_logger.handlers
 logger.setLevel(logging.DEBUG)
 
 
+def register_task_submission(task_id: str) -> None:
+    """Create a durable marker for a submitted task.
+
+    The task status endpoint uses this marker to distinguish a real task
+    from a mistyped or already-forgotten task id.
+    """
+
+    task_dir = os.path.join(JOBS_BASE_PATH, task_id)
+    os.makedirs(task_dir, exist_ok=True)
+
+
 def generate_openapi_schema():
     """Generate the OpenAPI schema for the FastAPI application.
 
@@ -58,7 +69,7 @@ def generate_openapi_schema():
     """
     schema = get_openapi(
         title="CryptoShow API",
-        version="1.1.0",
+        version="1.2.0",
         description="CryptoShow API",
         routes=app.routes,
     )
@@ -143,6 +154,11 @@ async def calculate(
         ),
     )
 
+    if not task.id:
+        raise RuntimeError("Celery did not return a task id.")
+
+    register_task_submission(task.id)
+
     return {"task_id": task.id}
 
 
@@ -181,6 +197,11 @@ async def calculate_custom(file: UploadFile = File(..., description="PDB/CIF fil
         ),
     )
 
+    if not task.id:
+        raise RuntimeError("Celery did not return a task id.")
+
+    register_task_submission(task.id)
+
     return {"task_id": task.id}
 
 
@@ -197,6 +218,7 @@ def get_status(
     """
 
     RESULTS_FILE = os.path.join(JOBS_BASE_PATH, task_id, "results.json")
+    TASK_DIR = os.path.join(JOBS_BASE_PATH, task_id)
 
     if os.path.exists(RESULTS_FILE):
         with open(RESULTS_FILE, "r") as f:
@@ -209,7 +231,16 @@ def get_status(
             if result:
                 return {"status": "SUCCESS", "result": result}
         except Exception as e:
-            return {"status: 'FAILURE', result": f"Failed to find the task result: {str(e)}"}
+            return JSONResponse(
+                status_code=404,
+                content={"status": "FAILURE", "result": None, "error": f"Failed to find the task result: {str(e)}"},
+            )
+
+    if not os.path.exists(TASK_DIR):
+        return JSONResponse(
+            status_code=404,
+            content={"status": "FAILURE", "result": None, "error": f"Task not found: {task_id}"},
+        )
 
     task_result: AsyncResult = celery_app.AsyncResult(task_id)
 
@@ -217,6 +248,12 @@ def get_status(
     result_value = task_result.result
     if isinstance(result_value, Exception):
         result_value = str(result_value)
+
+    if task_result.state == "PENDING" and result_value is None:
+        return {"status": "PENDING", "result": None, "error": None}
+
+    if task_result.state == "FAILURE":
+        return {"status": "FAILURE", "result": result_value, "error": str(result_value) if result_value else None}
 
     return {"status": task_result.state, "result": result_value, "error": None}
 
@@ -293,6 +330,7 @@ async def websocket_endpoint(
 
     try:
         RESULTS_FILE = os.path.join(JOBS_BASE_PATH, task_id, "results.json")
+        TASK_DIR = os.path.join(JOBS_BASE_PATH, task_id)
 
         while True:
             if os.path.exists(RESULTS_FILE):
@@ -301,6 +339,12 @@ async def websocket_endpoint(
                         json.dumps({"task_id": task_id, "status": "SUCCESS", "result": json.load(f)})
                     )
 
+            elif not os.path.exists(TASK_DIR):
+                await websocket.send_text(
+                    json.dumps({"task_id": task_id, "status": "FAILURE", "result": None, "error": f"Task not found: {task_id}"})
+                )
+                break
+
             else:
                 result = celery_app.AsyncResult(task_id)
 
@@ -308,6 +352,12 @@ async def websocket_endpoint(
                 result_value = result.result
                 if isinstance(result_value, Exception):
                     result_value = str(result_value)
+
+                if result.status == "FAILURE":
+                    await websocket.send_text(
+                        json.dumps({"task_id": task_id, "status": "FAILURE", "result": result_value, "error": result_value})
+                    )
+                    break
 
                 status_info = {"task_id": task_id, "status": result.status, "result": result_value}
 

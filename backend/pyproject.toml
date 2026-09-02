@@ -1,6 +1,6 @@
 [project]
 name = "backend"
-version = "1.1.0"
+version = "1.2.0"
 description = "Backend for CryptoShow"
 requires-python = ">=3.12"
 authors = [{ name = "Lukas Polak", email = "admin@lukaspolak.cz" }]
@@ -14,7 +14,8 @@ dependencies = [
 
     # CryptoBench (Tiny), ESM-2
     "biopython==1.88",
-    "transformers==4.57.6",
+    # transformers pinned for custom model compatibility.
+    "transformers==4.48.1",
     "torch==2.13.0",
 
     # Clustering

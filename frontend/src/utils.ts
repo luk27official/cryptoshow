@@ -1,4 +1,4 @@
-export const STORAGE_VERSION = "v0.0.1";
+export const STORAGE_VERSION = "v0.0.2";
 
 export const getApiUrl = (path: string) => {
     return `./api${path}`;
