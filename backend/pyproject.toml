@@ -1,6 +1,6 @@
 [project]
 name = "backend"
-version = "1.2.0"
+version = "1.2.1"
 description = "Backend for CryptoShow"
 requires-python = ">=3.12"
 authors = [{ name = "Lukas Polak", email = "admin@lukaspolak.cz" }]

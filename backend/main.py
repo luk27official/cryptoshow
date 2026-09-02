@@ -69,7 +69,7 @@ def generate_openapi_schema():
     """
     schema = get_openapi(
         title="CryptoShow API",
-        version="1.2.0",
+        version="1.2.1",
         description="CryptoShow API",
         routes=app.routes,
     )
