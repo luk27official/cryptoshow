@@ -20,6 +20,7 @@ function VisualizationContent() {
     } = useAppContext();
 
     const [plugin, setPlugin] = useState<PluginUIContext | null>(null);
+    const [taskFetchError, setTaskFetchError] = useState<string | null>(null);
 
     // get taskId from URL (viewer?id=taskId)
     const taskId = new URLSearchParams(window.location.search).get("id");
@@ -29,11 +30,24 @@ function VisualizationContent() {
             return;
         }
         setCryptoBenchResult(null);
+        setTaskFetchError(null);
         setLoadedStructures([]);
+
+        let cancelled = false;
+
         const fetchData = async () => {
+            if (cancelled) {
+                return;
+            }
+
             try {
                 const response = await fetch(getApiUrl(`/task-status/${taskId}`));
                 const data = await response.json();
+                if (!response.ok || data.status === "FAILURE") {
+                    setTaskFetchError(data.error || "Task not found.");
+                    return;
+                }
+
                 if (data["result"]) {
                     setCryptoBenchResult(data["result"]);
                 } else {
@@ -41,10 +55,17 @@ function VisualizationContent() {
                 }
             } catch (error) {
                 console.error("Error fetching task status:", error);
-                setTimeout(() => fetchData(), 3000);
+                setTaskFetchError("Failed to fetch task status.");
+                if (!cancelled) {
+                    setTimeout(() => fetchData(), 3000);
+                }
             }
         };
         fetchData();
+
+        return () => {
+            cancelled = true;
+        };
     }, [taskId, setCryptoBenchResult, setLoadedStructures]);
 
     useEffect(() => {
@@ -68,6 +89,16 @@ function VisualizationContent() {
             <div>
                 <h2>3D Structure Viewer</h2>
                 <p>Task ID not found in URL.</p>
+            </div>
+        );
+    }
+
+    if (taskFetchError) {
+        return (
+            <div>
+                <h2>3D Structure Viewer</h2>
+                <p>{taskFetchError}</p>
+                <p>Click here to reset the page: <a href={`/viewer?id=${taskId}`}>Reset</a></p>
             </div>
         );
     }

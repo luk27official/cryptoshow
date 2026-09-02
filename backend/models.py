@@ -22,10 +22,15 @@ class CalculateResponse(BaseModel):
 
 class TaskStatusResponse(BaseModel):
     status: str = Field(..., examples=["SUCCESS"], description="Current status of the task.")
-    result: Optional[dict] = Field(None, examples=[{"key": "value"}], description="Result data when task is complete.")
+    result: Optional[dict | str] = Field(
+        None,
+        examples=[{"key": "value"}],
+        description="Result data when task is complete, or an error message when the task fails.",
+    )
+    error: Optional[str] = Field(None, examples=["Task not found."], description="Error message when the task fails.")
 
     class Config:
-        json_schema_extra = {"example": {"status": "SUCCESS", "result": {"key": "value"}}}
+        json_schema_extra = {"example": {"status": "SUCCESS", "result": {"key": "value"}, "error": None}}
 
 
 class FileResponseModel(BaseModel):
