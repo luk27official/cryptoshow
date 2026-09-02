@@ -7,6 +7,8 @@ on:
 
 jobs:
   maintenance:
+    env:
+      DEPLOY_BRANCH: ${{ github.ref_name || 'main' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -31,7 +33,7 @@ jobs:
       - name: Pull latest changes
         run: |
           ssh -p "${{ secrets.REMOTE_PORT || 22 }}" "${{ secrets.REMOTE_USER }}@${{ secrets.REMOTE_HOST }}" \
-          "cd ~/cryptoshow && git pull origin main"
+          "cd ~/cryptoshow && git pull origin '${{ env.DEPLOY_BRANCH }}'"
 
       - name: Run docker-compose
         run: |
