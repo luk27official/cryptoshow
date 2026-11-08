@@ -284,12 +284,12 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
 
     if (pocketId !== null) {
         const pocket = result.pockets[pocketId];
-        createPocketFromJson(plugin, structure, pocket, `Pocket ${pocketId + 1}`, group, getColor(pocket.pocket_id), representations);
+        createPocketFromJson(plugin, structure, pocket, `Pocket ${pocketId + 1}`, group, getColor(pocket.pocket_id), representations, residueNumberingFor(result.input_structure));
     }
 
     else {
         result.pockets.map((pocket, i) => {
-            createPocketFromJson(plugin, structure, pocket, `Pocket ${i + 1}`, group, getColor(pocket.pocket_id), representations);
+            createPocketFromJson(plugin, structure, pocket, `Pocket ${i + 1}`, group, getColor(pocket.pocket_id), representations, residueNumberingFor(result.input_structure));
         });
     }
 
@@ -301,8 +301,13 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
                 const loc = StructureElement.Loci.getFirstLocation(loci);
                 if (!loc) return;
 
-                const chainId = StructureProperties.chain.auth_asym_id(loc);
-                const resId = StructureProperties.residue.auth_seq_id(loc);
+                const numbering = residueNumberingFor(result.input_structure);
+                const chainId = numbering === "label"
+                    ? StructureProperties.chain.label_asym_id(loc)
+                    : StructureProperties.chain.auth_asym_id(loc);
+                const resId = numbering === "label"
+                    ? StructureProperties.residue.label_seq_id(loc)
+                    : StructureProperties.residue.auth_seq_id(loc);
 
                 const idx = result.residue_ids.findIndex((e) => e === `${chainId}_${resId}`);
                 if (idx === -1) return "";
@@ -329,7 +334,7 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
  * @param representations Array of pocket representations (mutable)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const createPocketFromJson = async (plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef<PocketRepresentationType>[]) => {
+export const createPocketFromJson = async (plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef<PocketRepresentationType>[], numbering: ResidueNumbering) => {
     const group2 = group.apply(StateTransforms.Misc.CreateGroup, { label: groupName });
 
     const queries = [];
@@ -339,8 +344,8 @@ export const createPocketFromJson = async (plugin: PluginUIContext, structure: S
 
     for (const chain of uniqueChains) {
         const query = MS.struct.generator.atomGroups({
-            "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), chain]),
-            "residue-test": MS.core.set.has([MS.set(...pocket.residue_ids.map((e) => Number(e.split("_")[1]))), MS.struct.atomProperty.macromolecular.auth_seq_id()]),
+            "chain-test": MS.core.rel.eq([chainProperty(numbering), chain]),
+            "residue-test": MS.core.set.has([MS.set(...pocket.residue_ids.map((e) => Number(e.split("_")[1]))), seqProperty(numbering)]),
             "group-by": MS.struct.atomProperty.macromolecular.residueKey()
         });
         queries.push(query);
@@ -379,6 +384,14 @@ export const createPocketFromJson = async (plugin: PluginUIContext, structure: S
     }));
 
     representations.push({ type: "cartoon", object: cartoon, id: pocket.pocket_id });
+
+    const backbone = resSelection.apply(StateTransforms.Representation.StructureRepresentation3D, createStructureRepresentationParams(plugin, structure.data, {
+        type: "backbone",
+        color: "uniform",
+        colorParams: { value: Color(color) },
+    }));
+
+    representations.push({ type: "backbone", object: backbone, id: pocket.pocket_id });
 };
 
 /**
@@ -388,13 +401,47 @@ export const createPocketFromJson = async (plugin: PluginUIContext, structure: S
  * @param positions Array of residue positions
  * @returns Selection object
  */
-const getSelectionFromChainAuthId = (plugin: PluginUIContext, chainId: string, positions: number[]) => {
+/** CIF jobs store label_seq_id. PDB jobs store auth_seq_id. */
+export type ResidueNumbering = "label" | "auth";
+
+export const residueNumberingFor = (inputStructure: string): ResidueNumbering => {
+    return inputStructure.toLowerCase().endsWith(".cif") ? "label" : "auth";
+};
+
+const chainProperty = (numbering: ResidueNumbering) => {
+    return numbering === "label"
+        ? MS.struct.atomProperty.macromolecular.label_asym_id()
+        : MS.struct.atomProperty.macromolecular.auth_asym_id();
+};
+
+const seqProperty = (numbering: ResidueNumbering) => {
+    return numbering === "label"
+        ? MS.struct.atomProperty.macromolecular.label_seq_id()
+        : MS.struct.atomProperty.macromolecular.auth_seq_id();
+};
+
+const getResidueSelection = (plugin: PluginUIContext, chainId: string, positions: number[], numbering: ResidueNumbering) => {
+    const structure = plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data;
+    if (!structure) return undefined;
+
     const query = MS.struct.generator.atomGroups({
-        "chain-test": MS.core.rel.eq([MS.struct.atomProperty.macromolecular.auth_asym_id(), chainId]),
-        "residue-test": MS.core.set.has([MS.set(...positions), MS.struct.atomProperty.macromolecular.auth_seq_id()]),
+        "chain-test": MS.core.rel.eq([chainProperty(numbering), chainId]),
+        "residue-test": MS.core.set.has([MS.set(...positions), seqProperty(numbering)]),
         "group-by": MS.struct.atomProperty.macromolecular.residueKey()
     });
-    return Script.getStructureSelection(query, plugin.managers.structure.hierarchy.current.structures[0].cell.obj!.data);
+    return Script.getStructureSelection(query, structure);
+};
+
+const firstResidueLocation = (plugin: PluginUIContext, chainId: string, position: number, numbering: ResidueNumbering) => {
+    const sel = getResidueSelection(plugin, chainId, [position], numbering);
+    if (!sel) return undefined;
+
+    const loci = getStructureElementLoci(StructureSelection.toLociWithSourceUnits(sel));
+    if (!loci || Loci.isEmpty(loci)) return undefined;
+
+    const location = StructureElement.Loci.getFirstLocation(loci);
+    if (!location?.unit) return undefined;
+    return location;
 };
 
 //cc: https://github.com/scheuerv/molart/
@@ -418,20 +465,13 @@ const getStructureElementLoci = (loci: Loci): StructureElement.Loci | undefined 
  * @param residues Array of residue strings (e.g., "A_1")
  * @returns Array of coordinates
  */
-export const getResidueCoordinates = (plugin: PluginUIContext, residues: string[]) => {
+export const getResidueCoordinates = (plugin: PluginUIContext, residues: string[], numbering: ResidueNumbering) => {
     const coordinates: Point3D[] = [];
 
-    // could this be potentially improved? not sure whether we can do it just with one selection
-    // but it is still pretty fast
     for (const res of residues) {
-        const sel = getSelectionFromChainAuthId(plugin, res.split("_")[0], [Number(res.split("_")[1])]);
-        const loci = getStructureElementLoci(StructureSelection.toLociWithSourceUnits(sel));
-
-        if (loci) {
-            const structureElement = StructureElement.Stats.ofLoci(loci);
-            const location = structureElement.firstElementLoc;
-            coordinates.push({ x: StructureProperties.atom.x(location), y: StructureProperties.atom.y(location), z: StructureProperties.atom.z(location) });
-        }
+        const location = firstResidueLocation(plugin, res.split("_")[0], Number(res.split("_")[1]), numbering);
+        if (!location) continue;
+        coordinates.push({ x: StructureProperties.atom.x(location), y: StructureProperties.atom.y(location), z: StructureProperties.atom.z(location) });
     }
 
     return coordinates;
@@ -443,13 +483,10 @@ export const getResidueCoordinates = (plugin: PluginUIContext, residues: string[
  * @param residue Residue string (e.g., "A_1")
  * @returns Residue object containing information about the residue
  */
-export const getResidueInformation = (plugin: PluginUIContext, residue: string) => {
-    const sel = getSelectionFromChainAuthId(plugin, residue.split("_")[0], [Number(residue.split("_")[1])]);
-    const loci = getStructureElementLoci(StructureSelection.toLociWithSourceUnits(sel));
-    if (!loci) return null;
-
-    const structureElement = StructureElement.Stats.ofLoci(loci);
-    const location = structureElement.firstElementLoc;
+export const getResidueInformation = (plugin: PluginUIContext, residue: string, numbering: ResidueNumbering) => {
+    const [chainId, seqId] = residue.split("_");
+    const location = firstResidueLocation(plugin, chainId, Number(seqId), numbering);
+    if (!location) return null;
     const r: MolstarResidue = {
         authName: StructureProperties.atom.auth_comp_id(location),
         name: StructureProperties.atom.label_comp_id(location),
@@ -579,7 +616,8 @@ async function overPaintStructureWithPrediction(plugin: PluginUIContext, represe
     }
 
     for (let i = 0; i < selections.length; i++) {
-        const sel = getSelectionFromChainAuthId(plugin, selections[i].chainId, selections[i].residueNums);
+        const sel = getResidueSelection(plugin, selections[i].chainId, selections[i].residueNums, residueNumberingFor(prediction.input_structure));
+        if (!sel) continue;
         const bundle = Bundle.fromSelection(sel);
 
         params.push({

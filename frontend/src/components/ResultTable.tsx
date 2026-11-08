@@ -19,7 +19,7 @@ function ResultTable() {
     );
 
     const handleClick = async (pocket: Pocket, idx: number) => {
-        const config = getAHoJJobConfiguration(pocket, plugin, cryptoBenchResult!.structure_name);
+        const config = getAHoJJobConfiguration(pocket, plugin, cryptoBenchResult!.structure_name, cryptoBenchResult!.input_structure);
         const postData = await submitJob(config);
 
         if (postData) {
