@@ -13,11 +13,13 @@ export default defineConfig({
     port: 3000,
     proxy: {
       "/api": {
-        target: "http://localhost", // this is used only for development, so it can be localhost
+        // Host port of the backend container. Nginx normally strips this prefix.
+        target: "http://localhost:5001",
         changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ""),
       },
       "/ws": {
-        target: "ws://localhost",
+        target: "ws://localhost:5001",
         ws: true,
       }
     }
