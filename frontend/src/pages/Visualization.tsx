@@ -1,6 +1,6 @@
 import { getApiUrl } from "../utils";
 import { useEffect, useState } from "react";
-import { loadPockets, initializePlugin, loadStructure, showOnePolymerRepresentation, showOnePocketRepresentation } from "../components/MolstarComponent";
+import { loadPockets, initializePlugin, loadStructure, showOneComponentRepresentation } from "../components/MolstarComponent";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import { PluginProvider } from "../providers/PluginProvider";
 import { AppProvider } from "../providers/AppProvider";
@@ -13,8 +13,7 @@ import MolstarControls from "../components/MolstarControls";
 function VisualizationContent() {
     const {
         setLoadedStructures,
-        selectedPolymerRepresentation,
-        selectedPocketRepresentation,
+        selectedRepresentations,
         cryptoBenchResult,
         setCryptoBenchResult
     } = useAppContext();
@@ -75,14 +74,15 @@ function VisualizationContent() {
                 setPlugin(pluginInstance);
                 const loaded = await loadStructure(pluginInstance, getApiUrl(`/file/${cryptoBenchResult!.file_hash}/${cryptoBenchResult!.input_structure}`), undefined, undefined, cryptoBenchResult);
                 setLoadedStructures(prevStructures => [...prevStructures, loaded]);
-                showOnePolymerRepresentation(pluginInstance, loaded, selectedPolymerRepresentation);
+                showOneComponentRepresentation(pluginInstance, loaded, "chain", selectedRepresentations.chain);
                 const pocketReprs = await loadPockets(pluginInstance, loaded.structure, cryptoBenchResult!, null);
                 loaded.pocketRepresentations = pocketReprs;
-                showOnePocketRepresentation(pluginInstance, loaded, selectedPocketRepresentation);
+                showOneComponentRepresentation(pluginInstance, loaded, "pocket", selectedRepresentations.pocket);
+                showOneComponentRepresentation(pluginInstance, loaded, "ligand", selectedRepresentations.ligand);
             };
             initPlugin();
         }
-    }, [cryptoBenchResult, plugin, selectedPolymerRepresentation, selectedPocketRepresentation, setLoadedStructures]);
+    }, [cryptoBenchResult, plugin, selectedRepresentations, setLoadedStructures]);
 
     if (!taskId) {
         return (

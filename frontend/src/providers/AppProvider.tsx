@@ -1,5 +1,5 @@
 import React, { useState, ReactNode } from "react";
-import { LoadedStructure, PolymerRepresentationType, PocketRepresentationType, CryptoBenchResult } from "../types";
+import { LoadedStructure, CryptoBenchResult, defaultComponentColors, defaultComponentRepresentations } from "../types";
 import AppContext from "../contexts/AppContext";
 
 interface AppProviderProps {
@@ -8,17 +8,17 @@ interface AppProviderProps {
 
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const [loadedStructures, setLoadedStructures] = useState<LoadedStructure[]>([]);
-    const [selectedPolymerRepresentation, setSelectedPolymerRepresentation] = useState<PolymerRepresentationType>("cartoon");
-    const [selectedPocketRepresentation, setSelectedPocketRepresentation] = useState<PocketRepresentationType>("backbone");
+    const [selectedRepresentations, setSelectedRepresentations] = useState(defaultComponentRepresentations);
+    const [selectedColors, setSelectedColors] = useState(defaultComponentColors);
     const [cryptoBenchResult, setCryptoBenchResult] = useState<CryptoBenchResult | null>(null);
 
     const value = {
         loadedStructures,
         setLoadedStructures,
-        selectedPolymerRepresentation,
-        setSelectedPolymerRepresentation,
-        selectedPocketRepresentation,
-        setSelectedPocketRepresentation,
+        selectedRepresentations,
+        setSelectedRepresentations,
+        selectedColors,
+        setSelectedColors,
         cryptoBenchResult,
         setCryptoBenchResult,
     };

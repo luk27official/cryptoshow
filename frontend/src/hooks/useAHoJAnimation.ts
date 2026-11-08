@@ -3,14 +3,15 @@ import {
     AHoJStructure,
     LoadedStructure,
     TrajectoryTaskResult,
-    PolymerRepresentationType,
+    Representation,
+    StructureComponentType,
     CryptoBenchResult
 } from "../types";
 import { useAHoJService } from "./useAHoJService";
 import {
     loadStructure,
     playAnimation,
-    showOnePolymerRepresentation,
+    showOneComponentRepresentation,
     resetCamera,
     setStructureTransparency,
     removeFromStateTree
@@ -62,7 +63,7 @@ export const useAHoJAnimation = () => {
         structure: AHoJStructure & { type: string; },
         plugin: PluginUIContext,
         cryptoBenchResult: CryptoBenchResult,
-        selectedPolymerRepresentation: PolymerRepresentationType,
+        selectedRepresentations: Record<StructureComponentType, Representation>,
         loadedStructures: LoadedStructure[],
         setLoadedStructures: (structures: LoadedStructure[]) => void
     ) => {
@@ -100,7 +101,8 @@ export const useAHoJAnimation = () => {
                         undefined
                     );
 
-                    showOnePolymerRepresentation(plugin, loadedStructure, selectedPolymerRepresentation);
+                    showOneComponentRepresentation(plugin, loadedStructure, "chain", selectedRepresentations.chain);
+                    showOneComponentRepresentation(plugin, loadedStructure, "ligand", selectedRepresentations.ligand);
 
                     const updatedStructures = await Promise.all(
                         loadedStructures.map(async (s) => {

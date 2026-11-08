@@ -15,7 +15,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
     const {
         loadedStructures,
         setLoadedStructures,
-        selectedPolymerRepresentation,
+        selectedRepresentations,
         cryptoBenchResult
     } = useAppContext();
 
@@ -80,7 +80,7 @@ const AHoJResults = ({ ahoJJobResult }: AHoJResultsProps) => {
             structure,
             plugin,
             cryptoBenchResult,
-            selectedPolymerRepresentation,
+            selectedRepresentations,
             loadedStructures,
             setLoadedStructures
         );

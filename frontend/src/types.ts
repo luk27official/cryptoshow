@@ -85,27 +85,40 @@ export type AHoJResponse = {
     [key: string]: unknown;
 };
 
-export type PolymerRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface" | "backbone";
+export type StructureComponentType = "pocket" | "chain" | "ligand";
 
-export type PocketRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface" | "backbone" | "none";
+export type Representation = "cartoon" | "ball-and-stick" | "molecular-surface" | "backbone" | "none";
 
-export const PolymerRepresentationValues: Record<string, PolymerRepresentationType> = {
-    Cartoon: "cartoon",
-    BallAndStick: "ball-and-stick",
-    MolecularSurface: "molecular-surface",
-    Backbone: "backbone"
-} as const;
+export interface RepresentationChange {
+    structureComponentType: StructureComponentType;
+    representationChanged: boolean;
+    colorChanged: boolean;
+    color: string;
+    representation: Representation;
+}
 
-export const PocketRepresentationValues: Record<string, PocketRepresentationType> = {
-    Cartoon: "cartoon",
-    BallAndStick: "ball-and-stick",
-    MolecularSurface: "molecular-surface",
-    Backbone: "backbone",
-    None: "none"
-} as const;
+export const defaultComponentRepresentations: Record<StructureComponentType, Representation> = {
+    chain: "cartoon",
+    pocket: "backbone",
+    ligand: "ball-and-stick",
+};
 
-export type RepresentationWithRef<T extends PolymerRepresentationType | PocketRepresentationType> = {
-    type: T;
+export const defaultComponentColors: Record<StructureComponentType, string> = {
+    chain: "#ffffff",
+    pocket: "#1abc9c",
+    ligand: "#e74c3c",
+};
+
+export const representationOptions: { value: Representation; label: string; }[] = [
+    { value: "cartoon", label: "Cartoon" },
+    { value: "ball-and-stick", label: "Ball and Stick" },
+    { value: "molecular-surface", label: "Surface" },
+    { value: "backbone", label: "Backbone" },
+    { value: "none", label: "None" },
+];
+
+export type RepresentationWithRef = {
+    type: Representation;
     object: StateObjectSelector;
     transparentObjectRef?: string;
     overPaintRef?: string;
@@ -115,8 +128,9 @@ export type RepresentationWithRef<T extends PolymerRepresentationType | PocketRe
 export type LoadedStructure = {
     structure: StateObjectSelector;
     data: StateObjectSelector;
-    polymerRepresentations: RepresentationWithRef<PolymerRepresentationType>[];
-    pocketRepresentations: RepresentationWithRef<PocketRepresentationType>[];
+    polymerRepresentations: RepresentationWithRef[];
+    pocketRepresentations: RepresentationWithRef[];
+    ligandRepresentations: RepresentationWithRef[];
     structureUrl: string;
     structureName: string;
     ahojStructure?: AHoJStructure;

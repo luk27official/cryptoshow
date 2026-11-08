@@ -17,7 +17,7 @@ import { Download } from "molstar/lib/mol-plugin-state/transforms/data";
 import { AnimateModelIndex } from "molstar/lib/mol-plugin-state/animation/built-in/model-index";
 import { Bundle } from "molstar/lib/mol-model/structure/structure/element/bundle";
 import { PluginCommands } from "molstar/lib/mol-plugin/commands";
-import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, PolymerRepresentationType, LoadedStructure, PocketRepresentationType, AHoJStructure, OverPaintParams, ChainData } from "../types";
+import { CryptoBenchResult, Pocket, Point3D, MolstarResidue, RepresentationWithRef, LoadedStructure, AHoJStructure, OverPaintParams, ChainData, Representation, StructureComponentType } from "../types";
 import { getColor, getWindowWidth } from "../utils";
 import { getCurrentTheme } from "../hooks/useTheme";
 
@@ -111,7 +111,7 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
     let structure: StateObjectSelector;
     let polymer;
 
-    const representations: RepresentationWithRef<PolymerRepresentationType>[] = [];
+    const representations: RepresentationWithRef[] = [];
 
     if (structureUrl.endsWith("cif")) trajectory = await plugin.builders.structure.parseTrajectory(pdbData, "mmcif");
     else trajectory = await plugin.builders.structure.parseTrajectory(pdbData, "pdb");
@@ -185,13 +185,14 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
         await overPaintStructureWithPrediction(plugin, representations, prediction);
     }
 
-    await createLigandRepresentations(plugin, structure);
+    const ligandRepresentations = await createLigandRepresentations(plugin, structure, !structureNameShort);
 
     const loadedStucture: LoadedStructure = {
         structure: structure,
         data: pdbData,
         polymerRepresentations: representations,
         pocketRepresentations: [],
+        ligandRepresentations: ligandRepresentations,
         structureUrl: structureUrl,
         structureName: structureUrl.split("/").pop()!,
         ahojStructure: ahojStructure
@@ -205,20 +206,28 @@ export const loadStructure = async (plugin: PluginUIContext, structureUrl: strin
  * @param plugin Mol* plugin instance
  * @param structure Structure object
  */
-const createLigandRepresentations = async (plugin: PluginUIContext, structure: StateObjectSelector) => {
-    // do not show "nucleic" (DNA) as ligands
+const createLigandRepresentations = async (plugin: PluginUIContext, structure: StateObjectSelector, includeSurface: boolean): Promise<RepresentationWithRef[]> => {
     const shownGroups = ["ion", "ligand", "lipid", "branched", "non-standard", "coarse"] as const;
+    const representationTypes: Exclude<Representation, "none">[] = includeSurface
+        ? ["cartoon", "ball-and-stick", "molecular-surface", "backbone"]
+        : ["cartoon", "ball-and-stick", "backbone"];
+    const representations: RepresentationWithRef[] = [];
 
     for (const group of shownGroups) {
         const component = await plugin.builders.structure.tryCreateComponentStatic(structure, group);
-        if (component) {
-            await plugin.builders.structure.representation.addRepresentation(component, {
-                type: "ball-and-stick"
+        if (!component) continue;
+
+        for (const type of representationTypes) {
+            const object = await plugin.builders.structure.representation.addRepresentation(component, {
+                type: type,
+                color: "uniform",
             });
+            representations.push({ type: type, object: object });
         }
     }
 
     await plugin.build().commit();
+    return representations;
 };
 
 /**
@@ -227,10 +236,10 @@ const createLigandRepresentations = async (plugin: PluginUIContext, structure: S
  * @param representations Array of representations
  * @param representationType Type of representation to show 
  */
-export const showOneRepresentation = async <T extends PolymerRepresentationType | PocketRepresentationType>(
+export const showOneRepresentation = async (
     plugin: PluginUIContext,
-    representations: RepresentationWithRef<T>[],
-    representationType: T | null
+    representations: RepresentationWithRef[],
+    representationType: Representation | null
 ) => {
     for (const representation of representations) {
         const isVisible = representation.type !== representationType;
@@ -248,7 +257,7 @@ export const showOneRepresentation = async <T extends PolymerRepresentationType 
 export const showOnePolymerRepresentation = async (
     plugin: PluginUIContext,
     loadedStructure: LoadedStructure,
-    representationType: PolymerRepresentationType | null
+    representationType: Representation | null
 ) => {
     return showOneRepresentation(plugin, loadedStructure.polymerRepresentations, representationType);
 };
@@ -263,9 +272,46 @@ export const showOnePolymerRepresentation = async (
 export const showOnePocketRepresentation = async (
     plugin: PluginUIContext,
     loadedStructure: LoadedStructure,
-    representationType: PocketRepresentationType | null
+    representationType: Representation | null
 ) => {
     return showOneRepresentation(plugin, loadedStructure.pocketRepresentations, representationType);
+};
+
+export const showOneComponentRepresentation = async (
+    plugin: PluginUIContext,
+    loadedStructure: LoadedStructure,
+    componentType: StructureComponentType,
+    representationType: Representation
+) => {
+    const representations = componentRepresentations(loadedStructure, componentType);
+    return showOneRepresentation(plugin, representations, representationType);
+};
+
+export const setComponentColor = async (
+    plugin: PluginUIContext,
+    loadedStructure: LoadedStructure,
+    componentType: StructureComponentType,
+    color: string
+) => {
+    const value = Color.fromHexStyle(color);
+
+    for (const representation of componentRepresentations(loadedStructure, componentType)) {
+        if (representation.overPaintRef) {
+            await plugin.state.data.build().to(representation.object.ref).delete(representation.overPaintRef).commit();
+            representation.overPaintRef = undefined;
+        }
+
+        await plugin.build().to(representation.object).update(old => ({
+            ...old,
+            colorTheme: { name: "uniform", params: { value } },
+        })).commit();
+    }
+};
+
+const componentRepresentations = (loadedStructure: LoadedStructure, componentType: StructureComponentType) => {
+    if (componentType === "chain") return loadedStructure.polymerRepresentations;
+    if (componentType === "pocket") return loadedStructure.pocketRepresentations;
+    return loadedStructure.ligandRepresentations;
 };
 
 /**
@@ -280,7 +326,7 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
     const builder = plugin.state.data.build();
     const group = builder.to(structure).apply(StateTransforms.Misc.CreateGroup, { label: "Pockets" });
 
-    const representations: RepresentationWithRef<PocketRepresentationType>[] = [];
+    const representations: RepresentationWithRef[] = [];
 
     if (pocketId !== null) {
         const pocket = result.pockets[pocketId];
@@ -334,7 +380,7 @@ export const loadPockets = async (plugin: PluginUIContext, structure: StateObjec
  * @param representations Array of pocket representations (mutable)
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const createPocketFromJson = async (plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef<PocketRepresentationType>[], numbering: ResidueNumbering) => {
+export const createPocketFromJson = async (plugin: PluginUIContext, structure: StateObjectSelector, pocket: Pocket, groupName: string, group: any, color: number, representations: RepresentationWithRef[], numbering: ResidueNumbering) => {
     const group2 = group.apply(StateTransforms.Misc.CreateGroup, { label: groupName });
 
     const queries = [];
@@ -545,7 +591,7 @@ export const resetCamera = (plugin: PluginUIContext) => {
  * @param representations Array of representations
  * @param structure Structure object (Mol*)
  */
-export const setStructureTransparency = async (plugin: PluginUIContext, alpha: number, representations: RepresentationWithRef<PocketRepresentationType | PolymerRepresentationType>[], structure: StateObjectSelector) => {
+export const setStructureTransparency = async (plugin: PluginUIContext, alpha: number, representations: RepresentationWithRef[], structure: StateObjectSelector) => {
     type TransparencyParams = {
         bundle: Bundle;
         value: number;
@@ -581,7 +627,7 @@ export const setStructureTransparency = async (plugin: PluginUIContext, alpha: n
  * @param prediction CryptoBench result object containing the predicted scores
  * @returns void
  */
-async function overPaintStructureWithPrediction(plugin: PluginUIContext, representations: RepresentationWithRef<PocketRepresentationType | PolymerRepresentationType>[], prediction: CryptoBenchResult) {
+async function overPaintStructureWithPrediction(plugin: PluginUIContext, representations: RepresentationWithRef[], prediction: CryptoBenchResult) {
     const params: OverPaintParams[] = [];
     const thresholds = [0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0];
     const colors: Color[] = [];

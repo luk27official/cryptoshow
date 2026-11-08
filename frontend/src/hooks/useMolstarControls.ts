@@ -2,35 +2,29 @@ import { useCallback } from "react";
 import { PluginUIContext } from "molstar/lib/mol-plugin-ui/context";
 import {
     resetCamera,
-    showOnePolymerRepresentation,
-    showOnePocketRepresentation,
+    showOneComponentRepresentation,
+    setComponentColor,
     removeFromStateTree,
     setStructureTransparency
 } from "../components/MolstarComponent";
 import {
     LoadedStructure,
-    PolymerRepresentationType,
-    PocketRepresentationType
+    RepresentationChange
 } from "../types";
 
 export const useMolstarControls = () => {
-    const updatePolymerRepresentation = useCallback((
+    const updateRepresentation = useCallback((
         plugin: PluginUIContext,
         loadedStructures: LoadedStructure[],
-        newRepresentation: PolymerRepresentationType
+        change: RepresentationChange
     ) => {
         loadedStructures.forEach(loadedStructure => {
-            showOnePolymerRepresentation(plugin, loadedStructure, newRepresentation);
-        });
-    }, []);
-
-    const updatePocketRepresentation = useCallback((
-        plugin: PluginUIContext,
-        loadedStructures: LoadedStructure[],
-        newRepresentation: PocketRepresentationType
-    ) => {
-        loadedStructures.forEach(loadedStructure => {
-            showOnePocketRepresentation(plugin, loadedStructure, newRepresentation);
+            if (change.representationChanged) {
+                showOneComponentRepresentation(plugin, loadedStructure, change.structureComponentType, change.representation);
+            }
+            if (change.colorChanged) {
+                setComponentColor(plugin, loadedStructure, change.structureComponentType, change.color);
+            }
         });
     }, []);
 
@@ -60,8 +54,7 @@ export const useMolstarControls = () => {
     }, []);
 
     return {
-        updatePolymerRepresentation,
-        updatePocketRepresentation,
+        updateRepresentation,
         resetCameraView,
         removeSuperposition
     };
