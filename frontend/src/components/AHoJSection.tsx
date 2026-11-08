@@ -24,7 +24,7 @@ const AHoJSection = ({
                 onClick={() => onAHoJClick(pocket, index)}
                 disabled={!!ahoJJobId || !!ahoJJobResult}
             >
-                {ahoJJobResult ? "Job Completed" : ahoJJobId ? "Loading..." : "Run AHoJ"}
+                {ahoJJobResult ? "Job Completed" : ahoJJobId ? "Loading..." : "Obtain conformational ensemble"}
             </button>
 
             {ahoJJobId && <a href={`https://apoholo.cz/job/${ahoJJobId}`} target="_blank" rel="noopener noreferrer" className="job-id">AHoJ Job ID: {ahoJJobId}</a>}
