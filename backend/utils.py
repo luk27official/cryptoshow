@@ -134,7 +134,7 @@ def download_cif_file(pdb_id: str, tmp_dir: str = "") -> str:
 
     try:
         if len(pdb_id) == 4:
-            cif_file_path: str = rcsb.fetch(pdb_id, "cif", tmp_dir)  # type: ignore
+            cif_file_path = str(rcsb.fetch(pdb_id, "cif", tmp_dir))
             with open(cif_file_path, "r") as f:
                 cif_file_content = f
                 if "400 Bad Request" in cif_file_content.read() or "404 Not Found" in cif_file_content.read():
