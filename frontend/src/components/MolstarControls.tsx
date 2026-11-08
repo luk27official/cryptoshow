@@ -68,6 +68,7 @@ function MolstarControls() {
                         onChange={handlePocketRepresentationChange}
                         className="molstar-control-select"
                     >
+                        <option value={PocketRepresentationValues.Backbone}>Backbone</option>
                         <option value={PocketRepresentationValues.Cartoon}>Cartoon</option>
                         <option value={PocketRepresentationValues.BallAndStick}>Ball and Stick</option>
                         <option value={PocketRepresentationValues.MolecularSurface}>Surface</option>

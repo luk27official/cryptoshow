@@ -9,7 +9,7 @@ interface AppProviderProps {
 export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     const [loadedStructures, setLoadedStructures] = useState<LoadedStructure[]>([]);
     const [selectedPolymerRepresentation, setSelectedPolymerRepresentation] = useState<PolymerRepresentationType>("cartoon");
-    const [selectedPocketRepresentation, setSelectedPocketRepresentation] = useState<PocketRepresentationType>("cartoon");
+    const [selectedPocketRepresentation, setSelectedPocketRepresentation] = useState<PocketRepresentationType>("backbone");
     const [cryptoBenchResult, setCryptoBenchResult] = useState<CryptoBenchResult | null>(null);
 
     const value = {

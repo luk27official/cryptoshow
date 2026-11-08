@@ -87,7 +87,7 @@ export type AHoJResponse = {
 
 export type PolymerRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface" | "backbone";
 
-export type PocketRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface" | "none";
+export type PocketRepresentationType = "cartoon" | "ball-and-stick" | "molecular-surface" | "backbone" | "none";
 
 export const PolymerRepresentationValues: Record<string, PolymerRepresentationType> = {
     Cartoon: "cartoon",
@@ -100,6 +100,7 @@ export const PocketRepresentationValues: Record<string, PocketRepresentationType
     Cartoon: "cartoon",
     BallAndStick: "ball-and-stick",
     MolecularSurface: "molecular-surface",
+    Backbone: "backbone",
     None: "none"
 } as const;
 
